@@ -79,6 +79,7 @@ struct GameSimulation {
     private let movement: MovementSystem
     private var spawner: SpawnSystem
     private var enemyAI: EnemyAISystem
+    private var waves: WaveSystem
     private var weaponSystem: WeaponSystem
     private let projectileSystem = ProjectileSystem()
     private var statusSystem = StatusSystem()
@@ -127,6 +128,7 @@ struct GameSimulation {
                              capacity: tuning.enemyAI.hardCap, seed: run.seed ^ 0xC0_4BA7)
         movement = MovementSystem(tuning: tuning.player)
         spawner = SpawnSystem(tuning: tuning.spawning, roster: EnemyCatalog.roster(for: run.realmID))
+        waves = WaveSystem(plan: realm.waves, conquestWave: realm.conquestWave)
         enemyAI = EnemyAISystem(tuning: tuning.enemyAI, combatTuning: tuning.combat)
         weaponSystem = WeaponSystem(weapon: weapon, tuning: tuning.combat,
                                     growthPerLevel: tuning.progression.damageGrowthPerLevel)
@@ -144,6 +146,11 @@ struct GameSimulation {
 
     /// Enemies per second the spawner is currently aiming for.
     var currentSpawnRate: Double { spawner.rate(atElapsed: elapsed) }
+
+    /// Where the run has got to: the wave, and any champion on the field.
+    var wave: WaveState { waves.state }
+    /// True once the realm's final champion has fallen.
+    var isRealmConquered: Bool { waves.state.phase == .conquered }
 
     // MARK: - Step
 
@@ -169,6 +176,9 @@ struct GameSimulation {
         }
         flush()
 
+        if alive {
+            advanceWaves(dt)
+        }
         spawner.isEnabled = alive && cheats.spawningEnabled
         spawner.step(&combat, player: player, elapsed: elapsed, dt: dt, hardCap: tuning.enemyAI.hardCap,
                      speedVariance: tuning.enemyAI.speedVariance)
@@ -187,7 +197,7 @@ struct GameSimulation {
         }
         AllySystem.step(&combat, player: player, dt: dt)
         flush()
-        projectileSystem.step(&combat, dt: dt)
+        projectileSystem.step(&combat, player: &player, godMode: cheats.godMode, dt: dt)
         flush()
         ZoneSystem.step(&combat, player: &player, dt: dt)
         flush()
@@ -216,6 +226,25 @@ struct GameSimulation {
             syncAuras()
         }
         syncPlayerSnapshot()
+    }
+
+    /// Runs the wave clock and places whatever champion it calls for.
+    ///
+    /// The wave decides what the spawner is allowed to field and how hard it
+    /// pushes; when a champion is due, it arrives with an escort and the
+    /// ordinary horde thins out so the fight is against the champion.
+    private mutating func advanceWaves(_ dt: TimeInterval) {
+        let due = waves.step(&combat, dt: dt)
+        spawner.wave = waves.state.index
+        spawner.rateMultiplier = waves.pressure * waves.spawnShare
+        combat.stats.wave = max(combat.stats.wave, waves.state.index)
+        guard let due, let definition = EnemyCatalog.definition(for: due) else { return }
+        let id = spawner.spawnNamed(definition, into: &combat, player: player,
+                                    distance: spawner.spawnRadius * 0.8)
+        guard let index = combat.index(ofEnemy: id) else { return }
+        waves.bossArrived(id: id, title: definition.name, health: combat.enemies.health[index], &combat)
+        spawner.spawnBurst(realm.waves.escortCount, into: &combat, player: player,
+                           hardCap: tuning.enemyAI.hardCap, speedVariance: tuning.enemyAI.speedVariance)
     }
 
     /// A fallen hero's power dies with them: missiles, companions, zones,
@@ -597,6 +626,12 @@ struct GameSimulation {
     }
 
     // MARK: - Developer commands
+
+    /// Developer tooling: jump straight to the next wave.
+    mutating func skipWave() {
+        waves.skipToNextWave(&combat)
+        spawner.wave = waves.state.index
+    }
 
     mutating func spawnEnemies(_ count: Int) {
         spawner.spawnBurst(count, into: &combat, player: player, hardCap: tuning.enemyAI.hardCap,

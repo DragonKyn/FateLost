@@ -18,6 +18,9 @@ struct GameplayHUDState: Equatable {
     var summonsDismissed = false
     /// True when the build has summons at all, so the control can hide.
     var hasSummons = false
+    /// The champion holding the wave open, if any.
+    var bossTitle: String?
+    var bossHealthFraction: Double = 0
 }
 
 /// The build as the skill tree screen needs it. Published when it changes.
@@ -34,12 +37,20 @@ struct ProgressionSnapshot: Equatable {
 
 /// How a run ended, for the summary screen.
 struct RunSummary: Equatable {
+    /// Whether the realm took the player, or the player took the realm.
+    enum Outcome: Equatable {
+        case defeated
+        case conquered
+    }
+
     let realm: RealmID
     let weapon: WeaponID
     let secondsSurvived: Int
     let stats: RunStats
     let level: Int
     let allocation: SkillAllocation
+    var outcome: Outcome = .defeated
+    var wave: Int = 1
 }
 
 /// The gameplay scene.
@@ -432,12 +443,16 @@ final class GameScene: SKScene {
         let player = simulation.player
         let progression = simulation.progression
         let fraction = progression.required > 0 ? Double(progression.experience) / Double(progression.required) : 0
+        let wave = simulation.wave
         let state = GameplayHUDState(health: player.health, maxHealth: player.maxHealth, barrier: player.barrier,
-                                     elapsedSeconds: Int(simulation.elapsed), wave: 1, level: progression.level,
+                                     elapsedSeconds: Int(simulation.elapsed), wave: wave.index,
+                                     level: progression.level,
                                      experienceFraction: min(1, fraction), unspentPoints: progression.unspentPoints,
                                      kills: simulation.stats.kills, allyCount: simulation.allies.count,
                                      summonsDismissed: simulation.areSummonsDismissed,
-                                     hasSummons: simulation.hasSummons)
+                                     hasSummons: simulation.hasSummons,
+                                     bossTitle: wave.isBossActive ? wave.bossTitle : nil,
+                                     bossHealthFraction: wave.bossHealthFraction)
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
@@ -470,14 +485,24 @@ final class GameScene: SKScene {
     }
 
     private func deliverSummaryIfDue() {
-        guard !summaryDelivered, let sinceDefeat = simulation.timeSinceDefeat,
+        guard !summaryDelivered else { return }
+        // Taking the realm ends the run as surely as falling does.
+        if simulation.isRealmConquered {
+            deliverSummary(outcome: .conquered, seconds: Int(simulation.elapsed))
+            return
+        }
+        guard let sinceDefeat = simulation.timeSinceDefeat,
               sinceDefeat >= Timing.defeatSummaryDelay * Timing.defeatTimeScale else { return }
+        deliverSummary(outcome: .defeated, seconds: Int(simulation.elapsed - sinceDefeat))
+    }
+
+    private func deliverSummary(outcome: RunSummary.Outcome, seconds: Int) {
         summaryDelivered = true
         resetInput()
         onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.weapon.id,
-                               secondsSurvived: Int(simulation.elapsed - sinceDefeat),
-                               stats: simulation.stats, level: simulation.progression.level,
-                               allocation: simulation.allocation))
+                               secondsSurvived: seconds, stats: simulation.stats,
+                               level: simulation.progression.level, allocation: simulation.allocation,
+                               outcome: outcome, wave: simulation.wave.index))
     }
 
     // MARK: - Build

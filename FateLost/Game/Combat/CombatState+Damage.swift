@@ -236,6 +236,57 @@ extension CombatState {
         }
     }
 
+    /// Everything between an enemy's blow and the player's health: immunity,
+    /// dodging, armour, barriers, a refused death, and the triggers that
+    /// answer being struck.
+    mutating func strikePlayer(_ player: inout PlayerState, amount rawAmount: Double,
+                               direction: CGPoint, godMode: Bool) {
+        guard !player.isInvulnerable else { return }
+        if random.chance(sheet[.dodgeChance]) {
+            player.timeSinceDodge = 0
+            stats.dodges += 1
+            events.append(.playerDodged)
+            fireProcs(build.dodgeProcs, origin: player.position)
+            return
+        }
+
+        let armor = max(0, sheet[.armor])
+        let reduction = min(0.8, armor / (armor + 75))
+        var amount = godMode ? 0 : rawAmount * (1 - reduction)
+
+        if player.barrier > 0 {
+            let absorbed = min(player.barrier, amount)
+            player.barrier -= absorbed
+            amount -= absorbed
+        }
+
+        if amount >= player.health, let refusal = build.cheatDeath, cheatDeathCooldown <= 0 {
+            cheatDeathCooldown = refusal.cooldown
+            player.health = max(1, player.maxHealth * refusal.restore)
+            player.invulnerability = refusal.invulnerability
+            events.append(.cheatedDeath)
+            if let action = refusal.action {
+                pendingActions.append(QueuedAction(action: action, origin: player.position, targetID: nil,
+                                                          direction: direction, depth: 1, ability: nil))
+            }
+            return
+        }
+
+        let dealt = min(amount, player.health)
+        player.health -= dealt
+        player.invulnerability = tuning.invulnerabilityDuration
+        player.timeSinceHit = 0
+        // `direction` points at the player, so the shove carries on the same way.
+        player.knockback = player.knockback + direction * tuning.playerKnockbackSpeed
+        stats.damageTaken += dealt
+        events.append(.playerHit(amount: rawAmount, direction: direction))
+        conditions.healthFraction = player.healthFraction
+        fireProcs(build.hurtProcs, origin: player.position)
+        if player.isDefeated {
+            events.append(.playerDefeated)
+        }
+    }
+
     // MARK: - Death
 
     /// Removes every enemy whose health has run out: reports the kills,
@@ -257,7 +308,14 @@ extension CombatState {
                                            direction: direction))
                 stats.kills += 1
                 killsThisStep += 1
-                dropExperience(definition.experience, at: position)
+                if definition.rank >= .elite {
+                    stats.eliteKills += 1
+                }
+                if definition.isBoss {
+                    stats.bossKills += 1
+                }
+                dropExperience(definition.experienceValue + enemies.strain(at: index).experienceBonus,
+                               at: position)
 
                 let depth = Int(enemies.lastHitDepth[index])
                 if depth < 2 {

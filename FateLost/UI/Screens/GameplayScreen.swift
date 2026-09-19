@@ -40,6 +40,12 @@ struct GameplayScreen: View {
                     }
                 )
                 .transition(.opacity)
+                .onAppear {
+                    // Taking a realm is what opens the next one.
+                    if summary.outcome == .conquered {
+                        services.realmProgress.conquered.insert(summary.realm)
+                    }
+                }
             } else if session.isSkillTreePresented {
                 SkillTreeView(session: session)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -115,8 +121,14 @@ private struct GameplayHUDOverlay: View {
                 }
                 hudButton(systemImage: "pause.fill", label: "Pause", action: onPause)
             }
+            if let title = session.hud.bossTitle {
+                BossBanner(title: title, fraction: session.hud.bossHealthFraction)
+                    .padding(.top, 6)
+                    .transition(.move(edge: .top).combined(with: .opacity))
+            }
             Spacer()
         }
+        .animation(.easeOut(duration: 0.3), value: session.hud.bossTitle)
         .padding(.horizontal, 20)
         .padding(.top, 12)
     }
@@ -234,6 +246,39 @@ struct ExperienceBar: View {
         .accessibilityElement()
         .accessibilityLabel("Experience")
         .accessibilityValue("\(Int(fraction * 100)) percent to next level")
+    }
+}
+
+/// The champion holding the wave open: its name, and how much of it is left.
+private struct BossBanner: View {
+    let title: String
+    let fraction: Double
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(title.uppercased())
+                .font(FLTheme.Typeface.heading(15))
+                .tracking(3)
+                .foregroundStyle(FLTheme.Palette.parchment)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+                .shadow(color: .black, radius: 3)
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.black.opacity(0.7))
+                    Capsule()
+                        .fill(LinearGradient(colors: [FLTheme.Palette.blood, Color(red: 0.42, green: 0.05, blue: 0.05)],
+                                             startPoint: .top, endPoint: .bottom))
+                        .frame(width: proxy.size.width * min(1, max(0, fraction)))
+                        .animation(.easeOut(duration: 0.2), value: fraction)
+                    Capsule().strokeBorder(FLTheme.Palette.ember.opacity(0.8), lineWidth: 1)
+                }
+            }
+            .frame(height: 12)
+        }
+        .frame(maxWidth: 420)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title), \(Int(fraction * 100)) percent health")
     }
 }
 

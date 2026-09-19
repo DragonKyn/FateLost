@@ -1,10 +1,10 @@
 import SwiftUI
 
-/// Shown when the player falls ("Fate Sealed"): what the run achieved, and
-/// the way back in.
+/// Shown when a run ends: what it achieved, and the way back in.
 ///
-/// Legacy rewards join this screen in Phase 6; conquest gets its own
-/// variant when realm bosses arrive.
+/// Two endings, one screen. Falling seals your fate; putting the realm's
+/// last champion down conquers it, and the wording, colour and button all
+/// change to say so.
 struct RunSummaryView: View {
     let summary: RunSummary
     let realm: RealmDefinition
@@ -20,11 +20,14 @@ struct RunSummaryView: View {
 
             HStack(alignment: .center, spacing: 40) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("FATE SEALED")
+                    Text(isConquest ? "REALM CONQUERED" : "FATE SEALED")
                         .font(FLTheme.Typeface.title(52))
                         .tracking(8)
                         .foregroundStyle(FLTheme.Palette.parchment)
-                        .shadow(color: FLTheme.Palette.blood.opacity(0.8), radius: 18)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.6)
+                        .shadow(color: (isConquest ? FLTheme.Palette.ember : FLTheme.Palette.blood).opacity(0.8),
+                                radius: 18)
                     Text("\(title.name), level \(summary.level) · \(realm.name) · \(weapon.name)")
                         .font(FLTheme.Typeface.heading(17))
                         .italic()
@@ -32,7 +35,14 @@ struct RunSummaryView: View {
 
                     Grid(alignment: .leading, horizontalSpacing: 28, verticalSpacing: 10) {
                         statRow("Survived", formatTime(summary.secondsSurvived))
+                        statRow("Wave reached", "\(summary.wave)")
                         statRow("Enemies slain", "\(summary.stats.kills)")
+                        if summary.stats.eliteKills > 0 {
+                            statRow("Elites felled", "\(summary.stats.eliteKills)")
+                        }
+                        if summary.stats.bossKills > 0 {
+                            statRow("Champions felled", "\(summary.stats.bossKills)")
+                        }
                         statRow("Damage dealt", "\(Int(summary.stats.damageDealt.rounded()))")
                         statRow("Highest hit", "\(Int(summary.stats.highestHit.rounded()))")
                         statRow("Healing received", "\(Int(summary.stats.healingReceived.rounded()))")
@@ -57,7 +67,7 @@ struct RunSummaryView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 14) {
-                    Button("Rise Again", action: onRetry)
+                    Button(isConquest ? "Run It Again" : "Rise Again", action: onRetry)
                         .buttonStyle(.flPrimary)
                     Button("Return to Menu", action: onMenu)
                         .buttonStyle(.flSecondary)
@@ -68,6 +78,8 @@ struct RunSummaryView: View {
         }
         .accessibilityElement(children: .contain)
     }
+
+    private var isConquest: Bool { summary.outcome == .conquered }
 
     private var title: BuildTitle.Title { BuildTitle.title(for: summary.allocation) }
 

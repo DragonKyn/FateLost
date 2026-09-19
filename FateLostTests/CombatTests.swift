@@ -23,9 +23,10 @@ private enum Fixture {
 
     /// A goblin that neither moves nor strikes, for weapon tests.
     static let dummy = EnemyDefinition(
-        id: "test.dummy", name: "Dummy", maxHealth: 1000, moveSpeed: 0, radius: 0.3, attackDamage: 0,
-        attackReach: 0, attackWindup: 1, attackCooldown: 1000, knockbackResistance: 1, damageType: .physical,
-        behavior: .melee, experience: 0, spawnWeight: 0, earliestMinute: 0, spriteVariants: [.enemyGoblin]
+        id: "test.dummy", name: "Dummy", family: .goblinoid, maxHealth: 1000, moveSpeed: 0, radius: 0.3,
+        attackDamage: 0, attackReach: 0, attackWindup: 1, attackCooldown: 1000, knockbackResistance: 1,
+        damageType: .physical, behavior: .melee, experience: 0, spawnWeight: 0, earliestWave: 1,
+        spriteVariants: [.enemyGoblin]
     )
 
     static func noCrits() -> CombatTuning {

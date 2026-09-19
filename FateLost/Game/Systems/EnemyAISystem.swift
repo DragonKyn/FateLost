@@ -4,17 +4,23 @@ import Foundation
 /// Moves enemies toward the player, keeps crowds from stacking, and resolves
 /// their strikes.
 ///
-/// Each enemy heads straight for its target by the shortest route across
-/// the wrapping arena. Usually that's the player; a taunting ally nearby
-/// draws it instead, a summon standing closer than the hero is mauled on the
-/// way past, a confused enemy turns on its own kind, a terrified one flees,
-/// and a stealthed player simply can't be found. Crowding is handled
-/// by separation: overlapping enemies push apart. That push is the expensive
-/// part, so it is recomputed for one group of enemies per tick
-/// (`separationGroups`) and cached in between.
+/// Each enemy heads for its target by the shortest route across the wrapping
+/// arena. Usually that's the player; a taunting ally nearby draws it instead,
+/// a summon standing closer than the hero is mauled on the way past, a
+/// confused enemy turns on its own kind, a terrified one flees, and a
+/// stealthed player simply can't be found. Crowding is handled by separation:
+/// overlapping enemies push apart. That push is the expensive part, so it is
+/// recomputed for one group of enemies per tick (`separationGroups`) and
+/// cached in between.
 ///
-/// Strikes are telegraphed: an enemy in reach starts a windup, slows down,
-/// and only lands the blow if its target is still in reach when it ends.
+/// Every strike is telegraphed by a windup, and every behaviour has a
+/// different answer:
+/// - melee closes and swings; walk away from it;
+/// - an exploder lights a fuse; let the kill go and step back;
+/// - a shooter holds its distance and looses; close on it;
+/// - a charger winds up in place and then hurls itself in a straight line;
+///   side-step it and it is spent;
+/// - a summoner hangs back calling more of its kind; kill it first.
 struct EnemyAISystem {
     let tuning: EnemyAITuning
     let combatTuning: CombatTuning
@@ -27,6 +33,8 @@ struct EnemyAISystem {
     /// How much nearer than the hero a summon must be to be preferred. The
     /// horde wants the player; minions are what it walks through.
     static let allyPreferenceBias: CGFloat = 1.2
+    /// A shooter holds this share of its range, and backs off below it.
+    static let standoffShare: CGFloat = 0.65
 
     init(tuning: EnemyAITuning, combatTuning: CombatTuning) {
         self.tuning = tuning
@@ -64,6 +72,13 @@ struct EnemyAISystem {
             let mask = combat.enemies.statusMask[index]
             let incapacitated = mask & StatusKind.incapacitating != 0
             let rooted = mask & StatusKind.root.bit != 0
+
+            // A charge in progress overrides everything else it might do.
+            if combat.enemies.special[index] > 0, combat.enemies.dash[index] != .zero {
+                advanceCharge(index, definition: definition, player: &player, combat: &combat,
+                              godMode: godMode, dt: dt, incapacitated: incapacitated)
+                continue
+            }
 
             // Decide what this enemy is after.
             let goal: Goal
@@ -105,8 +120,11 @@ struct EnemyAISystem {
             default: contactDistance = 0.45 + definition.radius
             }
 
-            // Strikes: cool down, start a windup when in reach, land it if
-            // the target is still there when it finishes.
+            // How far out it is willing to start a strike, and where it wants
+            // to stand while doing so.
+            let strikeRange = engagementRange(definition, contact: contactDistance)
+            let standRange = standoffDistance(definition, contact: contactDistance)
+
             combat.enemies.attackCooldown[index] = max(0, combat.enemies.attackCooldown[index] - dt)
             if !incapacitated {
                 if combat.enemies.windup[index] > 0 {
@@ -114,12 +132,12 @@ struct EnemyAISystem {
                     if combat.enemies.windup[index] <= 0 {
                         combat.enemies.windup[index] = 0
                         combat.enemies.attackCooldown[index] = definition.attackCooldown
-                        let landingReach = contactDistance + definition.attackReach * 1.35
                         resolveStrike(index, definition: definition, goal: goal, distance: distance,
-                                      landingReach: landingReach, player: &player, combat: &combat, godMode: godMode)
+                                      landingReach: strikeRange * 1.2, toTarget: toTarget,
+                                      player: &player, combat: &combat, godMode: godMode)
                     }
                 } else if targetPosition != nil, combat.enemies.attackCooldown[index] <= 0,
-                          distance <= contactDistance + definition.attackReach {
+                          distance <= strikeRange {
                     combat.enemies.windup[index] = definition.attackWindup
                     combat.events.append(.enemyWindup(enemyID: combat.enemies.ids[index]))
                 }
@@ -140,9 +158,14 @@ struct EnemyAISystem {
             switch goal {
             case .player, .ally, .enemy:
                 let direction = distance > 0.0001 ? toTarget / distance : heading
-                let gap = max(0, distance - contactDistance)
-                chase = direction * min(speed, gap / max(step, 0.0001))
                 heading = direction
+                if distance < standRange - 0.35 {
+                    // Too close to shoot comfortably: give ground.
+                    chase = direction * -speed * 0.8
+                } else {
+                    let gap = max(0, distance - standRange)
+                    chase = direction * min(speed, gap / max(step, 0.0001))
+                }
             case .flee:
                 let away = combat.world.delta(from: player.position, to: position).normalized
                 chase = away * speed * 0.9
@@ -169,6 +192,35 @@ struct EnemyAISystem {
             if chase.lengthSquared > 0.0001 {
                 combat.enemies.heading[index] = heading
             }
+        }
+    }
+
+    // MARK: - Ranges
+
+    /// How far out this kind will start a strike.
+    private func engagementRange(_ definition: EnemyDefinition, contact: CGFloat) -> CGFloat {
+        switch definition.behavior {
+        case .melee, .exploder:
+            return contact + definition.attackReach
+        case .ranged(let range, _, _):
+            return range
+        case .charger(let range, _, _):
+            return range
+        case .summoner(_, _, _, let range):
+            return range
+        }
+    }
+
+    /// Where this kind wants to stand relative to its target.
+    private func standoffDistance(_ definition: EnemyDefinition, contact: CGFloat) -> CGFloat {
+        switch definition.behavior {
+        case .melee, .exploder:
+            return contact
+        case .ranged(let range, _, _), .summoner(_, _, _, let range):
+            return max(contact + 0.4, range * Self.standoffShare)
+        case .charger:
+            // A charger closes like anything else; the charge is the reach.
+            return contact
         }
     }
 
@@ -228,32 +280,44 @@ struct EnemyAISystem {
     // MARK: - Strikes
 
     private func resolveStrike(_ index: Int, definition: EnemyDefinition, goal: Goal, distance: CGFloat,
-                               landingReach: CGFloat, player: inout PlayerState, combat: inout CombatState,
-                               godMode: Bool) {
+                               landingReach: CGFloat, toTarget: CGPoint, player: inout PlayerState,
+                               combat: inout CombatState, godMode: Bool) {
         let weakened = 1 - combat.enemies.potency(.weaken, at: index)
-        let damage = definition.attackDamage * combat.enemyDamageScale * max(0, weakened)
+        let damage = definition.attackDamage * combat.enemyDamageScale * combat.enemies.damageScale[index]
+            * max(0, weakened)
+        let direction = toTarget.lengthSquared > 0.0001 ? toTarget.normalized : combat.enemies.heading[index]
 
-        if case .exploder(let radius) = definition.behavior {
+        switch definition.behavior {
+        case .exploder(let radius):
             explode(index, radius: radius, damage: damage, player: &player, combat: &combat, godMode: godMode)
             return
+        case .ranged(_, let speed, let sprite):
+            loose(index, definition: definition, damage: damage, direction: direction, speed: speed,
+                  sprite: sprite, combat: &combat)
+            return
+        case .charger(_, let speed, let travel):
+            beginCharge(index, direction: direction, speed: speed, distance: travel, combat: &combat)
+            return
+        case .summoner(let spawns, let count, let interval, _):
+            call(index, spawns: spawns, count: count, interval: interval, combat: &combat)
+            return
+        case .melee:
+            break
         }
 
         switch goal {
         case .player:
             guard distance <= landingReach, !player.isDefeated else { return }
-            let direction = combat.world.delta(from: combat.enemies.positions[index], to: player.position).normalized
-            strikePlayer(&player, amount: damage, direction: direction, combat: &combat, godMode: godMode)
-        case .enemy(let other):
-            guard distance <= landingReach, other < combat.enemies.count else { return }
-            // A confused enemy's blow lands on its own kind, and the kill is yours.
-            let direction = combat.world.delta(from: combat.enemies.positions[index],
-                                               to: combat.enemies.positions[other]).normalized
-            let hit = Hit(amount: damage * 2.5, type: definition.damageType, tags: [.melee], direction: direction,
-                          knockback: 0.6, canCrit: false, depth: 1, source: .environment)
-            combat.strike(other, with: hit)
+            combat.strikePlayer(&player, amount: damage, direction: direction, godMode: godMode)
         case .ally(let anchor):
             guard distance <= landingReach else { return }
             wound(anchor, amount: damage, combat: &combat)
+        case .enemy(let other):
+            guard distance <= landingReach, other < combat.enemies.count else { return }
+            // A confused enemy's blow lands on its own kind, and the kill is yours.
+            let hit = Hit(amount: damage * 2.5, type: definition.damageType, tags: [.melee], direction: direction,
+                          knockback: 0.6, canCrit: false, depth: 1, source: .environment)
+            combat.strike(other, with: hit)
         case .flee, .wander:
             break
         }
@@ -266,6 +330,101 @@ struct EnemyAISystem {
         AllySystem.wound(anchor.index, amount: amount, &combat)
     }
 
+    /// A shot on its way. Enemy projectiles fly through the same system as
+    /// the player's, flagged so they look the other way for something to hit.
+    private func loose(_ index: Int, definition: EnemyDefinition, damage: Double, direction: CGPoint,
+                       speed: CGFloat, sprite: SpriteID, combat: inout CombatState) {
+        guard direction != .zero else { return }
+        let origin = combat.enemies.positions[index]
+        let range = engagementRange(definition, contact: definition.radius)
+        var hit = Hit(amount: damage, type: definition.damageType, tags: [.projectile], direction: direction,
+                      knockback: 0.3, canCrit: false, depth: 1, source: .environment)
+        hit.status = nil
+        combat.projectiles.append(Projectile(
+            id: combat.makeEntityID(),
+            position: origin,
+            velocity: direction * speed,
+            remainingLife: Double(range / max(speed, 0.01)) * 1.4,
+            pierceRemaining: 0,
+            hit: hit,
+            radius: 0.22,
+            splashRadius: 0,
+            spriteID: sprite,
+            visual: VisualStyle.matching(definition.damageType),
+            isHostile: true
+        ))
+        combat.events.append(.projectileFired(spriteID: sprite, origin: origin, direction: direction))
+    }
+
+    /// Winds up, then throws itself along a straight line.
+    private func beginCharge(_ index: Int, direction: CGPoint, speed: CGFloat, distance: CGFloat,
+                             combat: inout CombatState) {
+        guard direction != .zero else { return }
+        combat.enemies.dash[index] = direction * speed
+        combat.enemies.special[index] = Double(distance / max(speed, 0.01))
+        combat.enemies.heading[index] = direction
+    }
+
+    /// Carries a charge forward, ending it on the first thing it hits.
+    private func advanceCharge(_ index: Int, definition: EnemyDefinition, player: inout PlayerState,
+                               combat: inout CombatState, godMode: Bool, dt: TimeInterval,
+                               incapacitated: Bool) {
+        guard !incapacitated else {
+            // Knocked out of it mid-run.
+            combat.enemies.dash[index] = .zero
+            combat.enemies.special[index] = 0
+            return
+        }
+        combat.enemies.special[index] -= dt
+        let velocity = combat.enemies.dash[index]
+        let moved = combat.world.wrap(combat.enemies.positions[index] + velocity * CGFloat(dt))
+        combat.enemies.positions[index] = moved
+
+        let damage = definition.attackDamage * combat.enemyDamageScale * combat.enemies.damageScale[index]
+        let reach = definition.radius + definition.attackReach
+
+        // Anything it runs through takes the full weight of it, once.
+        let toPlayer = combat.world.delta(from: moved, to: player.position)
+        if !player.isDefeated, toPlayer.length <= reach + combatTuning.playerRadius {
+            combat.strikePlayer(&player, amount: damage, direction: toPlayer.normalized, godMode: godMode)
+            combat.enemies.dash[index] = .zero
+            combat.enemies.special[index] = 0
+            return
+        }
+        let anchors = combat.allyAnchors
+        for anchor in anchors where anchor.isMortal {
+            guard combat.world.distance(moved, anchor.position) <= reach + anchor.radius else { continue }
+            wound(anchor, amount: damage, combat: &combat)
+            combat.enemies.dash[index] = .zero
+            combat.enemies.special[index] = 0
+            return
+        }
+
+        if combat.enemies.special[index] <= 0 {
+            combat.enemies.dash[index] = .zero
+            combat.enemies.special[index] = 0
+        }
+    }
+
+    /// Calls more of its kind in around itself.
+    private func call(_ index: Int, spawns: EnemyKindID, count: Int, interval: Double,
+                      combat: inout CombatState) {
+        guard let definition = EnemyCatalog.definition(for: spawns) else { return }
+        let center = combat.enemies.positions[index]
+        combat.enemies.attackCooldown[index] = max(combat.enemies.attackCooldown[index], interval)
+        combat.events.append(.burst(position: center, radius: 1.4, visual: .shadow))
+        let kind = combat.enemies.kindIndex(for: definition)
+        for slot in 0..<count {
+            let angle = CGFloat(2 * Double.pi * Double(slot) / Double(max(count, 1)) + combat.random.range(-0.4, 0.4))
+            let offset = CGPoint(x: cos(angle), y: sin(angle)) * CGFloat(combat.random.range(1.2, 2.2))
+            let position = combat.world.wrap(center + offset)
+            let id = combat.makeEntityID()
+            combat.enemies.append(id: id, kind: kind, position: position, speedScale: 1,
+                                  healthScale: combat.enemyHealthScale)
+            combat.events.append(.summoned(position: position, visual: .shadow))
+        }
+    }
+
     /// A sapper's keg going off: hurts everything nearby, including goblins,
     /// and takes the sapper with it.
     private func explode(_ index: Int, radius: CGFloat, damage: Double, player: inout PlayerState,
@@ -276,7 +435,7 @@ struct EnemyAISystem {
 
         let toPlayer = combat.world.delta(from: center, to: player.position)
         if !player.isDefeated, toPlayer.length <= radius + combatTuning.playerRadius {
-            strikePlayer(&player, amount: damage, direction: toPlayer.normalized, combat: &combat, godMode: godMode)
+            combat.strikePlayer(&player, amount: damage, direction: toPlayer.normalized, godMode: godMode)
         }
 
         // The blast takes summons with it, the same as any other bystander.
@@ -297,57 +456,6 @@ struct EnemyAISystem {
                           direction: distance > 0.0001 ? offset / distance : CGPoint(x: 1, y: 0),
                           knockback: 1.2, canCrit: false, depth: 1, source: .environment)
             combat.strike(other, with: hit)
-        }
-    }
-
-    /// Everything between an enemy's blow and the player's health: immunity,
-    /// dodging, armour, barriers, a refused death, and the triggers that
-    /// answer being struck.
-    private func strikePlayer(_ player: inout PlayerState, amount rawAmount: Double, direction: CGPoint,
-                              combat: inout CombatState, godMode: Bool) {
-        guard !player.isInvulnerable else { return }
-        if combat.random.chance(combat.sheet[.dodgeChance]) {
-            player.timeSinceDodge = 0
-            combat.stats.dodges += 1
-            combat.events.append(.playerDodged)
-            combat.fireProcs(combat.build.dodgeProcs, origin: player.position)
-            return
-        }
-
-        let armor = max(0, combat.sheet[.armor])
-        let reduction = min(0.8, armor / (armor + 75))
-        var amount = godMode ? 0 : rawAmount * (1 - reduction)
-
-        if player.barrier > 0 {
-            let absorbed = min(player.barrier, amount)
-            player.barrier -= absorbed
-            amount -= absorbed
-        }
-
-        if amount >= player.health, let refusal = combat.build.cheatDeath, combat.cheatDeathCooldown <= 0 {
-            combat.cheatDeathCooldown = refusal.cooldown
-            player.health = max(1, player.maxHealth * refusal.restore)
-            player.invulnerability = refusal.invulnerability
-            combat.events.append(.cheatedDeath)
-            if let action = refusal.action {
-                combat.pendingActions.append(QueuedAction(action: action, origin: player.position, targetID: nil,
-                                                          direction: direction, depth: 1, ability: nil))
-            }
-            return
-        }
-
-        let dealt = min(amount, player.health)
-        player.health -= dealt
-        player.invulnerability = combatTuning.invulnerabilityDuration
-        player.timeSinceHit = 0
-        // `direction` points at the player, so the shove carries on the same way.
-        player.knockback = player.knockback + direction * combatTuning.playerKnockbackSpeed
-        combat.stats.damageTaken += dealt
-        combat.events.append(.playerHit(amount: rawAmount, direction: direction))
-        combat.conditions.healthFraction = player.healthFraction
-        combat.fireProcs(combat.build.hurtProcs, origin: player.position)
-        if player.isDefeated {
-            combat.events.append(.playerDefeated)
         }
     }
 

@@ -30,6 +30,8 @@ struct RealmDefinition: Identifiable, Equatable {
     let conquestWave: Int?
     let legacyMultiplier: Double
     let arena: ArenaDefinition
+    /// How this realm paces its waves and which champions it sends.
+    var waves = WavePlan()
 
     var isEndless: Bool { conquestWave == nil }
 }

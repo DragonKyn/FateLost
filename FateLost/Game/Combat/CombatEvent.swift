@@ -43,6 +43,13 @@ enum CombatEvent: Equatable {
     case formChanged(FormID?)
     /// A killing blow was refused (Last Bastion, Phoenix Heart).
     case cheatedDeath
+    /// A new wave began.
+    case waveBegan(wave: Int)
+    /// A realm's champion has landed, and holds the wave open.
+    case bossArrived(title: String)
+    case bossDefeated(title: String)
+    /// The realm's final champion fell: the run is won.
+    case realmConquered
     case experienceCollected(amount: Int)
     case levelUp(level: Int, position: CGPoint)
     case playerDefeated
@@ -61,6 +68,10 @@ struct RunStats: Equatable {
     var dodges = 0
     /// Summons cut down over the run.
     var summonsLost = 0
+    var eliteKills = 0
+    var bossKills = 0
+    /// Highest wave reached.
+    var wave = 1
     /// Times each ability was used.
     var abilityUses: [AbilityID: Int] = [:]
 

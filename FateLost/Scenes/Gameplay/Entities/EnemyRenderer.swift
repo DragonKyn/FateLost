@@ -13,6 +13,9 @@ final class EnemyView: SKNode {
     fileprivate var phase: CGFloat = 0
     /// Per-enemy size variation, so a crowd isn't a row of clones.
     fileprivate var sizeScale: CGFloat = 1
+    /// Colour wash from this creature's strain, and how strongly it shows.
+    fileprivate var strainTint: UIColor?
+    fileprivate var strainStrength: CGFloat = 0
 
     init(catalog: SpriteCatalog) {
         shadowSprite = catalog.makeSprite(.shadow)
@@ -78,6 +81,8 @@ final class EnemyRenderer {
         self.pointsPerWorldUnit = pointsPerWorldUnit
         pool = NodePool(prewarm: 120, make: { EnemyView(catalog: catalog) }, prepareForReuse: { view in
             view.flash = 0
+            view.strainTint = nil
+            view.strainStrength = 0
             view.body.colorBlendFactor = 0
             view.alpha = 1
         })
@@ -107,6 +112,10 @@ final class EnemyRenderer {
 
             let definition = enemies.definition(at: index)
             view.configure(sprite: definition.sprite(forEnemyID: id), catalog: catalog)
+            // A creature's roll shows in its size and its colour.
+            let strain = enemies.strain(at: index)
+            view.strainTint = strain.tint?.uiColor
+            view.strainStrength = strain.tintStrength
             let mask = enemies.statusMask[index]
             let held = mask & StatusKind.incapacitating != 0
 
@@ -123,7 +132,7 @@ final class EnemyRenderer {
             // A scurrying waddle, frozen into a crouch while winding up.
             let windingUp = enemies.windup[index] > 0
             let t = seconds * Style.bobFrequency * enemies.speedScale[index] + view.phase
-            let size = view.sizeScale
+            let size = view.sizeScale * enemies.sizeScale[index]
             if held {
                 // Frozen or stunned: locked in place, with a faint shiver.
                 view.body.position = CGPoint(x: sin(seconds * 40 + view.phase) * 0.6, y: 0)
@@ -154,6 +163,9 @@ final class EnemyRenderer {
             } else if mask != 0, let tint = Self.tint(for: mask) {
                 view.body.color = tint
                 view.body.colorBlendFactor = mask & StatusKind.freeze.bit != 0 ? 0.7 : 0.4
+            } else if let strainTint = view.strainTint {
+                view.body.color = strainTint
+                view.body.colorBlendFactor = view.strainStrength
             } else {
                 view.body.colorBlendFactor = 0
             }

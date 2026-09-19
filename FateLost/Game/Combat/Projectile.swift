@@ -21,6 +21,9 @@ struct Projectile {
     let visual: VisualStyle
     /// Enemies already struck, so a piercing shot hits each only once.
     var struckEnemyIDs: [Int] = []
+    /// Loosed by an enemy: it looks for the player and their summons rather
+    /// than for the horde.
+    var isHostile = false
 
     var direction: CGPoint { velocity.normalized }
 }

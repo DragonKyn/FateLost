@@ -207,6 +207,19 @@ final class CombatFeedback {
             case .summonsDismissed, .summonsRecalled:
                 audio.play(.uiBack)
 
+            case .waveBegan:
+                audio.play(.uiConfirm)
+
+            case .bossArrived:
+                // A champion landing is felt before it is read.
+                camera.addTrauma(0.9)
+                haptics.play(.criticalHit)
+                audio.play(.abilityImpact)
+
+            case .bossDefeated, .realmConquered:
+                camera.addTrauma(0.6)
+                audio.play(.levelUp)
+
             case let .enemyExploded(position, radius):
                 effects.burst(at: position, radius: radius, color: VisualStyle.fire.color)
                 effects.motes(at: position, count: 10, color: UIColor(rgb: 0xFFB040), spread: radius * 0.5,

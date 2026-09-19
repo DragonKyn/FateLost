@@ -7,11 +7,15 @@ import Foundation
 /// carries on (never striking the same enemy twice); otherwise it is spent.
 /// Projectiles with a splash radius burst on impact, damaging everything
 /// around the point of contact.
+///
+/// Enemy shots fly through the same code, flagged `isHostile`: they look for
+/// the player and their summons instead of the horde, and are spent on the
+/// first thing they reach.
 struct ProjectileSystem {
     /// Fraction of a projectile's knockback its splash applies.
     private static let splashKnockbackScale: CGFloat = 1.4
 
-    func step(_ combat: inout CombatState, dt: TimeInterval) {
+    func step(_ combat: inout CombatState, player: inout PlayerState, godMode: Bool, dt: TimeInterval) {
         guard !combat.projectiles.isEmpty else { return }
         let step = CGFloat(dt)
         let padding = combat.largestEnemyRadius
@@ -23,7 +27,9 @@ struct ProjectileSystem {
             projectile.position = combat.world.wrap(projectile.position + projectile.velocity * step)
 
             var spent = projectile.remainingLife <= 0
-            if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
+            if !spent, projectile.isHostile {
+                spent = impactOnPlayerSide(projectile, player: &player, godMode: godMode, combat: &combat)
+            } else if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
                 spent = impact(&projectile, on: struck, combat: &combat)
             }
 
@@ -34,6 +40,29 @@ struct ProjectileSystem {
             }
             index -= 1
         }
+    }
+
+    /// An enemy shot reaching the player, or one of their summons. Returns
+    /// whether it was spent.
+    private func impactOnPlayerSide(_ projectile: Projectile, player: inout PlayerState, godMode: Bool,
+                                    combat: inout CombatState) -> Bool {
+        let toPlayer = combat.world.delta(from: projectile.position, to: player.position)
+        if !player.isDefeated, toPlayer.length <= projectile.radius + combat.tuning.playerRadius {
+            combat.strikePlayer(&player, amount: projectile.hit.amount, direction: projectile.direction,
+                                godMode: godMode)
+            combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
+            return true
+        }
+        let anchors = combat.allyAnchors
+        for anchor in anchors where anchor.isMortal {
+            guard combat.world.distance(projectile.position, anchor.position)
+                <= projectile.radius + anchor.radius else { continue }
+            guard anchor.index < combat.allies.count, combat.allies[anchor.index].id == anchor.id else { continue }
+            AllySystem.wound(anchor.index, amount: projectile.hit.amount, &combat)
+            combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
+            return true
+        }
+        return false
     }
 
     /// Nearest living enemy touching the projectile that it hasn't struck yet.

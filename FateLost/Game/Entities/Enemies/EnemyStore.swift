@@ -21,6 +21,12 @@ struct EnemyStore {
     var health: [Double] = []
     var maxHealth: [Double] = []
     var speedScale: [CGFloat] = []
+    /// Per-enemy damage multiplier from its strain.
+    var damageScale: [Double] = []
+    /// Per-enemy draw size, from its strain and its kind's `drawScale`.
+    var sizeScale: [CGFloat] = []
+    /// Index into `EnemyStrain.all`: this creature's roll of the dice.
+    var strains: [Int] = []
     /// Last movement direction, for facing.
     var heading: [CGPoint] = []
     /// Seconds until another strike may start.
@@ -29,6 +35,10 @@ struct EnemyStore {
     var windup: [Double] = []
     /// Cached push away from neighbours, refreshed on a staggered schedule.
     var separation: [CGPoint] = []
+    /// Velocity of a charge in progress; zero when not charging.
+    var dash: [CGPoint] = []
+    /// Seconds of charge left, or seconds until a summoner calls again.
+    var special: [Double] = []
 
     /// Bit per active `StatusKind`, for quick checks.
     var statusMask: [UInt16] = []
@@ -60,8 +70,22 @@ struct EnemyStore {
         return definitions.count - 1
     }
 
+    /// Index of an already-registered kind, without registering a new one.
+    func registeredKind(for id: EnemyKindID) -> Int? {
+        definitions.firstIndex { $0.id == id }
+    }
+
     func definition(at index: Int) -> EnemyDefinition {
         definitions[kinds[index]]
+    }
+
+    func strain(at index: Int) -> EnemyStrain {
+        EnemyStrain.strain(at: strains[index])
+    }
+
+    /// The creature's full name, strain and all.
+    func title(at index: Int) -> String {
+        strain(at: index).title(for: definition(at: index).name)
     }
 
     func hasStatus(_ kind: StatusKind, at index: Int) -> Bool {
@@ -73,21 +97,27 @@ struct EnemyStore {
     }
 
     mutating func append(id: Int, kind: Int, position: CGPoint, speedScale scale: CGFloat,
-                         healthScale: Double = 1) {
+                         healthScale: Double = 1, strain strainIndex: Int = 0) {
         let definition = definitions[kind]
+        let strain = EnemyStrain.strain(at: strainIndex)
         ids.append(id)
         kinds.append(kind)
         positions.append(position)
         knockback.append(.zero)
-        let life = definition.maxHealth * healthScale
+        let life = definition.maxHealth * healthScale * strain.healthScale
         health.append(life)
         maxHealth.append(life)
-        speedScale.append(scale)
+        speedScale.append(scale * strain.speedScale)
+        damageScale.append(strain.damageScale)
+        sizeScale.append(definition.drawScale * strain.sizeScale)
+        strains.append(strainIndex)
         heading.append(CGPoint(x: 1, y: 0))
         // A fresh enemy can't strike the instant it arrives.
         attackCooldown.append(definition.attackCooldown * 0.5)
         windup.append(0)
         separation.append(.zero)
+        dash.append(.zero)
+        special.append(0)
         statusMask.append(0)
         for kind in 0..<statusTime.count {
             statusTime[kind].append(0)
@@ -107,10 +137,15 @@ struct EnemyStore {
         health.swapRemove(at: index)
         maxHealth.swapRemove(at: index)
         speedScale.swapRemove(at: index)
+        damageScale.swapRemove(at: index)
+        sizeScale.swapRemove(at: index)
+        strains.swapRemove(at: index)
         heading.swapRemove(at: index)
         attackCooldown.swapRemove(at: index)
         windup.swapRemove(at: index)
         separation.swapRemove(at: index)
+        dash.swapRemove(at: index)
+        special.swapRemove(at: index)
         statusMask.swapRemove(at: index)
         for kind in 0..<statusTime.count {
             statusTime[kind].swapRemove(at: index)
@@ -128,10 +163,15 @@ struct EnemyStore {
         health.removeAll(keepingCapacity: true)
         maxHealth.removeAll(keepingCapacity: true)
         speedScale.removeAll(keepingCapacity: true)
+        damageScale.removeAll(keepingCapacity: true)
+        sizeScale.removeAll(keepingCapacity: true)
+        strains.removeAll(keepingCapacity: true)
         heading.removeAll(keepingCapacity: true)
         attackCooldown.removeAll(keepingCapacity: true)
         windup.removeAll(keepingCapacity: true)
         separation.removeAll(keepingCapacity: true)
+        dash.removeAll(keepingCapacity: true)
+        special.removeAll(keepingCapacity: true)
         statusMask.removeAll(keepingCapacity: true)
         for kind in 0..<statusTime.count {
             statusTime[kind].removeAll(keepingCapacity: true)
@@ -150,10 +190,15 @@ struct EnemyStore {
         health.reserveCapacity(capacity)
         maxHealth.reserveCapacity(capacity)
         speedScale.reserveCapacity(capacity)
+        damageScale.reserveCapacity(capacity)
+        sizeScale.reserveCapacity(capacity)
+        strains.reserveCapacity(capacity)
         heading.reserveCapacity(capacity)
         attackCooldown.reserveCapacity(capacity)
         windup.reserveCapacity(capacity)
         separation.reserveCapacity(capacity)
+        dash.reserveCapacity(capacity)
+        special.reserveCapacity(capacity)
         statusMask.reserveCapacity(capacity)
         for kind in 0..<statusTime.count {
             statusTime[kind].reserveCapacity(capacity)
