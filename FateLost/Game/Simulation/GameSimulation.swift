@@ -60,6 +60,9 @@ struct GameSimulation {
     let arena: ArenaLayout
     let weapon: WeaponDefinition
     let tuning: GameTuning
+    /// Permanent bonuses the Legacy board grants this run. Applied as part
+    /// of the stat sheet, so every other system sees them as ordinary stats.
+    let legacy: [StatModifier]
 
     private(set) var player: PlayerState
     private(set) var combat: CombatState
@@ -114,9 +117,10 @@ struct GameSimulation {
         return nil
     }
 
-    init(run: RunConfiguration, tuning: GameTuning) {
+    init(run: RunConfiguration, tuning: GameTuning, legacy: [StatModifier] = []) {
         self.run = run
         self.tuning = tuning
+        self.legacy = legacy
         let realm = RealmCatalog.realm(run.realmID)
         self.realm = realm
         weapon = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
@@ -371,6 +375,7 @@ struct GameSimulation {
         let baseHealth = tuning.player.baseMaxHealth - StatID.maxHealth.baseValue
         let levelHealth = tuning.progression.healthPerLevel * Double(progression.level - 1)
         sheet.add(StatModifier(.maxHealth, .flat, baseHealth + levelHealth))
+        sheet.add(legacy)
         sheet.add(combat.build.modifiers)
         for (index, conditional) in combat.build.conditionals.enumerated()
         where index < 64 && mask & (1 << UInt64(index)) != 0 {

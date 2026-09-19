@@ -22,6 +22,12 @@ struct RootView: View {
             case .realmSelect:
                 RealmSelectView()
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .legacy:
+                LegacyView()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .statistics:
+                StatisticsView()
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             case .weaponSelect(let realmID):
                 WeaponSelectView(realm: RealmCatalog.realm(realmID))
                     .transition(.move(edge: .trailing).combined(with: .opacity))

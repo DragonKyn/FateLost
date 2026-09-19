@@ -7,6 +7,8 @@ struct GameplayScreen: View {
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
     @State private var showRealmTitle = true
+    /// Echoes this run paid out, worked out once when it ends.
+    @State private var echoesEarned: Int?
 
     var body: some View {
         ZStack {
@@ -30,6 +32,7 @@ struct GameplayScreen: View {
                     summary: summary,
                     realm: session.realm,
                     weapon: session.weapon,
+                    echoes: echoesEarned ?? 0,
                     onRetry: {
                         services.audio.play(.uiConfirm)
                         router.restartRun(services: services)
@@ -41,10 +44,9 @@ struct GameplayScreen: View {
                 )
                 .transition(.opacity)
                 .onAppear {
-                    // Taking a realm is what opens the next one.
-                    if summary.outcome == .conquered {
-                        services.realmProgress.conquered.insert(summary.realm)
-                    }
+                    // Written down once: a redraw must not pay twice.
+                    guard echoesEarned == nil else { return }
+                    echoesEarned = services.record(summary)
                 }
             } else if session.isSkillTreePresented {
                 SkillTreeView(session: session)

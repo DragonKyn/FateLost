@@ -26,6 +26,8 @@ final class DeveloperOptions {
     /// Multiplies simulated time. 1 is normal speed.
     var gameSpeed: Double = 1
     var unlockAllRealms = false
+    /// Run without the Legacy board's bonuses, to feel the baseline.
+    var disableLegacyBonuses = false
     /// The player takes no damage.
     var godMode = false
     /// Natural enemy spawning; developer spawns work either way.

@@ -9,6 +9,8 @@ struct RunSummaryView: View {
     let summary: RunSummary
     let realm: RealmDefinition
     let weapon: WeaponDefinition
+    /// Echoes this run left behind, for the Legacy board.
+    let echoes: Int
     let onRetry: () -> Void
     let onMenu: () -> Void
 
@@ -67,6 +69,18 @@ struct RunSummaryView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
                 VStack(spacing: 14) {
+                    VStack(spacing: 2) {
+                        Text("\(echoes)")
+                            .font(FLTheme.Typeface.number(30))
+                            .foregroundStyle(FLTheme.Palette.emberBright)
+                        Text(echoes == 1 ? "echo earned" : "echoes earned")
+                            .font(FLTheme.Typeface.label(11))
+                            .tracking(2)
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    }
+                    .padding(.bottom, 4)
+                    .accessibilityElement(children: .combine)
+
                     Button(isConquest ? "Run It Again" : "Rise Again", action: onRetry)
                         .buttonStyle(.flPrimary)
                     Button("Return to Menu", action: onMenu)

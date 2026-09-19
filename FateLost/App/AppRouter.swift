@@ -8,6 +8,8 @@ enum AppScreen: Equatable {
     case mainMenu
     case realmSelect
     case weaponSelect(RealmID)
+    case legacy
+    case statistics
     case gameplay
 }
 

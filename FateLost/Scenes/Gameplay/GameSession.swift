@@ -48,7 +48,8 @@ final class GameSession {
             settings: services.settings,
             developer: services.developer,
             audio: services.audio,
-            haptics: services.haptics
+            haptics: services.haptics,
+            legacy: services.legacyModifiers
         ))
         scene.onHUDStateChange = { [weak self] state in
             self?.hud = state

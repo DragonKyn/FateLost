@@ -9,21 +9,62 @@ import Observation
 final class AppServices {
     let settings: SettingsStore
     let developer: DeveloperOptions
-    /// In-memory until the Legacy save arrives in Phase 6.
-    var realmProgress = RealmProgress()
+
+    /// Everything kept between runs: echoes, the Legacy board, conquered
+    /// realms and the lifetime record. Saved whenever it changes.
+    private(set) var profile: LegacyProfile
+
+    var realmProgress: RealmProgress {
+        get { profile.realms }
+        set {
+            profile.realms = newValue
+            saveProfile()
+        }
+    }
 
     @ObservationIgnored let haptics: HapticsProviding
     @ObservationIgnored let audio: AudioManager
+    @ObservationIgnored private let legacyStore: LegacyStore
 
-    init(settings: SettingsStore = SettingsStore(), developer: DeveloperOptions = DeveloperOptions()) {
+    init(settings: SettingsStore = SettingsStore(), developer: DeveloperOptions = DeveloperOptions(),
+         legacyStore: LegacyStore = LegacyStore()) {
         self.settings = settings
         self.developer = developer
+        self.legacyStore = legacyStore
+        profile = legacyStore.load()
         haptics = HapticsService(isEnabled: { [weak settings] in settings?.settings.hapticsEnabled ?? false })
         audio = AudioManager(volumes: { [weak settings] in settings?.settings ?? .defaults })
     }
 
     func isRealmUnlocked(_ realm: RealmDefinition) -> Bool {
         if developer.unlockAllRealms { return true }
-        return RealmUnlockRules.isUnlocked(realm, progress: realmProgress, catalog: RealmCatalog.all)
+        return RealmUnlockRules.isUnlocked(realm, progress: profile.realms, catalog: RealmCatalog.all)
+    }
+
+    /// The bonuses the Legacy board grants a new run.
+    var legacyModifiers: [StatModifier] {
+        developer.disableLegacyBonuses ? [] : profile.modifiers
+    }
+
+    /// Buys a Legacy node and keeps it.
+    @discardableResult
+    func buyLegacy(_ node: LegacyNode) -> Bool {
+        guard profile.buy(node) else { return false }
+        saveProfile()
+        return true
+    }
+
+    /// Folds a finished run into the record and pays out its echoes.
+    /// Returns what the run was worth, for the summary screen.
+    @discardableResult
+    func record(_ summary: RunSummary) -> Int {
+        let before = profile.echoes
+        profile.record(summary, realm: RealmCatalog.realm(summary.realm))
+        saveProfile()
+        return profile.echoes - before
+    }
+
+    private func saveProfile() {
+        legacyStore.save(profile)
     }
 }

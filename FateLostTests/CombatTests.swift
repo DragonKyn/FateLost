@@ -296,7 +296,7 @@ final class WeaponSystemTests: XCTestCase {
         for _ in 0..<40 {
             combat.rebuildGrid()
             weapon.step(&combat, player: &player, form: nil, dt: Fixture.dt)
-            projectiles.step(&combat, dt: Fixture.dt)
+            projectiles.step(&combat, player: &player, godMode: false, dt: Fixture.dt)
         }
         XCTAssertLessThan(combat.enemies.health[target], 1000)
         XCTAssertTrue(combat.events.contains { if case .projectileFired = $0 { return true } else { return false } })
@@ -314,7 +314,7 @@ final class WeaponSystemTests: XCTestCase {
         for _ in 0..<60 {
             combat.rebuildGrid()
             weapon.step(&combat, player: &player, form: nil, dt: Fixture.dt)
-            projectiles.step(&combat, dt: Fixture.dt)
+            projectiles.step(&combat, player: &player, godMode: false, dt: Fixture.dt)
         }
         for index in indices {
             XCTAssertLessThan(combat.enemies.health[index], 1000, "enemy \(index) escaped the burst")

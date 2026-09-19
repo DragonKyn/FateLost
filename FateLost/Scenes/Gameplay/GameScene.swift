@@ -68,6 +68,8 @@ final class GameScene: SKScene {
         let developer: DeveloperOptions
         let audio: AudioManager
         let haptics: HapticsProviding
+        /// Permanent bonuses from the Legacy board.
+        var legacy: [StatModifier] = []
     }
 
     private enum Timing {
@@ -158,7 +160,7 @@ final class GameScene: SKScene {
     init(run: RunConfiguration, dependencies: Dependencies) {
         self.dependencies = dependencies
         let tuning = dependencies.tuning
-        let simulation = GameSimulation(run: run, tuning: tuning)
+        let simulation = GameSimulation(run: run, tuning: tuning, legacy: dependencies.legacy)
         self.simulation = simulation
 
         // Collaborators are built from locals: `self` cannot be read until

@@ -30,15 +30,20 @@ struct MainMenuView: View {
                     }
                     .buttonStyle(.flPrimary)
 
-                    Button("Legacy") {}
-                        .buttonStyle(.flSecondary)
-                        .disabled(true)
-                        .overlay(alignment: .topTrailing) { comingSoonBadge }
+                    Button("Legacy") {
+                        services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
+                        router.show(.legacy)
+                    }
+                    .buttonStyle(.flSecondary)
+                    .overlay(alignment: .topTrailing) { echoBadge }
 
-                    Button("Statistics") {}
-                        .buttonStyle(.flSecondary)
-                        .disabled(true)
-                        .overlay(alignment: .topTrailing) { comingSoonBadge }
+                    Button("Statistics") {
+                        services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
+                        router.show(.statistics)
+                    }
+                    .buttonStyle(.flSecondary)
 
                     Button("Settings") {
                         router.isSettingsPresented = true
@@ -60,14 +65,19 @@ struct MainMenuView: View {
         }
     }
 
-    private var comingSoonBadge: some View {
-        Text("SOON")
-            .font(.system(size: 9, weight: .heavy))
-            .tracking(1.2)
-            .foregroundStyle(FLTheme.Palette.abyss)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 3)
-            .background(Capsule().fill(FLTheme.Palette.parchmentDim))
-            .offset(x: 6, y: -6)
+    /// Unspent echoes, so the board asks to be visited without nagging.
+    @ViewBuilder
+    private var echoBadge: some View {
+        let echoes = services.profile.echoes
+        if echoes > 0 {
+            Text("\(echoes)")
+                .font(.system(size: 10, weight: .heavy))
+                .foregroundStyle(FLTheme.Palette.abyss)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(Capsule().fill(FLTheme.Palette.emberBright))
+                .offset(x: 6, y: -6)
+                .accessibilityLabel("\(echoes) echoes to spend")
+        }
     }
 }
