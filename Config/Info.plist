@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Most keys are generated from INFOPLIST_KEY_* build settings. Only
+	     values those settings cannot express live here. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<!-- A launch screen is required for the app to run full-screen rather
+	     than letterboxed. A plain colour matching the menus avoids a white
+	     flash on a dark game. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+	</dict>
+</dict>
+</plist>

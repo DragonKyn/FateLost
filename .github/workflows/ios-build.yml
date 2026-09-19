@@ -1,0 +1,160 @@
+name: Build, test and package
+
+# Compiles Fate Lost on a macOS runner, runs the unit tests on a simulator,
+# and produces a code-signing-free .ipa for sideloading (Sideloadly re-signs
+# it with your own Apple ID on install).
+#
+# The sideload IPA is a Release (optimised) build with developer tools
+# compiled in (FATELOST_DEVTOOLS), so performance is representative while
+# the debug panel stays available on device. A store build would omit it.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out
+        uses: actions/checkout@v5
+
+      - name: Select newest Xcode
+        run: |
+          set -euo pipefail
+          latest=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1 || true)
+          if [ -n "$latest" ]; then
+            sudo xcode-select -s "$latest"
+          fi
+          xcodebuild -version
+          swift --version
+
+      - name: Build for device (unsigned, Release + dev tools)
+        id: build
+        run: |
+          set -o pipefail
+          set +e
+          xcodebuild \
+            -project FateLost.xcodeproj \
+            -scheme FateLost \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS=FATELOST_DEVTOOLS \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_ENTITLEMENTS="" \
+            clean build 2>&1 | tee xcodebuild.log
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Package into an IPA
+        if: steps.build.outcome == 'success'
+        run: |
+          set -euo pipefail
+          APP_PATH="build/Build/Products/Release-iphoneos/FateLost.app"
+          test -d "$APP_PATH" || { echo "App bundle not found at $APP_PATH"; exit 1; }
+          test -f "$APP_PATH/FateLost" || { echo "No executable inside the app bundle"; exit 1; }
+          rm -rf Payload FateLost.ipa
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry FateLost.ipa Payload
+          ls -lh FateLost.ipa
+
+      - name: Upload IPA
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: FateLost-unsigned-ipa
+          path: FateLost.ipa
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Run unit tests on a simulator
+        id: test
+        if: steps.build.outcome == 'success'
+        run: |
+          set -o pipefail
+          set +e
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          devices = json.load(sys.stdin)["devices"]
+          runtimes = sorted((r for r in devices if "iOS" in r), reverse=True)
+          for runtime in runtimes:
+              for device in devices[runtime]:
+                  if device["name"].startswith("iPhone"):
+                      print(device["udid"]); sys.exit(0)
+          ')
+          echo "Testing on simulator $udid"
+          xcodebuild \
+            -project FateLost.xcodeproj \
+            -scheme FateLost \
+            -configuration Debug \
+            -destination "id=$udid" \
+            -derivedDataPath build-tests \
+            CODE_SIGNING_ALLOWED=NO \
+            test 2>&1 | tee test.log
+          status=${PIPESTATUS[0]}
+          echo "exit_code=$status" >> "$GITHUB_OUTPUT"
+          exit "$status"
+
+      - name: Summarise
+        if: always()
+        run: |
+          set +e
+          products=build/Build/Products/Release-iphoneos
+          {
+            echo "=== build exit code: ${{ steps.build.outputs.exit_code || 'not run' }}"
+            echo "=== test exit code: ${{ steps.test.outputs.exit_code || 'not run' }}"
+            echo "=== xcode"
+            xcodebuild -version
+            echo "=== app bundle"
+            ls -la "$products/FateLost.app" 2>&1 | head -40
+            echo "=== bundle id / version / minimum iOS"
+            plutil -extract CFBundleIdentifier raw "$products/FateLost.app/Info.plist" 2>&1
+            plutil -extract CFBundleShortVersionString raw "$products/FateLost.app/Info.plist" 2>&1
+            plutil -extract MinimumOSVersion raw "$products/FateLost.app/Info.plist" 2>&1
+            echo "=== orientations"
+            plutil -extract UISupportedInterfaceOrientations xml1 -o - "$products/FateLost.app/Info.plist" 2>&1
+            echo "=== build errors"
+            grep -nE "(error:|\*\* BUILD FAILED|The following build commands failed)" xcodebuild.log 2>&1 | head -200
+            echo "=== build warnings in project sources (first 80)"
+            grep -nE "/FateLost/.*warning:" xcodebuild.log 2>&1 | sort -u | head -80
+            echo "=== test results"
+            grep -nE "(error:|Test Case .* failed|Executed [0-9]+ tests|\*\* TEST (SUCCEEDED|FAILED)|XCTAssert)" test.log 2>&1 | head -200
+          } > build-report.txt 2>&1
+          cat build-report.txt
+
+      # Actions logs and artifacts need a signed-in session even on a public
+      # repository. Committing the logs to a branch makes them readable
+      # through the contents API instead.
+      - name: Publish logs to the ci-logs branch
+        if: always()
+        run: |
+          set -euo pipefail
+          workdir=$(mktemp -d)
+          cp xcodebuild.log build-report.txt "$workdir/" 2>/dev/null || true
+          cp test.log "$workdir/" 2>/dev/null || true
+          cd "$workdir"
+          echo "run ${{ github.run_number }} · commit ${{ github.sha }} · $(date -u)" > README.md
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "CI logs for run ${{ github.run_number }}" --allow-empty
+          git branch -M ci-logs
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" ci-logs

@@ -1,0 +1,165 @@
+# Fate Lost architecture
+
+This file records the decisions that shape the codebase and why they were
+made. Update it whenever one of them changes.
+
+## 1. Simulation and presentation are separate layers
+
+```
+SwiftUI (UI/)            menus, HUD text, pause, settings
+   │  reads GameSession, calls pause/resume
+SpriteKit (Scenes/)      GameScene coordinator + focused renderers
+   │  feeds PlayerIntent, reads state
+Simulation (Game/)       GameSimulation, systems, world topology. No SpriteKit
+   │
+Core/ + Data/            math, persistence, settings, content tables
+```
+
+- `GameSimulation` owns the game state and advances it in fixed steps. It
+  imports only Foundation and CoreGraphics, so every rule can be unit-tested
+  without a scene.
+- `GameScene` coordinates and holds no rules. Each frame it converts touches
+  into a `PlayerIntent`, steps the simulation, and hands the resulting state
+  to renderers (`WrappingGroundRenderer`, `DecorationRenderer`, `PlayerView`,
+  `CameraController`, `AtmosphereRenderer`, `GameHUDNode`).
+- **Where new code goes:** gameplay rules become systems called from
+  `GameSimulation.step`. Visuals become renderers called from
+  `GameScene.render`. Neither goes directly into `GameScene`.
+
+## 2. Fixed timestep
+
+`FixedTimestep` turns variable frame times into whole 1/60 s simulation
+steps, capped at 5 per frame so a hitch can't cause a catch-up spiral.
+Movement, cooldowns and (later) combat stay deterministic and frame-rate
+independent. The developer game-speed control scales simulated time only.
+
+## 3. The wrapping world
+
+The arena is a torus: leaving one edge brings you back on the opposite edge.
+
+- **Simulation** stores every position wrapped into the arena rectangle.
+  Anything comparing two positions must use `ToroidalWorld.delta(from:to:)` or
+  `distance`, which take the short way across the seam.
+- **Rendering** uses `WrappedRenderFrame`. It tracks an *unwrapped* focus that
+  accumulates the player's actual motion, and draws everything else at
+  `focus + shortestDelta(focus, object)`. Each object therefore appears at its
+  copy nearest the player, the camera follows a continuous path, and there is
+  never a teleport. After a long walk the unwrapped focus is pulled back by a
+  whole number of arena sizes ("rebased"), and the camera moves by exactly the
+  same amount so the shift can't be seen. This keeps floating-point precision.
+- **Ground** is one isometric `SKTileMapNode` covering the full arena. SpriteKit
+  culls and batches it, so it costs far less than hundreds of tile sprites. The
+  camera never sees more than half the arena, so four copies arranged 2×2 always
+  cover the view, and they leapfrog as the player moves. SpriteKit doesn't
+  document its isometric row/column directions, so the renderer measures them
+  at startup instead of assuming them.
+- **Content generation** is periodic by construction. Terrain noise
+  (`PeriodicValueNoise`) repeats exactly over the arena, and road meanders use
+  a whole number of sine cycles per arena length, so no seam shows. Tests check
+  both.
+
+## 4. Isometric projection
+
+`IsometricProjection` is a linear 2:1 mapping. World +x points to the lower
+right of the screen, world +y to the lower left, and one world unit is one
+tile. Joystick input is converted from screen direction to world direction,
+so pushing right always moves right on screen. Depth sorting uses screen y
+inside fixed z bands (`DepthSorting.Band`).
+
+## 5. Built for hundreds of entities
+
+These are already in Phase 1, before enemies exist:
+
+- `ToroidalSpatialGrid` handles broad-phase "what's near here" queries that
+  wrap across the seam. Decorations use it statically. Enemies, projectiles and
+  pickups will rebuild it every tick; `removeAll` keeps bucket capacity, so a
+  rebuild allocates nothing.
+- `NodePool` recycles nodes. Decoration nodes are pooled per sprite, and
+  enemies and projectiles will follow the same pattern.
+- `DecorationRenderer` only re-queries when the camera crosses a grid cell,
+  so most frames do no decoration work.
+- `SpriteCatalog` packs every sprite into one runtime texture atlas so
+  SpriteKit can batch draws.
+
+Phase 2 adds centralised enemy storage (struct-of-arrays in the simulation),
+staggered AI updates, and targeting through the spatial grid instead of
+scanning every enemy.
+
+## 6. Data-driven content
+
+Balance numbers live in typed Swift tables, never in logic:
+
+- `Data/RealmCatalog.swift`: all 10 realms with conquest wave, Legacy
+  multiplier and arena definition
+- `Data/ArenaThemes.swift`: ground palettes, roads, landmark clusters,
+  decoration scatter and atmosphere for each realm
+- `Data/StarterWeapons.swift`: weapon definitions (damage, speed, range,
+  damage type, tags, delivery, targeting, rarity, sprite)
+- `Game/Config/GameTuning.swift`: feel tuning for movement, camera, controls
+  and rendering
+
+These are plain value types, so moving them to JSON later only means adding
+decoding.
+
+## 7. Art is swappable
+
+Gameplay refers to visuals only through a `SpriteID`. `SpriteCatalog` resolves
+an ID to an asset-catalogue image with the same name if one exists, and falls
+back to procedurally drawn placeholder art (`PlaceholderArt`) otherwise.
+Dropping in final art means adding assets with the right names. No code
+changes.
+
+## 8. Input
+
+- The joystick floats: it appears wherever the thumb lands in the left half of
+  the screen. When the thumb goes past the rim the base follows it, so
+  reversing direction never needs a long drag back. The logic is
+  `JoystickModel`, which is pure and tested. The visuals are
+  `VirtualJoystickNode`.
+- Touch-critical controls (joystick, ability sockets) are SpriteKit nodes for
+  zero-latency multi-touch. Informational HUD (health, level, wave, time) is
+  SwiftUI over the game view. The scene publishes `GameplayHUDState` only
+  when a value changes.
+- `HUDLayout` places controls from the screen size and safe-area insets, and
+  scales them up on larger screens within a cap.
+
+## 9. Services and state
+
+- `AppServices` is created once at launch and passed down through the SwiftUI
+  environment and scene initialisers. It holds settings, developer options,
+  haptics, audio and realm progress. There are no global singletons.
+- `AppRouter` swaps between full-screen modes: launch, menu, realm select,
+  weapon select and gameplay. Gameplay is a set of modes rather than a
+  drill-down hierarchy, which is why it doesn't use a `NavigationStack`.
+- `GameSession` owns one run's scene and is the only bridge between SwiftUI
+  and SpriteKit.
+
+## 10. Persistence
+
+`VersionedFileStore` writes JSON inside a `SaveEnvelope` that records the
+schema version.
+
+- Writes are atomic.
+- Older versions go through a migration closure.
+- Corrupt files, and files from a newer build, are renamed aside rather than
+  deleted or overwritten, and the game continues with defaults.
+- `GameSettings` decoding tolerates missing keys, so adding a setting never
+  invalidates an existing file.
+
+The Legacy profile (Phase 6) will use the same store.
+
+## 11. Developer tooling
+
+Developer tools are compiled in under `FATELOST_DEVTOOLS`. That flag is set in
+Debug and in the CI sideload build (Release optimisation plus tools), so
+performance measured on device is representative. A store build omits the
+flag. `DeveloperOptions` exists in every build so gameplay code needs no
+`#if`; only the UI and overlays that change it are conditional.
+
+## 12. Concurrency
+
+The project uses the Swift 5 language mode. Everything that touches UIKit or
+SpriteKit runs on the main actor. SpriteKit nodes inherit main-actor isolation
+through `UIResponder`, and renderers and services are annotated explicitly.
+Simulation types are value types with no isolation, so they can later move
+off the main thread if profiling shows a need.

@@ -1,0 +1,9 @@
+# Normalise to LF in the repository. The macOS CI runner and Xcode both want
+# LF; Git still checks these out as CRLF on Windows if core.autocrlf says so.
+* text=auto eol=lf
+
+*.png binary
+
+# Xcode project files are line-ending sensitive to merge tooling.
+*.pbxproj text eol=lf merge=union
+*.xcscheme text eol=lf

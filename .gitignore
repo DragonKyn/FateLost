@@ -1,0 +1,16 @@
+# macOS / Xcode
+.DS_Store
+build/
+build-tests/
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+Payload/
+*.xcresult
+
+# Swift Package Manager
+.swiftpm/
+.build/
