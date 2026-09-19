@@ -993,6 +993,210 @@ def sfx_ui_back():
     return normalize_peak(fade_edges(0.6 * tick + tone, 0.001, 0.05), -7)
 
 
+
+# --- Skills and progression -------------------------------------------------
+
+def tone_sweep(n, f_start, f_end, decay):
+    t = np.arange(n) / SR
+    freq = np.geomspace(f_start, f_end, n)
+    return np.sin(TAU * np.cumsum(freq) / SR) * np.exp(-t / decay)
+
+
+def sfx_ember(step):
+    """Soft chimes on a D minor pentatonic, climbing with quick pickups."""
+    rng = np.random.default_rng(1100 + step)
+    notes = ["D6", "F6", "G6", "A6", "C7"]
+    n = secs(0.45)
+    body = fit(bell(hz(notes[step]), 1, 0.6, rng, decay=0.35, ratio=3.0, index=0.6), n)
+    return normalize_peak(fade_edges(body, 0.001, 0.08), -8)
+
+
+def sfx_level_up():
+    """A burst of fate: a low boom, a rising rush, and the Fate motif on bells."""
+    rng = np.random.default_rng(1200)
+    n = secs(2.2)
+    t = np.arange(n) / SR
+    boom = tone_sweep(n, 110, 48, 0.5)
+    rush = sweep_noise(n, rng, 400, 5200) * np.clip(t / 0.25, 0, 1) * np.exp(-np.maximum(t - 0.25, 0) / 0.18)
+    body = 0.9 * boom + 0.35 * rush
+    for offset, note in zip([0.12, 0.3, 0.46, 0.62], ["D5", "A5", "G5", "F5"]):
+        start = secs(offset)
+        chime = fit(bell(hz(note), 1.4, 0.9, rng, decay=1.2, ratio=2.0, index=1.0), n - start)
+        body[start:] += 0.55 * chime
+    for note in ["D4", "A4", "D5", "F5"]:
+        body += 0.12 * mono(strings(hz(note), 1.6, 0.5, rng, attack=0.08, release=0.6), n)
+    return normalize_peak(fade_edges(small_room(body, 0.35, 1.6, seed=12)[:n], 0.002, 0.3), -1)
+
+
+def mono(signal, n):
+    """First channel of a possibly stereo render, fitted to n samples."""
+    data = np.asarray(signal)
+    if data.ndim > 1:
+        data = data[0]
+    return fit(data, n)
+
+
+def sfx_ui_skill_learn():
+    rng = np.random.default_rng(1250)
+    n = secs(0.55)
+    pluck = mono(harp(hz("A4"), 0.5, 0.9, rng), n)
+    shimmer = mono(bell(hz("E6"), 1, 0.5, rng, decay=0.4, ratio=3.0, index=0.7), n)
+    return normalize_peak(fade_edges(small_room(pluck + 0.5 * shimmer, 0.3, 0.8, seed=13)[:n], 0.001, 0.1), -6)
+
+
+def sfx_ui_tree_open():
+    rng = np.random.default_rng(1260)
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    page = sweep_noise(n, rng, 900, 3200) * np.exp(-t / 0.08) * np.clip(t / 0.02, 0, 1)
+    chord = sum(mono(bell(hz(note), 1, 0.5, rng, decay=0.6, ratio=2.0, index=0.5), n) for note in ("D5", "F5", "A5"))
+    return normalize_peak(fade_edges(0.4 * page + 0.5 * chord, 0.001, 0.15), -7)
+
+
+def sfx_ab_impact():
+    rng = np.random.default_rng(1300)
+    n = secs(0.5)
+    t = np.arange(n) / SR
+    thump = tone_sweep(n, 140, 45, 0.16)
+    crack = spectral(rng.standard_normal(n), chain(lowpass(3000, 2), highpass(200))) * np.exp(-t / 0.03)
+    rubble = band_noise(n, rng, 500, 1.4) * np.exp(-t / 0.12)
+    return normalize_peak(fade_edges(thump + 0.7 * crack + 0.5 * rubble, 0.001, 0.05), -1)
+
+
+def sfx_ab_fire():
+    rng = np.random.default_rng(1310)
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    whoomp = sweep_noise(n, rng, 300, 1800) * np.clip(t / 0.05, 0, 1) * np.exp(-t / 0.25)
+    crackle = (rng.random(n) > 0.997) * rng.uniform(-1, 1, n)
+    crackle = spectral(crackle, highpass(1500)) * np.exp(-t / 0.4)
+    body = whoomp + 0.6 * tone_sweep(n, 90, 50, 0.2) + 1.5 * crackle
+    return normalize_peak(fade_edges(body, 0.002, 0.1), -2)
+
+
+def sfx_ab_frost():
+    rng = np.random.default_rng(1320)
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    crystal = sum(np.sin(TAU * f * t + rng.uniform(0, TAU)) * np.exp(-t / rng.uniform(0.15, 0.4))
+                  for f in rng.uniform(2200, 7000, 9))
+    hiss = sweep_noise(n, rng, 6000, 2500) * np.exp(-t / 0.2) * np.clip(t / 0.01, 0, 1)
+    crack = band_noise(n, rng, 2500, 1.0) * np.exp(-t / 0.015)
+    return normalize_peak(fade_edges(0.25 * crystal + 0.6 * hiss + crack, 0.001, 0.1), -3)
+
+
+def sfx_ab_lightning():
+    rng = np.random.default_rng(1330)
+    n = secs(0.55)
+    t = np.arange(n) / SR
+    zap = spectral(rng.standard_normal(n), highpass(1200)) * np.exp(-t / 0.05)
+    freq = np.full(n, 110.0)
+    buzz = spectral(saw(np.cumsum(freq) / SR, freq / SR) * np.exp(-t / 0.12), lowpass(2500, 2))
+    boom = tone_sweep(n, 90, 40, 0.18)
+    return normalize_peak(fade_edges(zap + 0.4 * buzz + 0.6 * boom, 0.001, 0.05), -2)
+
+
+def sfx_ab_holy():
+    rng = np.random.default_rng(1340)
+    n = secs(1.0)
+    voices = sum(mono(choir(hz(note), 0.9, 0.6, rng, attack=0.03, release=0.5), n) for note in ("D5", "A5", "D6"))
+    chime = mono(bell(hz("A6"), 1, 0.6, rng, decay=0.6, ratio=2.0, index=0.8), n)
+    body = 0.5 * voices + 0.5 * chime + 0.4 * tone_sweep(n, 120, 60, 0.15)
+    return normalize_peak(fade_edges(small_room(body, 0.4, 1.2, seed=14)[:n], 0.002, 0.2), -2)
+
+
+def sfx_ab_shadow():
+    rng = np.random.default_rng(1350)
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    rush = sweep_noise(n, rng, 2400, 250) * np.clip(t / 0.03, 0, 1) * np.exp(-t / 0.2)
+    moan = formant_voice(n, rng, 120, 80, [(400, 1.0, 0.6), (800, 0.5, 0.6)]) * np.exp(-t / 0.3)
+    return normalize_peak(fade_edges(rush + 0.35 * moan + 0.5 * tone_sweep(n, 70, 38, 0.3), 0.002, 0.1), -2)
+
+
+def sfx_ab_nature():
+    rng = np.random.default_rng(1360)
+    n = secs(0.7)
+    t = np.arange(n) / SR
+    rustle = band_noise(n, rng, 2800, 1.6) * (0.6 + 0.4 * np.sin(TAU * 23 * t)) * np.exp(-t / 0.18)
+    creak = tone_sweep(n, 180, 95, 0.25) * 0.6
+    snap = band_noise(n, rng, 1200, 1.0) * np.exp(-t / 0.012)
+    return normalize_peak(fade_edges(rustle + creak + snap, 0.001, 0.1), -3)
+
+
+def sfx_ab_sonic():
+    rng = np.random.default_rng(1370)
+    n = secs(0.8)
+    t = np.arange(n) / SR
+    chord = sum(np.sin(TAU * hz(note) * t + 0.8 * np.sin(TAU * hz(note) * 1.007 * t))
+                for note in ("D4", "G#4", "D5"))
+    body = chord * np.clip(t / 0.01, 0, 1) * np.exp(-t / 0.28)
+    swell = sweep_noise(n, rng, 800, 300) * np.exp(-t / 0.1)
+    return normalize_peak(fade_edges(small_room(0.4 * body + swell, 0.3, 0.9, seed=15)[:n], 0.001, 0.1), -3)
+
+
+def sfx_ab_buff():
+    """A short war-horn call."""
+    rng = np.random.default_rng(1380)
+    n = secs(0.9)
+    call = mono(horn(hz("D4"), 0.7, 0.9, rng, attack=0.04, release=0.25), n)
+    fifth = mono(horn(hz("A4"), 0.6, 0.7, rng, attack=0.06, release=0.25), n)
+    return normalize_peak(fade_edges(small_room(call + 0.6 * fifth, 0.35, 1.0, seed=16)[:n], 0.002, 0.15), -3)
+
+
+def sfx_summon():
+    rng = np.random.default_rng(1390)
+    n = secs(0.9)
+    t = np.arange(n) / SR
+    rise = sweep_noise(n, rng, 200, 1400) * np.clip(t / 0.3, 0, 1) * np.exp(-np.maximum(t - 0.3, 0) / 0.15)
+    low = tone_sweep(n, 55, 85, 0.5)
+    return normalize_peak(fade_edges(rise + 0.6 * low, 0.002, 0.15), -3)
+
+
+def sfx_dash():
+    rng = np.random.default_rng(1400)
+    n = secs(0.3)
+    t = np.arange(n) / SR
+    whoosh = sweep_noise(n, rng, 500, 3500) * np.sin(np.pi * np.clip(t / 0.25, 0, 1))
+    return normalize_peak(fade_edges(whoosh, 0.002, 0.03), -4)
+
+
+def sfx_heal():
+    rng = np.random.default_rng(1410)
+    n = secs(0.7)
+    body = sum(0.5 * mono(bell(hz(note), 1, 0.5, rng, decay=0.5, ratio=2.0, index=0.4), n)
+               for note in ("A5", "D6", "F#6"))
+    return normalize_peak(fade_edges(small_room(body, 0.35, 0.9, seed=17)[:n], 0.002, 0.15), -7)
+
+
+def sfx_dodge():
+    rng = np.random.default_rng(1420)
+    n = secs(0.22)
+    t = np.arange(n) / SR
+    swish = sweep_noise(n, rng, 2500, 5000) * np.sin(np.pi * np.clip(t / 0.2, 0, 1)) ** 2
+    return normalize_peak(fade_edges(swish, 0.002, 0.02), -6)
+
+
+def sfx_keg_blast():
+    rng = np.random.default_rng(1430)
+    n = secs(1.1)
+    t = np.arange(n) / SR
+    boom = tone_sweep(n, 90, 30, 0.35)
+    blast = spectral(rng.standard_normal(n), lowpass(3500, 2)) * np.exp(-t / 0.15)
+    debris = spectral((rng.random(n) > 0.995) * rng.uniform(-1, 1, n), highpass(800)) * np.exp(-t / 0.5)
+    return normalize_peak(fade_edges(boom + 0.8 * blast + 1.5 * debris, 0.001, 0.2), -1)
+
+
+def sfx_shapeshift():
+    rng = np.random.default_rng(1440)
+    n = secs(0.9)
+    t = np.arange(n) / SR
+    growl = formant_voice(n, rng, 90, 70, [(350, 1.0, 0.6), (700, 0.6, 0.6), (1300, 0.3, 0.5)])
+    growl *= np.clip(t / 0.08, 0, 1) * np.exp(-t / 0.35)
+    rustle = band_noise(n, rng, 2600, 1.5) * np.exp(-t / 0.2)
+    return normalize_peak(fade_edges(growl + 0.4 * rustle, 0.002, 0.15), -2)
+
+
 # ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
@@ -1036,6 +1240,29 @@ EFFECTS = {
     "sfx_arcane_burst": sfx_arcane_burst,
     "ui_confirm": sfx_ui_confirm,
     "ui_back": sfx_ui_back,
+    "sfx_ember_1": lambda: sfx_ember(0),
+    "sfx_ember_2": lambda: sfx_ember(1),
+    "sfx_ember_3": lambda: sfx_ember(2),
+    "sfx_ember_4": lambda: sfx_ember(3),
+    "sfx_ember_5": lambda: sfx_ember(4),
+    "sfx_level_up": sfx_level_up,
+    "ui_skill_learn": sfx_ui_skill_learn,
+    "ui_tree_open": sfx_ui_tree_open,
+    "sfx_ab_impact": sfx_ab_impact,
+    "sfx_ab_fire": sfx_ab_fire,
+    "sfx_ab_frost": sfx_ab_frost,
+    "sfx_ab_lightning": sfx_ab_lightning,
+    "sfx_ab_holy": sfx_ab_holy,
+    "sfx_ab_shadow": sfx_ab_shadow,
+    "sfx_ab_nature": sfx_ab_nature,
+    "sfx_ab_sonic": sfx_ab_sonic,
+    "sfx_ab_buff": sfx_ab_buff,
+    "sfx_summon": sfx_summon,
+    "sfx_dash": sfx_dash,
+    "sfx_heal": sfx_heal,
+    "sfx_dodge": sfx_dodge,
+    "sfx_keg_blast": sfx_keg_blast,
+    "sfx_shapeshift": sfx_shapeshift,
 }
 
 

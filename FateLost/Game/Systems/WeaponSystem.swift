@@ -8,44 +8,92 @@ import Foundation
 /// enemy inside; a ranged weapon launches projectiles for `ProjectileSystem`
 /// to fly. If nothing is in reach the weapon stays ready, so the attack comes
 /// out the instant an enemy steps in rather than on an arbitrary beat.
+///
+/// A shapeshifted form swaps in its own weapon. Skills change the attack
+/// through `WeaponModifierSet` and the player's stats, never by editing the
+/// weapon definition.
 struct WeaponSystem {
     let weapon: WeaponDefinition
     let tuning: CombatTuning
+    /// Level growth per level; see `ProgressionTuning`.
+    let growthPerLevel: Double
     /// Seconds until the weapon may attack again.
     private(set) var cooldown: Double = 0
 
-    init(weapon: WeaponDefinition, tuning: CombatTuning) {
+    init(weapon: WeaponDefinition, tuning: CombatTuning, growthPerLevel: Double = 0.07) {
         self.weapon = weapon
         self.tuning = tuning
+        self.growthPerLevel = growthPerLevel
     }
 
-    var attackInterval: Double { 1 / max(weapon.attackSpeed, 0.01) }
+    /// Seconds between attacks with the player's current stats.
+    func attackInterval(for weapon: WeaponDefinition, attackSpeed: Double) -> Double {
+        1 / max(weapon.attackSpeed * attackSpeed, 0.05)
+    }
 
-    mutating func step(_ combat: inout CombatState, player: inout PlayerState, dt: TimeInterval) {
+    mutating func step(_ combat: inout CombatState, player: inout PlayerState, form: FormDefinition?,
+                       dt: TimeInterval) {
         cooldown = max(0, cooldown - dt)
         guard cooldown <= 0, !player.isDefeated, !combat.enemies.isEmpty else { return }
 
-        switch weapon.delivery {
+        let active = form?.weapon ?? weapon
+        let interval = attackInterval(for: active, attackSpeed: combat.sheet[.attackSpeed])
+        let target: Int?
+        switch active.delivery {
         case .meleeArc(let arcDegrees):
-            if swing(arcDegrees: arcDegrees, combat: &combat, player: &player) {
-                cooldown = attackInterval
-            }
+            target = swing(active, arcDegrees: arcDegrees, combat: &combat, player: &player)
         case .projectile(let profile):
-            if fire(profile, combat: &combat, player: &player) {
-                cooldown = attackInterval
+            target = fire(active, profile, combat: &combat, player: &player)
+        }
+        guard let target else { return }
+
+        cooldown = interval
+        let modifiers = combat.build.weapon
+        var multistrike = modifiers.multistrike
+        if case .meleeArc = active.delivery {
+            // Extra projectiles become extra strikes for melee weapons.
+            multistrike += 0.15 * Double(modifiers.extraProjectiles)
+        }
+        if multistrike > 0, combat.random.chance(min(multistrike, 0.9)) {
+            cooldown = min(cooldown, 0.1)
+        }
+
+        combat.attackCount += 1
+        let position = combat.enemies.positions[target]
+        let direction = player.facing
+        for procIndex in combat.build.attackProcs {
+            switch combat.build.procs[procIndex].trigger {
+            case .attack:
+                combat.fireProc(procIndex, origin: position, targetIndex: target, depth: 0, direction: direction)
+            case .everyNthAttack(let n) where n > 0 && combat.attackCount % n == 0:
+                combat.fireProc(procIndex, origin: position, targetIndex: target, depth: 0, direction: direction)
+            default:
+                break
             }
         }
     }
 
+    private func baseHit(_ weapon: WeaponDefinition, combat: CombatState) -> Hit {
+        let growth = SkillPower.growth(level: combat.level, perLevel: growthPerLevel)
+        var tags = TagMask(weapon.tags)
+        tags.insert(.weapon)
+        var hit = Hit(amount: weapon.baseDamage * growth, type: weapon.damageType, tags: tags, knockback: 1,
+                      depth: 0, source: .weapon)
+        hit.added = combat.build.weapon.added
+        return hit
+    }
+
     // MARK: - Melee
 
-    private func swing(arcDegrees: Double, combat: inout CombatState, player: inout PlayerState) -> Bool {
-        let range = CGFloat(weapon.range)
+    private func swing(_ weapon: WeaponDefinition, arcDegrees baseArc: Double, combat: inout CombatState,
+                       player: inout PlayerState) -> Int? {
+        let modifiers = combat.build.weapon
+        let range = CGFloat(weapon.range * (1 + modifiers.reach)) * CGFloat(combat.sheet[.areaSize]).squareRoot()
+        let arcDegrees = min(360, baseArc + modifiers.cleaveDegrees)
         let padding = combat.largestEnemyRadius
-        guard let target = Targeting.nearest(to: player.position,
-                                             within: range + tuning.meleeAcquireSlack,
+        guard let target = Targeting.nearest(to: player.position, within: range + tuning.meleeAcquireSlack,
                                              padding: padding, combat: &combat) else {
-            return false
+            return nil
         }
         let aim = combat.world.delta(from: player.position, to: combat.enemies.positions[target]).normalized
         let direction = aim == .zero ? player.facing : aim
@@ -54,9 +102,11 @@ struct WeaponSystem {
         let halfArcCosine = CGFloat(cos(arcDegrees * .pi / 360))
         // The swing reaches as far as the target it was aimed at.
         let sweep = range + tuning.meleeAcquireSlack
+        let template = baseHit(weapon, combat: combat)
         combat.nearby.removeAll(keepingCapacity: true)
         combat.grid.query(around: player.position, radius: sweep + padding, into: &combat.nearby)
-        for index in combat.nearby where index < combat.enemies.count {
+        let candidates = combat.nearby
+        for index in candidates where index < combat.enemies.count {
             let offset = combat.world.delta(from: player.position, to: combat.enemies.positions[index])
             let distance = offset.length
             let reach = sweep + combat.enemies.definition(at: index).radius
@@ -64,65 +114,74 @@ struct WeaponSystem {
             let inArc = distance <= tuning.meleePointBlank
                 || (distance > 0.0001 && (offset / distance).dot(direction) >= halfArcCosine)
             guard inArc else { continue }
-            let pushDirection = distance > 0.0001 ? offset / distance : direction
-            combat.damageEnemy(at: index, base: weapon.baseDamage, direction: pushDirection, knockbackScale: 1)
+            var hit = template
+            hit.direction = distance > 0.0001 ? offset / distance : direction
+            combat.strike(index, with: hit)
         }
 
         combat.events.append(.meleeSwing(origin: player.position, direction: direction, range: range,
                                          arcDegrees: arcDegrees))
-        return true
+        return target
     }
 
     // MARK: - Projectiles
 
-    private func fire(_ profile: ProjectileProfile, combat: inout CombatState, player: inout PlayerState) -> Bool {
-        let range = CGFloat(weapon.range)
+    private func fire(_ weapon: WeaponDefinition, _ profile: ProjectileProfile, combat: inout CombatState,
+                      player: inout PlayerState) -> Int? {
+        let modifiers = combat.build.weapon
+        let range = CGFloat(weapon.range * (1 + modifiers.reach))
         let padding = combat.largestEnemyRadius
+        // Cleave gives projectiles a small burst on impact instead.
+        let splash = CGFloat(profile.splashRadius + modifiers.cleaveDegrees / 120) * CGFloat(combat.sheet[.areaSize])
         let target: Int?
         switch weapon.targeting {
         case .densestCluster:
             target = Targeting.densestCluster(around: player.position, within: range,
-                                              clusterRadius: max(CGFloat(profile.splashRadius), 1),
-                                              padding: padding, combat: &combat)
+                                              clusterRadius: max(splash, 1), padding: padding, combat: &combat)
         case .nearest, .nearestInRange:
             target = Targeting.nearest(to: player.position, within: range, padding: padding, combat: &combat)
         }
-        guard let target else { return false }
+        guard let target else { return nil }
 
         let aim = combat.world.delta(from: player.position, to: combat.enemies.positions[target]).normalized
         let direction = aim == .zero ? player.facing : aim
         player.facing = direction
 
-        let count = max(1, profile.count)
+        let count = max(1, profile.count + modifiers.extraProjectiles + Int(combat.sheet[.projectileCount]))
         let spread = 12 * Double.pi / 180
         let baseAngle = atan2(Double(direction.y), Double(direction.x)) - spread * Double(count - 1) / 2
-        let speed = CGFloat(profile.speed)
+        let speed = CGFloat(profile.speed) * CGFloat(combat.sheet[.projectileSpeed])
         // Lives long enough to cross the weapon's range with a little spare.
         let life = Double(range) / max(profile.speed, 0.01) * 1.25
+        let template = baseHit(weapon, combat: combat)
+        let pierce = profile.pierce + Int(combat.sheet[.pierce])
+        let visual: VisualStyle = VisualStyle.matching(weapon.damageType)
 
         for shot in 0..<count {
             let angle = baseAngle + spread * Double(shot)
             let heading = CGPoint(x: CGFloat(cos(angle)), y: CGFloat(sin(angle)))
+            var hit = template
+            hit.knockback = 0.45
             combat.projectiles.append(Projectile(
                 id: combat.makeEntityID(),
                 position: combat.world.wrap(player.position + heading * 0.35),
                 velocity: heading * speed,
                 remainingLife: life,
-                pierceRemaining: profile.pierce,
-                baseDamage: weapon.baseDamage,
-                damageType: weapon.damageType,
+                pierceRemaining: pierce,
+                hit: hit,
                 radius: 0.18,
-                splashRadius: CGFloat(profile.splashRadius),
-                spriteID: profile.spriteID
+                splashRadius: splash,
+                spriteID: profile.spriteID,
+                visual: visual
             ))
         }
         combat.events.append(.projectileFired(spriteID: profile.spriteID, origin: player.position,
                                               direction: direction))
-        return true
+        return target
     }
 }
 
-/// Target selection shared by weapons (and, later, skills).
+/// Target selection shared by weapons, skills and allies.
 enum Targeting {
     /// Index of the closest living enemy whose body lies within `range`.
     static func nearest(to point: CGPoint, within range: CGFloat, padding: CGFloat,

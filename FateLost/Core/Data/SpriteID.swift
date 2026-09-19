@@ -25,6 +25,27 @@ extension SpriteID {
 
     // Enemies
     static let enemyGoblin: SpriteID = "enemy.goblin"
+    static let enemyGoblinHooded: SpriteID = "enemy.goblin.hooded"
+    static let enemyGoblinHelmed: SpriteID = "enemy.goblin.helmed"
+    static let enemyGoblinSkulker: SpriteID = "enemy.goblinSkulker"
+    static let enemyGoblinSkulkerPale: SpriteID = "enemy.goblinSkulker.pale"
+    static let enemyGoblinSpearman: SpriteID = "enemy.goblinSpearman"
+    static let enemyGoblinSpearmanRed: SpriteID = "enemy.goblinSpearman.red"
+    static let enemyGoblinBrute: SpriteID = "enemy.goblinBrute"
+    static let enemyGoblinBruteScarred: SpriteID = "enemy.goblinBrute.scarred"
+    static let enemyGoblinSapper: SpriteID = "enemy.goblinSapper"
+
+    // Allies and forms
+    static let allySkeleton: SpriteID = "ally.skeleton"
+    static let allyBear: SpriteID = "ally.bear"
+    static let allyTiger: SpriteID = "ally.tiger"
+    static let allyOwl: SpriteID = "ally.owl"
+    static let allyImp: SpriteID = "ally.imp"
+    static let allyWolf: SpriteID = "ally.wolf"
+    static let allyTreant: SpriteID = "ally.treant"
+    static let allyBlade: SpriteID = "ally.blade"
+    /// A glowing mote, tinted per use.
+    static let allyWisp: SpriteID = "ally.wisp"
 
     // Weapons (held and icon)
     static let weaponSword: SpriteID = "weapon.sword"
@@ -34,6 +55,10 @@ extension SpriteID {
     // Projectiles
     static let projectileArrow: SpriteID = "projectile.arrow"
     static let projectileArcaneBolt: SpriteID = "projectile.arcaneBolt"
+    static let projectileKnife: SpriteID = "projectile.knife"
+    static let projectileShard: SpriteID = "projectile.shard"
+    /// A white bolt of energy, tinted by its effect's style.
+    static let projectileBolt: SpriteID = "projectile.bolt"
 
     // Decorations
     static let decorDeadTree: SpriteID = "decor.deadTree"
@@ -63,4 +88,12 @@ extension SpriteID {
     /// Stain left on the ground where an enemy fell. Drawn white; tinted
     /// per enemy.
     static let fxSplat: SpriteID = "fx.splat"
+    /// An ember of experience lying on the ground.
+    static let fxEmber: SpriteID = "fx.ember"
+    /// A wedge pointing along +x, for cone attacks.
+    static let fxCone: SpriteID = "fx.cone"
+    /// Soft disc for zones, drawn white and tinted.
+    static let fxDisc: SpriteID = "fx.disc"
+    /// Tall shaft of light for impacts from above and levelling up.
+    static let fxPillar: SpriteID = "fx.pillar"
 }

@@ -36,10 +36,24 @@ final class PlayerView: SKNode {
     private var attackFacing: CGFloat = 1
     private var defeatAge: CGFloat?
 
+    private let catalog: SpriteCatalog
+    /// Shimmer around the player while a barrier is up.
+    private let barrierGlow: SKSpriteNode
+    private var currentForm: FormID?
+    private var formScale: CGFloat = 1
+    private var formTint: UIColor?
+    /// Seconds since the last level-up; large when idle.
+    private var levelUpAge: CGFloat = 10
+    /// Weapon rest angle; bows are carried upright.
+    private let restAngle: CGFloat
+
     init(catalog: SpriteCatalog, weaponSprite: SpriteID) {
+        self.catalog = catalog
         shadowSprite = catalog.makeSprite(.shadow)
         figure = catalog.makeSprite(.playerAdventurer)
         weapon = catalog.makeSprite(weaponSprite)
+        barrierGlow = catalog.makeSprite(.fxGlow)
+        restAngle = weaponSprite == .weaponBow ? -0.1 : Style.weaponRestAngle
         super.init()
 
         shadowSprite.zPosition = -0.5
@@ -48,9 +62,36 @@ final class PlayerView: SKNode {
         body.addChild(figure)
 
         weapon.position = Style.weaponOffset
-        weapon.zRotation = Style.weaponRestAngle
+        weapon.zRotation = restAngle
         weapon.zPosition = 0.1
         body.addChild(weapon)
+
+        barrierGlow.blendMode = .add
+        barrierGlow.color = UIColor(rgb: 0x8FD0FF)
+        barrierGlow.colorBlendFactor = 1
+        barrierGlow.size = CGSize(width: 70, height: 84)
+        barrierGlow.position = CGPoint(x: 0, y: 26)
+        barrierGlow.zPosition = 0.3
+        barrierGlow.alpha = 0
+        addChild(barrierGlow)
+    }
+
+    /// Swaps the figure for a form's (or back to the adventurer).
+    func setForm(_ form: FormDefinition?) {
+        guard form?.id != currentForm else { return }
+        currentForm = form?.id
+        let id = form?.sprite ?? .playerAdventurer
+        figure.texture = catalog.texture(id)
+        figure.size = catalog.size(id)
+        figure.anchorPoint = catalog.anchor(id)
+        formScale = form?.scale ?? 1
+        formTint = form?.tint?.uiColor
+        weapon.isHidden = form?.hidesWeapon ?? false
+    }
+
+    /// A golden flare and swell as the player levels up.
+    func playLevelUp() {
+        levelUpAge = 0
     }
 
     @available(*, unavailable)
@@ -73,6 +114,7 @@ final class PlayerView: SKNode {
     ///   - dt: Seconds since the last frame, for animation timers.
     func apply(_ state: PlayerState, screenVelocity: CGPoint, dt: CGFloat) {
         attackAge += dt
+        levelUpAge += dt
 
         if state.isDefeated {
             applyDefeat(dt: dt)
@@ -101,10 +143,10 @@ final class PlayerView: SKNode {
                 weapon.zRotation = Style.swingFrom + (Style.swingTo - Style.swingFrom) * eased
             } else {
                 // A short recoil for bows and staves.
-                weapon.zRotation = Style.weaponRestAngle + 0.35 * sin(t * .pi)
+                weapon.zRotation = restAngle + 0.35 * sin(t * .pi)
             }
         } else {
-            let walk = Style.weaponRestAngle + CGFloat(sin(phase + .pi / 2)) * 0.12 * speedFraction
+            let walk = restAngle + CGFloat(sin(phase + .pi / 2)) * 0.12 * speedFraction
             let settle = (attackAge - Style.attackDuration) / Style.settleDuration
             if attackIsMelee, settle < 1 {
                 // Ease back from the end of the swing to the carry pose.
@@ -114,15 +156,35 @@ final class PlayerView: SKNode {
             }
         }
 
-        // Red flash on a hit, then a blink for the rest of the immunity.
+        // Red flash on a hit, a golden flare on levelling up, otherwise the
+        // form's own tint.
         let sinceHit = CGFloat(state.timeSinceHit)
         if sinceHit < Style.hurtFlashDuration {
             figure.color = Style.hurtColor
             figure.colorBlendFactor = 0.75 * (1 - sinceHit / Style.hurtFlashDuration)
+        } else if levelUpAge < 0.7 {
+            figure.color = UIColor(rgb: 0xFFD27A)
+            figure.colorBlendFactor = 0.8 * (1 - levelUpAge / 0.7)
+        } else if let formTint {
+            figure.color = formTint
+            figure.colorBlendFactor = 0.35
         } else {
             figure.colorBlendFactor = 0
         }
-        body.alpha = state.isInvulnerable && Int(sinceHit * 16) % 2 == 1 ? 0.45 : 1
+        let swell = levelUpAge < 0.5 ? 1 + 0.22 * sin(levelUpAge / 0.5 * .pi) : 1
+        figure.setScale(formScale * swell)
+
+        // Stealth turns the player to a shade; after a hit, a blink for the
+        // rest of the immunity.
+        if state.isStealthed {
+            body.alpha = 0.32
+        } else {
+            body.alpha = state.isInvulnerable && sinceHit < 1 && Int(sinceHit * 16) % 2 == 1 ? 0.45 : 1
+        }
+
+        let shielded = min(1, CGFloat(state.barrier / max(state.maxHealth * 0.15, 1)))
+        let shimmer = 0.75 + 0.25 * sin(CGFloat(state.strideTime + Double(attackAge)) * 4)
+        barrierGlow.alpha = state.barrier > 0.5 ? 0.35 + 0.35 * shielded * shimmer : 0
 
         // The shadow tightens slightly as the body rises.
         shadowSprite.setScale(1 - bob * 0.015)
@@ -138,7 +200,7 @@ final class PlayerView: SKNode {
         body.zRotation = eased * (.pi / 2) * facingSign
         figure.color = UIColor(white: 0.15, alpha: 1)
         figure.colorBlendFactor = 0.5 * eased
-        weapon.zRotation = Style.weaponRestAngle - eased
+        weapon.zRotation = restAngle - eased
         shadowSprite.setScale(1 + 0.3 * eased)
     }
 }

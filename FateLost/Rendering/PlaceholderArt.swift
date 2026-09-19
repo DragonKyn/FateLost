@@ -24,6 +24,31 @@ enum PlaceholderArt {
         case .playerAdventurer: return adventurer()
         case .shadow: return shadow()
         case .enemyGoblin: return goblin()
+        case .enemyGoblinHooded: return goblin(palette: .moss, headgear: .hood(0x2E2A26))
+        case .enemyGoblinHelmed: return goblin(palette: .ochre, headgear: .helmet(0x6E6A62))
+        case .enemyGoblinSkulker: return skulker(palette: .moss, hood: 0x1E1C22)
+        case .enemyGoblinSkulkerPale: return skulker(palette: .pale, hood: 0x3A2230)
+        case .enemyGoblinSpearman: return spearman(palette: .green, crest: 0x8A7A5A)
+        case .enemyGoblinSpearmanRed: return spearman(palette: .ochre, crest: 0x8A2A22)
+        case .enemyGoblinBrute: return brute(palette: .green, scarred: false)
+        case .enemyGoblinBruteScarred: return brute(palette: .moss, scarred: true)
+        case .enemyGoblinSapper: return sapper()
+        case .allySkeleton: return skeleton()
+        case .allyBear: return bear()
+        case .allyTiger: return tiger()
+        case .allyOwl: return owl()
+        case .allyImp: return imp()
+        case .allyWolf: return wolf()
+        case .allyTreant: return treant()
+        case .allyBlade: return orbitingBlade()
+        case .allyWisp: return radialDot(size: 26)
+        case .projectileKnife: return knife()
+        case .projectileShard: return shard()
+        case .projectileBolt: return energyBolt()
+        case .fxEmber: return ember()
+        case .fxCone: return cone()
+        case .fxDisc: return disc()
+        case .fxPillar: return pillar()
         case .weaponSword: return sword()
         case .weaponBow: return bow()
         case .weaponStaff: return staff()
@@ -113,63 +138,6 @@ enum PlaceholderArt {
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
     }
 
-    private static func goblin() -> Sprite {
-        let size = CGSize(width: 34, height: 40)
-        let footY: CGFloat = 37
-        let image = render(size) { ctx in
-            let outline = UIColor(rgb: 0x0E0C08)
-            let skin = UIColor(rgb: 0x6B7A3C)
-            let skinShade = UIColor(rgb: 0x4E5A2A)
-
-            // Bandy legs
-            fill(ctx, CGRect(x: 11, y: 28, width: 3.5, height: 8), skinShade)
-            fill(ctx, CGRect(x: 19.5, y: 28, width: 3.5, height: 8), skinShade)
-            fill(ctx, CGRect(x: 9.5, y: 34.5, width: 6, height: 2.5), UIColor(rgb: 0x2A2016))
-            fill(ctx, CGRect(x: 18.5, y: 34.5, width: 6, height: 2.5), UIColor(rgb: 0x2A2016))
-
-            // Hunched body, lit from the upper left
-            let body = [CGPoint(x: 10, y: 16), CGPoint(x: 7, y: 26), CGPoint(x: 10, y: 31),
-                        CGPoint(x: 24, y: 31), CGPoint(x: 26, y: 22), CGPoint(x: 21, y: 14)]
-            fillPolygon(ctx, body, skin)
-            fillPolygon(ctx, [CGPoint(x: 21, y: 14), CGPoint(x: 26, y: 22), CGPoint(x: 24, y: 31),
-                              CGPoint(x: 17, y: 31)], skinShade)
-            strokePolygon(ctx, body, outline, width: 1.1)
-
-            // Ragged loincloth
-            fillPolygon(ctx, [CGPoint(x: 9, y: 26), CGPoint(x: 25, y: 26), CGPoint(x: 23, y: 32),
-                              CGPoint(x: 20, y: 30), CGPoint(x: 17, y: 33), CGPoint(x: 14, y: 30),
-                              CGPoint(x: 11, y: 32)], UIColor(rgb: 0x5A3A22))
-
-            // Rusted blade held low
-            fill(ctx, CGRect(x: 25, y: 23, width: 3, height: 3.5), UIColor(rgb: 0x3A2818))
-            fillPolygon(ctx, [CGPoint(x: 26, y: 23), CGPoint(x: 31.5, y: 12), CGPoint(x: 28.5, y: 23)],
-                        UIColor(rgb: 0x8C8272))
-            stroke(ctx, from: CGPoint(x: 28, y: 21), to: CGPoint(x: 30.5, y: 14), UIColor(rgb: 0x9A5A32), width: 0.7)
-
-            // Head with long drooping ears
-            fillPolygon(ctx, [CGPoint(x: 8, y: 9), CGPoint(x: 0.5, y: 6), CGPoint(x: 7, y: 12.5)], skinShade)
-            fillPolygon(ctx, [CGPoint(x: 23, y: 9), CGPoint(x: 31, y: 5.5), CGPoint(x: 24, y: 12.5)], skinShade)
-            let head = CGRect(x: 7, y: 3, width: 17, height: 15)
-            ctx.setFillColor(skin.cgColor)
-            ctx.fillEllipse(in: head)
-            ctx.setStrokeColor(outline.cgColor)
-            ctx.setLineWidth(1.1)
-            ctx.strokeEllipse(in: head)
-
-            // Brow shadow and glowing eyes: the part that reads at a distance
-            ctx.setFillColor(UIColor(rgb: 0x2C3318).cgColor)
-            ctx.fill(CGRect(x: 10, y: 8.5, width: 11, height: 3))
-            ctx.setFillColor(UIColor(rgb: 0xF2D23C).cgColor)
-            ctx.fillEllipse(in: CGRect(x: 11.2, y: 9.2, width: 3, height: 2))
-            ctx.fillEllipse(in: CGRect(x: 16.8, y: 9.2, width: 3, height: 2))
-            // Snaggle teeth
-            ctx.setFillColor(UIColor(rgb: 0xE6DDC4).cgColor)
-            ctx.fill(CGRect(x: 12.5, y: 14, width: 1.4, height: 2))
-            ctx.fill(CGRect(x: 17.5, y: 14, width: 1.4, height: 2))
-        }
-        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: (size.height - footY) / size.height))
-    }
-
     // MARK: - Weapons and projectiles
 
     private static func sword() -> Sprite {
@@ -192,10 +160,13 @@ enum PlaceholderArt {
             ctx.setStrokeColor(UIColor(rgb: 0x6B4A2A).cgColor)
             ctx.setLineWidth(3)
             ctx.setLineCap(.round)
-            ctx.move(to: CGPoint(x: 12, y: 3))
-            ctx.addQuadCurve(to: CGPoint(x: 12, y: 43), control: CGPoint(x: -6, y: 23))
+            // The limbs bow outward toward the target (+x); the string sits
+            // on the archer's side.
+            ctx.move(to: CGPoint(x: 6, y: 3))
+            ctx.addQuadCurve(to: CGPoint(x: 6, y: 43), control: CGPoint(x: 24, y: 23))
             ctx.strokePath()
-            stroke(ctx, from: CGPoint(x: 12, y: 3), to: CGPoint(x: 12, y: 43), UIColor(rgb: 0xD8D0C0), width: 0.8)
+            stroke(ctx, from: CGPoint(x: 6, y: 3), to: CGPoint(x: 6, y: 43), UIColor(rgb: 0xD8D0C0), width: 0.8)
+            fill(ctx, CGRect(x: 13.2, y: 19.5, width: 3.4, height: 7), UIColor(rgb: 0x3A2818))
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
     }
@@ -527,7 +498,7 @@ enum PlaceholderArt {
 
     // MARK: - Effects
 
-    private static func radialDot(size: CGFloat) -> Sprite {
+    static func radialDot(size: CGFloat) -> Sprite {
         let image = render(CGSize(width: size, height: size)) { ctx in
             radialGradient(ctx, center: CGPoint(x: size / 2, y: size / 2), radius: size / 2,
                            inner: .white, outer: UIColor(white: 1, alpha: 0))
@@ -692,12 +663,12 @@ enum PlaceholderArt {
         }
     }
 
-    private static func fill(_ ctx: CGContext, _ rect: CGRect, _ color: UIColor) {
+    static func fill(_ ctx: CGContext, _ rect: CGRect, _ color: UIColor) {
         ctx.setFillColor(color.cgColor)
         ctx.fill(rect)
     }
 
-    private static func stroke(_ ctx: CGContext, from: CGPoint, to: CGPoint, _ color: UIColor, width: CGFloat) {
+    static func stroke(_ ctx: CGContext, from: CGPoint, to: CGPoint, _ color: UIColor, width: CGFloat) {
         ctx.setStrokeColor(color.cgColor)
         ctx.setLineWidth(width)
         ctx.setLineCap(.round)
@@ -706,20 +677,20 @@ enum PlaceholderArt {
         ctx.strokePath()
     }
 
-    private static func polygonPath(_ points: [CGPoint]) -> CGPath {
+    static func polygonPath(_ points: [CGPoint]) -> CGPath {
         let path = CGMutablePath()
         path.addLines(between: points)
         path.closeSubpath()
         return path
     }
 
-    private static func fillPolygon(_ ctx: CGContext, _ points: [CGPoint], _ color: UIColor) {
+    static func fillPolygon(_ ctx: CGContext, _ points: [CGPoint], _ color: UIColor) {
         ctx.setFillColor(color.cgColor)
         ctx.addPath(polygonPath(points))
         ctx.fillPath()
     }
 
-    private static func strokePolygon(_ ctx: CGContext, _ points: [CGPoint], _ color: UIColor, width: CGFloat) {
+    static func strokePolygon(_ ctx: CGContext, _ points: [CGPoint], _ color: UIColor, width: CGFloat) {
         ctx.setStrokeColor(color.cgColor)
         ctx.setLineWidth(width)
         ctx.setLineJoin(.round)
@@ -727,7 +698,7 @@ enum PlaceholderArt {
         ctx.strokePath()
     }
 
-    private static func radialGradient(_ ctx: CGContext, center: CGPoint, radius: CGFloat,
+    static func radialGradient(_ ctx: CGContext, center: CGPoint, radius: CGFloat,
                                        inner: UIColor, outer: UIColor) {
         let colors = [inner.cgColor, outer.cgColor] as CFArray
         guard let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors,

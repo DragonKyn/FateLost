@@ -48,7 +48,7 @@ struct SpawnSystem {
                 accumulator = 0
                 break
             }
-            let definition = roster[pick(from: &combat.random)]
+            let definition = roster[pick(from: &combat.random, elapsed: elapsed)]
             spawn(definition, into: &combat, player: player, speedVariance: speedVariance)
         }
     }
@@ -60,13 +60,26 @@ struct SpawnSystem {
         guard !roster.isEmpty else { return }
         let allowed = max(0, min(count, hardCap - combat.enemies.count))
         for _ in 0..<allowed {
-            let definition = roster[pick(from: &combat.random)]
+            let definition = roster[pick(from: &combat.random, elapsed: .infinity)]
             spawn(definition, into: &combat, player: player, speedVariance: speedVariance)
         }
     }
 
-    private func pick(from random: inout SeededRandom) -> Int {
-        min(roster.count - 1, Int(random.unit() * Double(roster.count)))
+    /// A roster index, weighted by spawn weight among the kinds allowed at
+    /// this point in the run.
+    private func pick(from random: inout SeededRandom, elapsed: TimeInterval) -> Int {
+        let minutes = elapsed / 60
+        var total = 0.0
+        for definition in roster where definition.earliestMinute <= minutes {
+            total += definition.spawnWeight
+        }
+        guard total > 0 else { return 0 }
+        var roll = random.unit() * total
+        for (index, definition) in roster.enumerated() where definition.earliestMinute <= minutes {
+            roll -= definition.spawnWeight
+            if roll < 0 { return index }
+        }
+        return 0
     }
 
     private func spawn(_ definition: EnemyDefinition, into combat: inout CombatState, player: PlayerState,
@@ -75,7 +88,8 @@ struct SpawnSystem {
         let kind = combat.enemies.kindIndex(for: definition)
         let scale = 1 + CGFloat(combat.random.range(-1, 1)) * speedVariance
         let id = combat.makeEntityID()
-        combat.enemies.append(id: id, kind: kind, position: position, speedScale: scale)
+        combat.enemies.append(id: id, kind: kind, position: position, speedScale: scale,
+                              healthScale: combat.enemyHealthScale)
         combat.stats.mostEnemiesAlive = max(combat.stats.mostEnemiesAlive, combat.enemies.count)
     }
 

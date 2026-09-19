@@ -69,9 +69,14 @@ final class SpriteCatalog {
     /// Every sprite the gameplay scene may use, preloaded up front so no
     /// texture is generated mid-run.
     static let gameplaySprites: [SpriteID] = [
-        .playerAdventurer, .shadow, .enemyGoblin,
+        .playerAdventurer, .shadow,
+        .enemyGoblin, .enemyGoblinHooded, .enemyGoblinHelmed, .enemyGoblinSkulker, .enemyGoblinSkulkerPale,
+        .enemyGoblinSpearman, .enemyGoblinSpearmanRed, .enemyGoblinBrute, .enemyGoblinBruteScarred,
+        .enemyGoblinSapper,
+        .allySkeleton, .allyBear, .allyTiger, .allyOwl, .allyImp, .allyWolf, .allyTreant, .allyBlade, .allyWisp,
         .weaponSword, .weaponBow, .weaponStaff,
-        .projectileArrow, .projectileArcaneBolt,
+        .projectileArrow, .projectileArcaneBolt, .projectileKnife, .projectileShard, .projectileBolt,
+        .fxEmber, .fxCone, .fxDisc, .fxPillar,
         .decorDeadTree, .decorDeadTreeSmall, .decorGravestone, .decorGraveCross,
         .decorRuinedPillar, .decorRuinedWall, .decorBrokenCart, .decorCampfire,
         .decorOldShrine, .decorRock, .decorGrassTuft, .decorBones,

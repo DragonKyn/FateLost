@@ -15,6 +15,7 @@ struct GameplayScreen: View {
 
             GameplayHUDOverlay(session: session,
                                onPause: { session.pause() },
+                               onSkills: { session.openSkillTree() },
                                onDeveloper: { openDeveloperPanel() })
 
             if showRealmTitle {
@@ -38,7 +39,10 @@ struct GameplayScreen: View {
                     }
                 )
                 .transition(.opacity)
-            } else if session.isPaused {
+            } else if session.isSkillTreePresented {
+                SkillTreeView(session: session)
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
+            } else if session.pauseReason == .menu {
                 PauseMenu(
                     onResume: {
                         services.audio.play(.uiConfirm)
@@ -53,7 +57,7 @@ struct GameplayScreen: View {
                 .transition(.opacity)
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: session.isPaused)
+        .animation(.easeInOut(duration: 0.25), value: session.pauseReason)
         .animation(.easeInOut(duration: 0.8), value: session.summary)
         .onAppear { session.beginPresentation() }
         .task {
@@ -63,7 +67,7 @@ struct GameplayScreen: View {
     }
 
     private func openDeveloperPanel() {
-        session.pause()
+        session.pause(for: .developer)
         router.isDeveloperPanelPresented = true
     }
 }
@@ -73,14 +77,18 @@ struct GameplayScreen: View {
 private struct GameplayHUDOverlay: View {
     let session: GameSession
     let onPause: () -> Void
+    let onSkills: () -> Void
     let onDeveloper: () -> Void
 
     var body: some View {
         VStack {
             HStack(alignment: .top, spacing: 14) {
                 VStack(alignment: .leading, spacing: 6) {
-                    HealthBar(current: session.hud.health, maximum: session.hud.maxHealth)
+                    HealthBar(current: session.hud.health, maximum: session.hud.maxHealth,
+                              barrier: session.hud.barrier)
                         .frame(width: 190, height: 14)
+                    ExperienceBar(fraction: session.hud.experienceFraction)
+                        .frame(width: 190, height: 6)
                     HStack(spacing: 10) {
                         Text("LV \(session.hud.level)")
                         Text("WAVE \(session.hud.wave)")
@@ -94,6 +102,7 @@ private struct GameplayHUDOverlay: View {
                     .shadow(color: .black, radius: 2)
                 }
                 Spacer()
+                SkillPointsButton(points: session.hud.unspentPoints, action: onSkills)
                 if DeveloperOptions.isAvailable {
                     hudButton(systemImage: "wrench.and.screwdriver", label: "Developer tools", action: onDeveloper)
                 }
@@ -125,10 +134,12 @@ private struct GameplayHUDOverlay: View {
 struct HealthBar: View {
     let current: Double
     let maximum: Double
+    var barrier: Double = 0
 
     var body: some View {
         GeometryReader { proxy in
             let fraction = maximum > 0 ? min(1, max(0, current / maximum)) : 0
+            let shield = maximum > 0 ? min(1, max(0, barrier / maximum)) : 0
             ZStack(alignment: .leading) {
                 Capsule().fill(Color.black.opacity(0.6))
                 Capsule()
@@ -136,6 +147,11 @@ struct HealthBar: View {
                                                   Color(red: 0.52, green: 0.08, blue: 0.08)],
                                          startPoint: .top, endPoint: .bottom))
                     .frame(width: proxy.size.width * fraction)
+                if shield > 0 {
+                    Capsule()
+                        .fill(Color(red: 0.55, green: 0.8, blue: 1).opacity(0.55))
+                        .frame(width: proxy.size.width * shield)
+                }
                 Capsule().strokeBorder(FLTheme.Palette.rim, lineWidth: 1)
             }
         }
@@ -189,6 +205,65 @@ private struct PauseMenu: View {
             .frame(width: 280)
             .padding(28)
             .flPanel()
+        }
+    }
+}
+
+/// Progress toward the next level: a thin line of fate-gold.
+struct ExperienceBar: View {
+    let fraction: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.black.opacity(0.55))
+                Capsule()
+                    .fill(LinearGradient(colors: [FLTheme.Palette.emberBright, FLTheme.Palette.ember],
+                                         startPoint: .leading, endPoint: .trailing))
+                    .frame(width: proxy.size.width * min(1, max(0, fraction)))
+                    .animation(.easeOut(duration: 0.25), value: fraction)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("Experience")
+        .accessibilityValue("\(Int(fraction * 100)) percent to next level")
+    }
+}
+
+/// Opens the skill tree. Glows while points wait to be spent.
+private struct SkillPointsButton: View {
+    let points: Int
+    let action: () -> Void
+
+    @State private var glowing = false
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundStyle(points > 0 ? FLTheme.Palette.abyss : FLTheme.Palette.parchment)
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(points > 0 ? AnyShapeStyle(FLTheme.Palette.emberBright)
+                                                         : AnyShapeStyle(Color.black.opacity(0.45))))
+                    .overlay(Circle().strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
+                    .shadow(color: FLTheme.Palette.ember.opacity(points > 0 && glowing ? 0.9 : 0), radius: 10)
+                if points > 0 {
+                    Text("\(points)")
+                        .font(FLTheme.Typeface.number(12))
+                        .foregroundStyle(FLTheme.Palette.parchment)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(FLTheme.Palette.blood))
+                        .offset(x: 4, y: -4)
+                }
+            }
+        }
+        .accessibilityLabel(points > 0 ? "Skill tree, \(points) points to spend" : "Skill tree")
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
+                glowing = true
+            }
         }
     }
 }

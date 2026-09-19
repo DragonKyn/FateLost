@@ -13,6 +13,8 @@ final class ProjectileRenderer {
 
     /// Height above the ground projectiles fly at, in scene points.
     private let flightHeight: CGFloat = 18
+    /// Body radius a sprite is drawn for; bigger projectiles scale up.
+    private let referenceRadius: CGFloat = 0.2
 
     init(catalog: SpriteCatalog, projection: IsometricProjection, layer: SKNode) {
         self.catalog = catalog
@@ -35,6 +37,7 @@ final class ProjectileRenderer {
                 sprite = pool(for: projectile.spriteID).acquire()
                 layer.addChild(sprite)
                 active[projectile.id] = (sprite, projectile.spriteID)
+                style(sprite, for: projectile)
             }
             let screen = projection.toScreen(frame.unwrapped(projectile.position))
             sprite.position = screen + CGPoint(x: 0, y: flightHeight)
@@ -54,6 +57,18 @@ final class ProjectileRenderer {
         }
     }
 
+    /// Tints energy projectiles by their style and sizes big ones up.
+    private func style(_ sprite: SKSpriteNode, for projectile: Projectile) {
+        let isEnergy = projectile.spriteID == .projectileBolt
+        if isEnergy {
+            sprite.color = projectile.visual.color
+            sprite.colorBlendFactor = 1
+        } else {
+            sprite.colorBlendFactor = 0
+        }
+        sprite.setScale(max(0.8, projectile.radius / referenceRadius))
+    }
+
     private func pool(for id: SpriteID) -> NodePool<SKSpriteNode> {
         if let pool = pools[id] {
             return pool
@@ -61,7 +76,7 @@ final class ProjectileRenderer {
         let catalog = catalog
         let pool = NodePool<SKSpriteNode>(prewarm: 8, make: {
             let sprite = catalog.makeSprite(id)
-            if id == .projectileArcaneBolt {
+            if id == .projectileArcaneBolt || id == .projectileBolt || id == .projectileShard {
                 sprite.blendMode = .add
             }
             return sprite

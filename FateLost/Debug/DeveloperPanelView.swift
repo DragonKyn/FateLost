@@ -75,6 +75,16 @@ private struct DeveloperOptionsForm: View {
                     developer.send(.shakeCamera)
                 }
             }
+            Section {
+                Button("Gain 1 Level") { developer.send(.grantLevels(1)) }
+                Button("Gain 5 Levels") { developer.send(.grantLevels(5)) }
+                Button("Gain 20 Levels") { developer.send(.grantLevels(20)) }
+                Button("Refund All Skill Points", role: .destructive) { developer.send(.resetSkills) }
+            } header: {
+                Text("Skills")
+            } footer: {
+                Text("Levels grant skill points and play the level-up burst. Open the skill tree from the HUD to spend them.")
+            }
             Section("Progression") {
                 Toggle("Unlock All Realms", isOn: $developer.unlockAllRealms)
             }

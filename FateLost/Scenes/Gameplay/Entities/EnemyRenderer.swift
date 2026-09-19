@@ -11,6 +11,8 @@ final class EnemyView: SKNode {
     fileprivate var flash: CGFloat = 0
     fileprivate var facingSign: CGFloat = 1
     fileprivate var phase: CGFloat = 0
+    /// Per-enemy size variation, so a crowd isn't a row of clones.
+    fileprivate var sizeScale: CGFloat = 1
 
     init(catalog: SpriteCatalog) {
         shadowSprite = catalog.makeSprite(.shadow)
@@ -97,13 +99,16 @@ final class EnemyRenderer {
             } else {
                 view = pool.acquire()
                 view.phase = CGFloat(id % 97) * 0.37
+                view.sizeScale = 0.92 + CGFloat((id &* 7919) % 17) / 100
                 layer.addChild(view)
                 views[id] = view
             }
             view.lastSeenFrame = frameNumber
 
             let definition = enemies.definition(at: index)
-            view.configure(sprite: definition.spriteID, catalog: catalog)
+            view.configure(sprite: definition.sprite(forEnemyID: id), catalog: catalog)
+            let mask = enemies.statusMask[index]
+            let held = mask & StatusKind.incapacitating != 0
 
             let screen = projection.toScreen(frame.unwrapped(enemies.positions[index]))
             view.position = screen
@@ -118,16 +123,23 @@ final class EnemyRenderer {
             // A scurrying waddle, frozen into a crouch while winding up.
             let windingUp = enemies.windup[index] > 0
             let t = seconds * Style.bobFrequency * enemies.speedScale[index] + view.phase
-            if windingUp {
+            let size = view.sizeScale
+            if held {
+                // Frozen or stunned: locked in place, with a faint shiver.
+                view.body.position = CGPoint(x: sin(seconds * 40 + view.phase) * 0.6, y: 0)
+                view.body.xScale = view.facingSign * size
+                view.body.yScale = size
+                view.body.zRotation = 0
+            } else if windingUp {
                 let progress = 1 - CGFloat(enemies.windup[index] / max(definition.attackWindup, 0.001))
                 view.body.position = .zero
-                view.body.xScale = view.facingSign * (1 + 0.14 * progress)
-                view.body.yScale = 1 - 0.12 * progress
+                view.body.xScale = view.facingSign * (1 + 0.14 * progress) * size
+                view.body.yScale = (1 - 0.12 * progress) * size
                 view.body.zRotation = -0.22 * progress * view.facingSign
             } else {
                 view.body.position = CGPoint(x: 0, y: abs(sin(t)) * Style.bobHeight)
-                view.body.xScale = view.facingSign
-                view.body.yScale = 1
+                view.body.xScale = view.facingSign * size
+                view.body.yScale = size
                 view.body.zRotation = sin(t) * Style.sway
             }
 
@@ -139,6 +151,9 @@ final class EnemyRenderer {
             } else if windingUp {
                 view.body.color = Style.windupTint
                 view.body.colorBlendFactor = 0.45
+            } else if mask != 0, let tint = Self.tint(for: mask) {
+                view.body.color = tint
+                view.body.colorBlendFactor = mask & StatusKind.freeze.bit != 0 ? 0.7 : 0.4
             } else {
                 view.body.colorBlendFactor = 0
             }
@@ -162,14 +177,21 @@ final class EnemyRenderer {
         }
     }
 
+    private static func tint(for mask: UInt16) -> UIColor? {
+        for kind in StatusKind.tintPriority where mask & kind.bit != 0 {
+            return kind.tint
+        }
+        return nil
+    }
+
     /// Flashes an enemy white after a hit.
     func flash(enemyID: Int) {
         views[enemyID]?.flash = 1
     }
 
     /// Screen position and look of an enemy, for death effects.
-    func snapshot(enemyID: Int) -> (position: CGPoint, spriteID: SpriteID?, facing: CGFloat)? {
+    func snapshot(enemyID: Int) -> (position: CGPoint, spriteID: SpriteID?, facing: CGFloat, scale: CGFloat)? {
         guard let view = views[enemyID] else { return nil }
-        return (view.position, view.spriteID, view.facingSign)
+        return (view.position, view.spriteID, view.facingSign, view.sizeScale)
     }
 }

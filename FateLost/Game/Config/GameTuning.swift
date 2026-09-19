@@ -12,6 +12,7 @@ struct GameTuning {
     var combat = CombatTuning()
     var spawning = SpawnTuning()
     var enemyAI = EnemyAITuning()
+    var progression = ProgressionTuning()
     var camera = CameraTuning()
     var projection = ProjectionTuning()
     var controls = ControlsTuning()
@@ -104,6 +105,42 @@ struct EnemyAITuning {
     /// Enemies vary their speed by up to ± this fraction so crowds don't
     /// march in lockstep.
     var speedVariance: CGFloat = 0.12
+}
+
+/// Experience, levels and the pace at which the player and the horde grow.
+struct ProgressionTuning {
+    /// Experience to reach level 2.
+    var baseRequirement: Double = 14
+    /// Added per level to the requirement.
+    var linearGrowth: Double = 11
+    /// Added per level squared, so late levels take a little longer.
+    var quadraticGrowth: Double = 0.3
+    /// Weapon and skill damage gained per level. Everyone gets stronger with
+    /// levels whatever they pick, so points buy new ways to fight rather
+    /// than the baseline needed to keep up.
+    var damageGrowthPerLevel: Double = 0.07
+    var healthPerLevel: Double = 4
+    /// Fraction of max health restored on levelling up.
+    var levelUpHeal: Double = 0.15
+
+    /// The burst of fate energy released on levelling up.
+    var levelUpBurstRadius: CGFloat = 4.2
+    /// As a multiple of skill power.
+    var levelUpBurstPower: Double = 3
+    var levelUpBurstKnockback: CGFloat = 3.4
+    var levelUpImmunity: Double = 1
+
+    /// Enemy health multiplier grows by this per minute…
+    var enemyHealthPerMinute: Double = 0.1
+    /// …and this per minute squared.
+    var enemyHealthPerMinuteSquared: Double = 0.012
+    var enemyDamagePerMinute: Double = 0.05
+
+    /// Experience needed to go from `level` to the next.
+    func requirement(toAdvanceFrom level: Int) -> Int {
+        let steps = Double(max(level, 1) - 1)
+        return Int((baseRequirement + linearGrowth * steps + quadraticGrowth * steps * steps).rounded())
+    }
 }
 
 struct CameraTuning {

@@ -8,9 +8,8 @@ import Foundation
 /// Projectiles with a splash radius burst on impact, damaging everything
 /// around the point of contact.
 struct ProjectileSystem {
-    /// Fraction of standard knockback a projectile hit applies.
-    private static let knockbackScale: CGFloat = 0.45
-    private static let splashKnockbackScale: CGFloat = 0.7
+    /// Fraction of a projectile's knockback its splash applies.
+    private static let splashKnockbackScale: CGFloat = 1.4
 
     func step(_ combat: inout CombatState, dt: TimeInterval) {
         guard !combat.projectiles.isEmpty else { return }
@@ -62,31 +61,36 @@ struct ProjectileSystem {
 
         if projectile.splashRadius > 0 {
             burst(at: combat.enemies.positions[enemy], projectile: projectile, combat: &combat)
-            return true
+            return projectile.pierceRemaining <= 0 || consumePierce(&projectile)
         }
 
-        combat.damageEnemy(at: enemy, base: projectile.baseDamage, direction: direction,
-                           knockbackScale: Self.knockbackScale)
-        if projectile.pierceRemaining > 0 {
-            projectile.pierceRemaining -= 1
-            return false
-        }
-        return true
+        var hit = projectile.hit
+        hit.direction = direction
+        combat.strike(enemy, with: hit)
+        return projectile.pierceRemaining <= 0 || consumePierce(&projectile)
+    }
+
+    /// Uses up one pierce; returns false so the projectile carries on.
+    private func consumePierce(_ projectile: inout Projectile) -> Bool {
+        projectile.pierceRemaining -= 1
+        return false
     }
 
     private func burst(at center: CGPoint, projectile: Projectile, combat: inout CombatState) {
         let radius = projectile.splashRadius
         let reach = radius + combat.largestEnemyRadius
-        combat.events.append(.explosion(position: center, radius: radius))
+        combat.events.append(.burst(position: center, radius: radius, visual: projectile.visual))
         combat.nearbySecondary.removeAll(keepingCapacity: true)
         combat.grid.query(around: center, radius: reach, into: &combat.nearbySecondary)
-        for index in combat.nearbySecondary where index < combat.enemies.count {
+        let candidates = combat.nearbySecondary
+        for index in candidates where index < combat.enemies.count {
             let offset = combat.world.delta(from: center, to: combat.enemies.positions[index])
             let distance = offset.length
             guard distance <= radius + combat.enemies.definition(at: index).radius else { continue }
-            let direction = distance > 0.0001 ? offset / distance : projectile.direction
-            combat.damageEnemy(at: index, base: projectile.baseDamage, direction: direction,
-                               knockbackScale: Self.splashKnockbackScale)
+            var hit = projectile.hit
+            hit.direction = distance > 0.0001 ? offset / distance : projectile.direction
+            hit.knockback = projectile.hit.knockback * Self.splashKnockbackScale
+            combat.strike(index, with: hit)
         }
     }
 }

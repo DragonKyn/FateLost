@@ -25,7 +25,7 @@ private enum Fixture {
     static let dummy = EnemyDefinition(
         id: "test.dummy", name: "Dummy", maxHealth: 1000, moveSpeed: 0, radius: 0.3, attackDamage: 0,
         attackReach: 0, attackWindup: 1, attackCooldown: 1000, knockbackResistance: 1, damageType: .physical,
-        spriteID: .enemyGoblin
+        behavior: .melee, experience: 0, spawnWeight: 0, earliestMinute: 0, spriteVariants: [.enemyGoblin]
     )
 
     static func noCrits() -> CombatTuning {
@@ -236,7 +236,7 @@ final class WeaponSystemTests: XCTestCase {
     private func swingOnce(_ weapon: WeaponDefinition, _ combat: inout CombatState, _ player: inout PlayerState) {
         var system = WeaponSystem(weapon: weapon, tuning: combat.tuning)
         combat.rebuildGrid()
-        system.step(&combat, player: &player, dt: Fixture.dt)
+        system.step(&combat, player: &player, form: nil, dt: Fixture.dt)
     }
 
     func testSwordHitsInsideTheArcOnly() {
@@ -258,7 +258,7 @@ final class WeaponSystemTests: XCTestCase {
         Fixture.addEnemy(&combat, at: player.position + CGPoint(x: 6, y: 0), definition: Fixture.dummy)
         var system = WeaponSystem(weapon: StarterWeapons.sword, tuning: combat.tuning)
         combat.rebuildGrid()
-        system.step(&combat, player: &player, dt: Fixture.dt)
+        system.step(&combat, player: &player, form: nil, dt: Fixture.dt)
 
         XCTAssertTrue(combat.events.isEmpty)
         // Still ready: it swings the moment something steps in.
@@ -294,7 +294,7 @@ final class WeaponSystemTests: XCTestCase {
         let projectiles = ProjectileSystem()
         for _ in 0..<40 {
             combat.rebuildGrid()
-            weapon.step(&combat, player: &player, dt: Fixture.dt)
+            weapon.step(&combat, player: &player, form: nil, dt: Fixture.dt)
             projectiles.step(&combat, dt: Fixture.dt)
         }
         XCTAssertLessThan(combat.enemies.health[target], 1000)
@@ -312,13 +312,13 @@ final class WeaponSystemTests: XCTestCase {
         let projectiles = ProjectileSystem()
         for _ in 0..<60 {
             combat.rebuildGrid()
-            weapon.step(&combat, player: &player, dt: Fixture.dt)
+            weapon.step(&combat, player: &player, form: nil, dt: Fixture.dt)
             projectiles.step(&combat, dt: Fixture.dt)
         }
         for index in indices {
             XCTAssertLessThan(combat.enemies.health[index], 1000, "enemy \(index) escaped the burst")
         }
-        XCTAssertTrue(combat.events.contains { if case .explosion = $0 { return true } else { return false } })
+        XCTAssertTrue(combat.events.contains { if case .burst = $0 { return true } else { return false } })
     }
 }
 

@@ -19,6 +19,7 @@ struct EnemyStore {
     var positions: [CGPoint] = []
     var knockback: [CGPoint] = []
     var health: [Double] = []
+    var maxHealth: [Double] = []
     var speedScale: [CGFloat] = []
     /// Last movement direction, for facing.
     var heading: [CGPoint] = []
@@ -29,10 +30,23 @@ struct EnemyStore {
     /// Cached push away from neighbours, refreshed on a staggered schedule.
     var separation: [CGPoint] = []
 
+    /// Bit per active `StatusKind`, for quick checks.
+    var statusMask: [UInt16] = []
+    /// Seconds left per status kind, indexed `[kind][enemy]`.
+    var statusTime: [[Float]] = []
+    /// Strength per status kind, indexed `[kind][enemy]`.
+    var statusPotency: [[Float]] = []
+    /// Damage type of the latest hit, for "killed by" triggers.
+    var lastHitType: [UInt8] = []
+    /// Proc depth of the latest hit, so death triggers can't chain forever.
+    var lastHitDepth: [UInt8] = []
+
     var count: Int { ids.count }
     var isEmpty: Bool { ids.isEmpty }
 
     init(capacity: Int = 0) {
+        statusTime = Array(repeating: [], count: StatusKind.allCases.count)
+        statusPotency = Array(repeating: [], count: StatusKind.allCases.count)
         reserveCapacity(capacity)
     }
 
@@ -50,19 +64,37 @@ struct EnemyStore {
         definitions[kinds[index]]
     }
 
-    mutating func append(id: Int, kind: Int, position: CGPoint, speedScale scale: CGFloat) {
+    func hasStatus(_ kind: StatusKind, at index: Int) -> Bool {
+        statusMask[index] & kind.bit != 0
+    }
+
+    func potency(_ kind: StatusKind, at index: Int) -> Double {
+        statusMask[index] & kind.bit != 0 ? Double(statusPotency[kind.rawValue][index]) : 0
+    }
+
+    mutating func append(id: Int, kind: Int, position: CGPoint, speedScale scale: CGFloat,
+                         healthScale: Double = 1) {
         let definition = definitions[kind]
         ids.append(id)
         kinds.append(kind)
         positions.append(position)
         knockback.append(.zero)
-        health.append(definition.maxHealth)
+        let life = definition.maxHealth * healthScale
+        health.append(life)
+        maxHealth.append(life)
         speedScale.append(scale)
         heading.append(CGPoint(x: 1, y: 0))
         // A fresh enemy can't strike the instant it arrives.
         attackCooldown.append(definition.attackCooldown * 0.5)
         windup.append(0)
         separation.append(.zero)
+        statusMask.append(0)
+        for kind in 0..<statusTime.count {
+            statusTime[kind].append(0)
+            statusPotency[kind].append(0)
+        }
+        lastHitType.append(0)
+        lastHitDepth.append(0)
     }
 
     /// Removes the enemy at `index` by moving the last enemy into its slot.
@@ -73,11 +105,19 @@ struct EnemyStore {
         positions.swapRemove(at: index)
         knockback.swapRemove(at: index)
         health.swapRemove(at: index)
+        maxHealth.swapRemove(at: index)
         speedScale.swapRemove(at: index)
         heading.swapRemove(at: index)
         attackCooldown.swapRemove(at: index)
         windup.swapRemove(at: index)
         separation.swapRemove(at: index)
+        statusMask.swapRemove(at: index)
+        for kind in 0..<statusTime.count {
+            statusTime[kind].swapRemove(at: index)
+            statusPotency[kind].swapRemove(at: index)
+        }
+        lastHitType.swapRemove(at: index)
+        lastHitDepth.swapRemove(at: index)
     }
 
     mutating func removeAll() {
@@ -86,11 +126,19 @@ struct EnemyStore {
         positions.removeAll(keepingCapacity: true)
         knockback.removeAll(keepingCapacity: true)
         health.removeAll(keepingCapacity: true)
+        maxHealth.removeAll(keepingCapacity: true)
         speedScale.removeAll(keepingCapacity: true)
         heading.removeAll(keepingCapacity: true)
         attackCooldown.removeAll(keepingCapacity: true)
         windup.removeAll(keepingCapacity: true)
         separation.removeAll(keepingCapacity: true)
+        statusMask.removeAll(keepingCapacity: true)
+        for kind in 0..<statusTime.count {
+            statusTime[kind].removeAll(keepingCapacity: true)
+            statusPotency[kind].removeAll(keepingCapacity: true)
+        }
+        lastHitType.removeAll(keepingCapacity: true)
+        lastHitDepth.removeAll(keepingCapacity: true)
     }
 
     private mutating func reserveCapacity(_ capacity: Int) {
@@ -100,11 +148,19 @@ struct EnemyStore {
         positions.reserveCapacity(capacity)
         knockback.reserveCapacity(capacity)
         health.reserveCapacity(capacity)
+        maxHealth.reserveCapacity(capacity)
         speedScale.reserveCapacity(capacity)
         heading.reserveCapacity(capacity)
         attackCooldown.reserveCapacity(capacity)
         windup.reserveCapacity(capacity)
         separation.reserveCapacity(capacity)
+        statusMask.reserveCapacity(capacity)
+        for kind in 0..<statusTime.count {
+            statusTime[kind].reserveCapacity(capacity)
+            statusPotency[kind].reserveCapacity(capacity)
+        }
+        lastHitType.reserveCapacity(capacity)
+        lastHitDepth.reserveCapacity(capacity)
     }
 }
 

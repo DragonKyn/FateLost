@@ -52,6 +52,33 @@ extension SoundCue {
     static let arcaneBurst = SoundCue("sfx_arcane_burst", channel: .effects, gain: 0.6, minimumInterval: 0.06)
     static let playerHurt = SoundCue("sfx_player_hurt", channel: .effects, gain: 0.8, minimumInterval: 0.2)
     static let playerDeath = SoundCue("sfx_player_death", channel: .effects, gain: 0.9)
+    static let dodge = SoundCue("sfx_dodge", channel: .effects, gain: 0.5, minimumInterval: 0.15)
+    static let kegBlast = SoundCue("sfx_keg_blast", channel: .effects, gain: 0.75, minimumInterval: 0.1)
+
+    // Skills
+    static let abilityImpact = SoundCue("sfx_ab_impact", channel: .effects, gain: 0.6, minimumInterval: 0.08)
+    static let abilityFire = SoundCue("sfx_ab_fire", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilityFrost = SoundCue("sfx_ab_frost", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilityLightning = SoundCue("sfx_ab_lightning", channel: .effects, gain: 0.5, minimumInterval: 0.07)
+    static let abilityHoly = SoundCue("sfx_ab_holy", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilityShadow = SoundCue("sfx_ab_shadow", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilityNature = SoundCue("sfx_ab_nature", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilitySonic = SoundCue("sfx_ab_sonic", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let abilityBuff = SoundCue("sfx_ab_buff", channel: .effects, gain: 0.6, minimumInterval: 0.1)
+    static let summon = SoundCue("sfx_summon", channel: .effects, gain: 0.6, minimumInterval: 0.12)
+    static let dash = SoundCue("sfx_dash", channel: .effects, gain: 0.55, minimumInterval: 0.08)
+    static let heal = SoundCue("sfx_heal", channel: .effects, gain: 0.5, minimumInterval: 0.25)
+    static let shapeshift = SoundCue("sfx_shapeshift", channel: .effects, gain: 0.7, minimumInterval: 0.2)
+
+    // Progression
+    static let levelUp = SoundCue("sfx_level_up", channel: .effects, gain: 0.85, minimumInterval: 0.3)
+    /// Experience chimes climbing a pentatonic scale as embers are gathered
+    /// in quick succession.
+    static let emberChimes: [SoundCue] = (1...5).map {
+        SoundCue("sfx_ember_\($0)", channel: .effects, gain: 0.32, minimumInterval: 0.06)
+    }
+    static let skillLearn = SoundCue("ui_skill_learn", channel: .interface, gain: 0.7)
+    static let skillTreeOpen = SoundCue("ui_tree_open", channel: .interface, gain: 0.7)
 
     // Music and beds
     static let musicMenu = SoundCue("mus_menu_fate_lost", channel: .music)

@@ -40,6 +40,15 @@ final class GameHUDNode: SKNode {
         ultimateButton.position = layout.ultimateSlot
     }
 
+    /// Animates a press on slot 0–2, or 3 for the ultimate.
+    func pulseAbility(_ slot: Int) {
+        if slot < abilityButtons.count {
+            abilityButtons[slot].pulse()
+        } else {
+            ultimateButton.pulse()
+        }
+    }
+
     /// - Parameter slots: Display state for slots 0–2 followed by the ultimate.
     func showAbilities(_ slots: [AbilitySlotDisplay]) {
         for (index, button) in abilityButtons.enumerated() {

@@ -225,3 +225,52 @@ events) as one `inout` argument.
   is inaudible.
 - The session category is `.ambient`: the game respects the silent switch
   and mixes with the player's own music.
+
+## 15. Skills and progression
+
+Skills are **data, not code**. Every one of the 231 skills (`Data/Skills/`)
+is a `SkillDefinition` whose `effects` are drawn from a small shared
+vocabulary (`Game/Skills/Model/`):
+
+- `SkillEffect`: stat modifiers (always, or while a `PlayerCondition`
+  holds), bonuses against enemies matching a `TargetCondition`, statuses on
+  hit, triggered procs, weapon modifiers, abilities, companions, auras,
+  refusing death, permanent forms.
+- `EffectAction`: what abilities and procs *do*: novas, cones, chains,
+  volleys, strikes from above, zones, summons, buffs, barriers, heals,
+  dashes, stealth, forms, afflictions, pulls, cooldown refunds, and random
+  or combined actions.
+
+Numbers are `RankValue`s (a value at rank 1 plus a step per rank), resolved
+once when a build is compiled. `CompiledBuild.compile` flattens an
+allocation into arrays the step reads; nothing walks the tree during play.
+`ActionExecutor` is the single interpreter for every action, and runs queued
+actions between systems so no effect ever runs inside another system's
+enemy loop. All damage resolves in `CombatState.strike(_:with:)`.
+
+**Tree rules** (`SkillTreeRules`, configurable): tiers open at 0/3/7/12/20
+points spent in the archetype's lower tiers; later path skills need one
+earlier skill of the same path; each archetype allows one capstone. The
+tree screen edits a draft that is validated by the same rules and committed
+at once.
+
+**Avoiding forced metas.** The design choices that keep early picks free:
+
+- Weapon and skill damage both grow with character level at the same rate
+  (`SkillPower`), so nobody needs to buy baseline damage to keep up, and a
+  skill learned at level 2 is still good at level 30.
+- Rank 1 carries each skill's mechanic; further ranks add steadily, so
+  breadth and depth are both viable.
+- Damage increases stack additively and utility stats are capped (dodge,
+  cooldown reduction, life steal, crit), giving natural diminishing
+  returns.
+- Every point grants its archetype's small *resonance* bonus, so no point
+  is filler.
+- Skills are written weapon-agnostically (extra projectiles become extra
+  strikes for melee weapons, cleave becomes a burst for projectiles).
+- Capstones change how you play rather than multiplying numbers.
+
+**Experience.** Enemies drop `ExperienceOrb`s, drawn in within the pickup
+radius. Levels come quickly at first (`ProgressionTuning`); each grants a
+point, heals a little, and releases a burst that clears space before the
+tree opens. Enemies gain health and damage with time.

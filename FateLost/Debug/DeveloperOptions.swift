@@ -8,6 +8,8 @@ enum DeveloperCommand: Equatable {
     case defeatAllEnemies
     case restoreHealth
     case shakeCamera
+    case grantLevels(Int)
+    case resetSkills
 }
 
 /// Developer toggles read by the game each frame.

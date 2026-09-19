@@ -5,10 +5,26 @@ import QuartzCore
 struct GameplayHUDState: Equatable {
     var health: Double = 0
     var maxHealth: Double = 1
+    var barrier: Double = 0
     var elapsedSeconds: Int = 0
     var wave: Int = 1
     var level: Int = 1
+    /// Progress toward the next level, 0…1.
+    var experienceFraction: Double = 0
+    var unspentPoints: Int = 0
     var kills: Int = 0
+}
+
+/// The build as the skill tree screen needs it. Published when it changes.
+struct ProgressionSnapshot: Equatable {
+    var level = 1
+    var unspentPoints = 0
+    var earnedPoints = 0
+    var allocation = SkillAllocation()
+    var abilitySlots: [AbilityID?] = Array(repeating: nil, count: AbilitySlots.count)
+    var buildVersion = 0
+
+    var title: BuildTitle.Title { BuildTitle.title(for: allocation) }
 }
 
 /// How a run ended, for the summary screen.
@@ -17,6 +33,8 @@ struct RunSummary: Equatable {
     let weapon: WeaponID
     let secondsSurvived: Int
     let stats: RunStats
+    let level: Int
+    let allocation: SkillAllocation
 }
 
 /// The gameplay scene.
@@ -24,9 +42,9 @@ struct RunSummary: Equatable {
 /// A coordinator, not a god object: it owns no game rules. Each frame it
 /// turns touches into a `PlayerIntent`, advances `GameSimulation` in fixed
 /// steps, hands the resulting events to `CombatFeedback` and the resulting
-/// state to focused renderers (ground, decorations, enemies, projectiles,
-/// effects, player, camera, HUD). New gameplay belongs in simulation
-/// systems; new visuals belong in renderers.
+/// state to focused renderers (ground, decorations, zones, pickups, enemies,
+/// allies, projectiles, effects, player, camera, HUD). New gameplay belongs
+/// in simulation systems; new visuals belong in renderers.
 final class GameScene: SKScene {
     struct Dependencies {
         let tuning: GameTuning
@@ -59,6 +77,8 @@ final class GameScene: SKScene {
     private var summaryDelivered = false
     /// Scene time used for idle animation, advanced only while unpaused.
     private var animationTime: TimeInterval = 0
+    /// Ability buttons pressed since the last simulation step.
+    private var pendingAbilityPresses: UInt8 = 0
 
     /// Freezes simulation while leaving rendering alive (pause menu, level-up).
     var isGameplayPaused = false {
@@ -70,9 +90,14 @@ final class GameScene: SKScene {
 
     /// Called on the main thread whenever HUD-relevant values change.
     var onHUDStateChange: ((GameplayHUDState) -> Void)?
+    /// Called whenever the build or skill points change.
+    var onProgressionChange: ((ProgressionSnapshot) -> Void)?
+    /// Called when the player gains one or more levels.
+    var onLevelUp: ((Int) -> Void)?
     /// Called once when the run is over and the summary should be shown.
     var onRunEnded: ((RunSummary) -> Void)?
     private var lastHUDState = GameplayHUDState()
+    private var lastProgression = ProgressionSnapshot()
 
     // MARK: Layers
 
@@ -88,7 +113,10 @@ final class GameScene: SKScene {
     private let decorations: DecorationRenderer
     private let playerView: PlayerView
     private let enemyRenderer: EnemyRenderer
+    private let allyRenderer: AllyRenderer
     private let projectileRenderer: ProjectileRenderer
+    private let pickupRenderer: PickupRenderer
+    private let zoneRenderer: ZoneRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
     private let cameraController: CameraController
@@ -154,12 +182,17 @@ final class GameScene: SKScene {
         let enemies = EnemyRenderer(catalog: catalog, projection: projection, layer: standing,
                                     pointsPerWorldUnit: pointsPerWorldUnit)
         enemyRenderer = enemies
+        allyRenderer = AllyRenderer(catalog: catalog, projection: projection, layer: standing)
         projectileRenderer = ProjectileRenderer(catalog: catalog, projection: projection, layer: standing)
+        pickupRenderer = PickupRenderer(catalog: catalog, projection: projection, layer: standing)
+        zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
+                                    layer: decals)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                       standingLayer: standing, decalLayer: decals, overlayLayer: overlays)
         self.effects = effects
         feedback = CombatFeedback(effects: effects, enemies: enemies, player: player, camera: camera,
                                   projection: projection, audio: dependencies.audio, haptics: dependencies.haptics)
+        feedback.levelUpRadius = tuning.progression.levelUpBurstRadius
 
         super.init(size: CGSize(width: 1, height: 1))
         scaleMode = .resizeFill
@@ -212,6 +245,7 @@ final class GameScene: SKScene {
         view.preferredFramesPerSecond = tuning.rendering.preferredFramesPerSecond
         safeInsets = ScreenInsets(view.safeAreaInsets)
         relayout()
+        publishProgressionIfChanged(force: true)
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
@@ -236,7 +270,7 @@ final class GameScene: SKScene {
                                  followsThumb: tuning.controls.joystickFollowsThumb)
         joystickTouch = nil
         hud.joystick.show(joystick, restPosition: layout.joystickRest)
-        hud.showAbilities([])
+        updateAbilityButtons()
         performanceOverlay?.position = layout.overlayOrigin + CGPoint(x: 0, y: -44 * layout.controlScale)
 
         cameraController.configureScale(forViewSize: size)
@@ -279,10 +313,13 @@ final class GameScene: SKScene {
         simulation.cheats = SimulationCheats(godMode: dependencies.developer.godMode,
                                              spawningEnabled: dependencies.developer.spawningEnabled)
         let steps = timestep.advance(by: simulatedDelta)
-        let intent = currentIntent()
+        var intent = currentIntent()
         let started = CACurrentMediaTime()
         for _ in 0..<steps {
+            intent.abilityPresses = pendingAbilityPresses
             simulation.step(dt: timestep.step, intent: intent)
+            // A press is used by the first step that sees it.
+            pendingAbilityPresses = 0
         }
         recordSimulationTime(CACurrentMediaTime() - started)
 
@@ -290,10 +327,15 @@ final class GameScene: SKScene {
             && !simulation.isPlayerDefeated
         // Events are presented before renderers update, so a killed enemy's
         // view still exists to spawn its falling body from.
-        feedback.present(simulation.drainEvents(), lowHealth: lowHealth, dt: CGFloat(frameDelta))
+        let events = simulation.drainEvents()
+        feedback.playerPosition = simulation.player.position
+        feedback.playerSpriteID = simulation.activeForm?.sprite ?? .playerAdventurer
+        feedback.present(events, lowHealth: lowHealth, frame: renderFrame, dt: CGFloat(frameDelta))
 
         render(frameDelta: CGFloat(frameDelta))
         publishHUDStateIfChanged()
+        publishProgressionIfChanged()
+        reportLevelUps(in: events)
         deliverSummaryIfDue()
     }
 
@@ -315,6 +357,7 @@ final class GameScene: SKScene {
         playerView.position = playerScreen
         playerView.zPosition = DepthSorting.z(forScreenY: playerScreen.y)
         let screenVelocity = projection.toScreen(player.velocity)
+        playerView.setForm(simulation.activeForm)
         playerView.apply(player, screenVelocity: screenVelocity, dt: frameDelta)
 
         cameraController.shakeEnabled = dependencies.settings.settings.cameraShakeEnabled
@@ -325,14 +368,37 @@ final class GameScene: SKScene {
 
         ground.update(focusUnwrapped: renderFrame.focusUnwrapped, force: rebased)
         decorations.update(frame: renderFrame, radius: visibleWorldRadius(), force: rebased)
+        zoneRenderer.update(zones: simulation.combat.zones, frame: renderFrame, time: animationTime)
+        pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
         enemyRenderer.update(enemies: simulation.enemies, frame: renderFrame, time: animationTime, dt: frameDelta,
                              showHitboxes: dependencies.developer.showHitboxes)
+        allyRenderer.update(allies: simulation.combat.allies, frame: renderFrame, time: animationTime, dt: frameDelta)
         projectileRenderer.update(projectiles: simulation.projectiles, frame: renderFrame)
         effects.update(frame: renderFrame, dt: frameDelta)
 
         if let layout = hud.layout {
             hud.joystick.show(joystick, restPosition: layout.joystickRest)
         }
+        updateAbilityButtons()
+    }
+
+    private func updateAbilityButtons() {
+        var displays: [AbilitySlotDisplay] = []
+        for slot in 0..<AbilitySlots.count {
+            guard let id = simulation.abilitySlots[slot], let ability = SkillCatalog.ability(id),
+                  let cooldown = simulation.cooldown(forSlot: slot) else {
+                displays.append(.empty)
+                continue
+            }
+            if cooldown.remaining > 0.01, cooldown.total > 0 {
+                let progress = CGFloat(1 - cooldown.remaining / cooldown.total)
+                displays.append(.coolingDown(symbol: ability.symbol, progress: progress,
+                                             secondsRemaining: cooldown.remaining))
+            } else {
+                displays.append(.ready(symbol: ability.symbol))
+            }
+        }
+        hud.showAbilities(displays)
     }
 
     /// World-unit radius around the focus that can appear on screen, plus a
@@ -355,14 +421,45 @@ final class GameScene: SKScene {
         return max(a, b)
     }
 
+    // MARK: - Publishing
+
     private func publishHUDStateIfChanged() {
         let player = simulation.player
-        let state = GameplayHUDState(health: player.health, maxHealth: player.maxHealth,
-                                     elapsedSeconds: Int(simulation.elapsed), wave: 1, level: 1,
+        let progression = simulation.progression
+        let fraction = progression.required > 0 ? Double(progression.experience) / Double(progression.required) : 0
+        let state = GameplayHUDState(health: player.health, maxHealth: player.maxHealth, barrier: player.barrier,
+                                     elapsedSeconds: Int(simulation.elapsed), wave: 1, level: progression.level,
+                                     experienceFraction: min(1, fraction), unspentPoints: progression.unspentPoints,
                                      kills: simulation.stats.kills)
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
+    }
+
+    private func publishProgressionIfChanged(force: Bool = false) {
+        let progression = simulation.progression
+        guard force
+            || progression.level != lastProgression.level
+            || progression.unspentPoints != lastProgression.unspentPoints
+            || simulation.buildVersion != lastProgression.buildVersion
+            || simulation.abilitySlots != lastProgression.abilitySlots else { return }
+        let snapshot = ProgressionSnapshot(level: progression.level, unspentPoints: progression.unspentPoints,
+                                           earnedPoints: progression.earnedPoints, allocation: simulation.allocation,
+                                           abilitySlots: simulation.abilitySlots, buildVersion: simulation.buildVersion)
+        lastProgression = snapshot
+        onProgressionChange?(snapshot)
+    }
+
+    private func reportLevelUps(in events: [CombatEvent]) {
+        var newest: Int?
+        for event in events {
+            if case .levelUp(let level, _) = event {
+                newest = level
+            }
+        }
+        if let newest {
+            onLevelUp?(newest)
+        }
     }
 
     private func deliverSummaryIfDue() {
@@ -372,7 +469,26 @@ final class GameScene: SKScene {
         resetInput()
         onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.weapon.id,
                                secondsSurvived: Int(simulation.elapsed - sinceDefeat),
-                               stats: simulation.stats))
+                               stats: simulation.stats, level: simulation.progression.level,
+                               allocation: simulation.allocation))
+    }
+
+    // MARK: - Build
+
+    /// Commits a skill draft. Returns false if the simulation rejected it.
+    @discardableResult
+    func commitBuild(_ draft: SkillAllocation, slots: [AbilityID?]) -> Bool {
+        let accepted = simulation.commit(draft, slots: slots)
+        publishProgressionIfChanged(force: true)
+        publishHUDStateIfChanged()
+        updateAbilityButtons()
+        return accepted
+    }
+
+    func equipAbilities(_ slots: [AbilityID?]) {
+        simulation.equip(slots)
+        publishProgressionIfChanged(force: true)
+        updateAbilityButtons()
     }
 
     // MARK: - Touch input
@@ -381,8 +497,9 @@ final class GameScene: SKScene {
         guard let layout = hud.layout else { return }
         for touch in touches {
             let point = touch.location(in: hud)
-            if layout.abilitySlot(at: point) != nil {
-                // Abilities arrive with the skill system in Phase 3.
+            if let slot = layout.abilitySlot(at: point) {
+                pendingAbilityPresses |= 1 << UInt8(slot)
+                hud.pulseAbility(slot)
                 continue
             }
             if joystickTouch == nil, point.x < layout.joystickZoneMaxX {
@@ -416,6 +533,7 @@ final class GameScene: SKScene {
     func resetInput() {
         joystickTouch = nil
         joystick.end()
+        pendingAbilityPresses = 0
     }
 
     // MARK: - Developer tooling
@@ -431,6 +549,10 @@ final class GameScene: SKScene {
                 simulation.restorePlayerHealth()
             case .shakeCamera:
                 cameraController.addTrauma(0.7)
+            case .grantLevels(let count):
+                simulation.grantLevels(count)
+            case .resetSkills:
+                simulation.resetSkills()
             }
         }
     }
@@ -462,7 +584,9 @@ final class GameScene: SKScene {
         snapshot.activeDecorations = decorations.activeCount
         snapshot.enemyCount = simulation.enemies.count
         snapshot.projectileCount = simulation.projectiles.count
-        snapshot.activeEffects = effects.activeCount
+        snapshot.pickupCount = simulation.combat.orbs.count
+        snapshot.playerLevel = simulation.progression.level
+        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + allyRenderer.activeCount
         snapshot.spawnRate = simulation.currentSpawnRate
         if simulationFrames > 0 {
             snapshot.simulationMilliseconds = simulationTimeAccumulator / Double(simulationFrames) * 1000

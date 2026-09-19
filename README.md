@@ -1,6 +1,6 @@
 # Fate Lost
 
-*You begin as nobody. Every run, you decide what you become.*
+*Fate forgot you. Make it remember.*
 
 Fate Lost is a dark-fantasy isometric survival roguelite for iPhone and iPad.
 Every run starts as a classless Level 1 Adventurer: your class comes only from
@@ -12,7 +12,17 @@ iOS 17 or later.
 
 ## Status
 
-**Phase 2: Combat.** Goblins pour in from beyond the edge of the screen in
+**Phase 3: The roguelite loop.** Slain enemies leave embers of experience;
+gather them to level up. Every level releases a burst of fate energy that
+hurls the horde back, and grants a skill point to spend in a skill tree of
+231 skills across eleven archetypes (Warrior, Rogue, Ranger, Wizard,
+Sorcerer, Warlock, Cleric, Paladin, Druid, Monk, Bard), each with a shared
+core and three subclass paths ending in a capstone. Abilities go on the
+four HUD buttons; companions, auras, forms and triggered effects work on
+their own. The goblin warband now fields grunts, skulkers, spearmen, brutes
+and sappers.
+
+Phase 2 brought the combat: goblins pour in from beyond the edge of the screen in
 ever-growing numbers, chase you across the wrapping arena and telegraph their
 strikes. Your weapon attacks automatically: the Sword sweeps an arc, the Bow
 looses arrows, the Staff bursts arcane bolts on the densest cluster. Hits
@@ -25,8 +35,8 @@ play throughout.
 |---|---|---|
 | 1 Playground | App shell, menus, isometric wrapping world, joystick, camera | **Done** |
 | 2 Combat | Enemies, spawning, health, auto-attacks, Sword; music and sound | **Done** |
-| 3 Roguelite loop | XP, levels, skill points, skills, death, summary | Next |
-| 4 Variety | Bow, Staff, more enemies, pickups, shrines, loot | |
+| 3 Roguelite loop | XP, levels, skill points, the full skill tree, abilities, summary | **Done** |
+| 4 Variety | More enemies, pickups, shrines, loot | Next |
 | 5 Waves | WaveManager, elites, milestones, the Grave Warden | |
 | 6 Legacy | Legacy XP and upgrades, save/load, realm unlocks | |
 | 7 Multiclass | Hybrid prerequisites, Spellblade | |
@@ -57,6 +67,7 @@ wrench button on the main menu and in the gameplay HUD. The panel currently has:
 - hitbox display and a wrap-seam visualiser,
 - god mode, restore health, kill all enemies, and a toggle for natural spawning,
 - stress spawns of 10, 100, 250 or 500 goblins,
+- instant levels (1, 5 or 20) and a skill point refund,
 - a game speed control (0.25× to 4×) and a camera shake test,
 - an "unlock all realms" toggle.
 

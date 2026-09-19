@@ -15,7 +15,7 @@ struct MainMenuView: View {
                         .tracking(8)
                         .foregroundStyle(FLTheme.Palette.parchment)
                         .shadow(color: FLTheme.Palette.ember.opacity(0.4), radius: 16)
-                    Text("Every run, you decide what you become.")
+                    Text("Fate forgot you. Make it remember.")
                         .font(FLTheme.Typeface.heading(17))
                         .italic()
                         .foregroundStyle(FLTheme.Palette.parchmentDim)
