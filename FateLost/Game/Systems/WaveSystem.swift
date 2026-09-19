@@ -137,6 +137,17 @@ struct WaveSystem {
         state.timeInWave = 0
     }
 
+    /// Gives up on a champion that could not be placed, so a run is never
+    /// left waiting on a fight that cannot happen.
+    mutating func abandonBossWave() {
+        guard state.phase == .bossIncoming || state.phase == .bossFight else { return }
+        state.bossID = nil
+        state.bossHealth = 0
+        state.bossMaxHealth = 0
+        state.phase = .fighting
+        state.timeInWave = 0
+    }
+
     /// Developer tooling: jump straight to the next wave.
     mutating func skipToNextWave(_ combat: inout CombatState) {
         guard state.phase == .fighting else { return }

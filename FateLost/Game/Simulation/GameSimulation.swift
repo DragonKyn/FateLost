@@ -245,7 +245,13 @@ struct GameSimulation {
         guard let due, let definition = EnemyCatalog.definition(for: due) else { return }
         let id = spawner.spawnNamed(definition, into: &combat, player: player,
                                     distance: spawner.spawnRadius * 0.8)
-        guard let index = combat.index(ofEnemy: id) else { return }
+        guard let index = combat.index(ofEnemy: id) else {
+            // The champion never made it onto the field. Carry on with the
+            // wave rather than leaving the run waiting for a fight that
+            // cannot happen.
+            waves.abandonBossWave()
+            return
+        }
         let title = definition.epithet.map { "\(definition.name), \($0)" } ?? definition.name
         waves.bossArrived(id: id, title: title, health: combat.enemies.health[index], &combat)
         spawner.spawnBurst(realm.waves.escortCount, into: &combat, player: player,
