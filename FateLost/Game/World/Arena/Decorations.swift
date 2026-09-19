@@ -14,6 +14,26 @@ enum DecorationKind: String, Codable, CaseIterable {
     case rock
     case grassTuft
     case bones
+
+    // Props belonging to one realm.
+    case reeds
+    case standingWater
+    case bogStump
+    case pineTree
+    case forestStump
+    case mushrooms
+    case iceSpire
+    case frozenCorpse
+    case gibbet
+    case warBanner
+    case lavaVent
+    case obsidianShard
+    case voidRift
+    case floatingStone
+    case brokenStatue
+    case barricade
+    case skullPile
+    case blackObelisk
 }
 
 /// How a decoration is layered.
@@ -96,6 +116,78 @@ enum DecorationCatalog {
             return DecorationSpec(kind: kind, spriteID: .decorBones, layer: .groundDecal,
                                   footprintRadius: 0.4, blocksMovement: false, animation: .none,
                                   scaleRange: 0.8...1.1)
+        case .reeds:
+            return DecorationSpec(kind: kind, spriteID: .decorReeds, layer: .standing,
+                                  footprintRadius: 0.4, blocksMovement: false, animation: .none,
+                                  scaleRange: 0.8...1.25)
+        case .standingWater:
+            return DecorationSpec(kind: kind, spriteID: .decorStandingWater, layer: .groundDecal,
+                                  footprintRadius: 1.3, blocksMovement: false, animation: .none,
+                                  scaleRange: 0.9...1.5)
+        case .bogStump:
+            return DecorationSpec(kind: kind, spriteID: .decorBogStump, layer: .standing,
+                                  footprintRadius: 0.7, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.85...1.15)
+        case .pineTree:
+            return DecorationSpec(kind: kind, spriteID: .decorPineTree, layer: .standing,
+                                  footprintRadius: 1.0, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.8...1.3)
+        case .forestStump:
+            return DecorationSpec(kind: kind, spriteID: .decorForestStump, layer: .standing,
+                                  footprintRadius: 0.6, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.85...1.2)
+        case .mushrooms:
+            return DecorationSpec(kind: kind, spriteID: .decorMushrooms, layer: .standing,
+                                  footprintRadius: 0.4, blocksMovement: false, animation: .pulse,
+                                  scaleRange: 0.8...1.3)
+        case .iceSpire:
+            return DecorationSpec(kind: kind, spriteID: .decorIceSpire, layer: .standing,
+                                  footprintRadius: 0.9, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.8...1.35)
+        case .frozenCorpse:
+            return DecorationSpec(kind: kind, spriteID: .decorFrozenCorpse, layer: .groundDecal,
+                                  footprintRadius: 0.8, blocksMovement: false, animation: .none,
+                                  scaleRange: 0.9...1.1)
+        case .gibbet:
+            return DecorationSpec(kind: kind, spriteID: .decorGibbet, layer: .standing,
+                                  footprintRadius: 0.8, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.9...1.1)
+        case .warBanner:
+            return DecorationSpec(kind: kind, spriteID: .decorWarBanner, layer: .standing,
+                                  footprintRadius: 0.5, blocksMovement: false, animation: .none,
+                                  scaleRange: 0.9...1.15)
+        case .lavaVent:
+            return DecorationSpec(kind: kind, spriteID: .decorLavaVent, layer: .groundDecal,
+                                  footprintRadius: 1.2, blocksMovement: false, animation: .flicker,
+                                  scaleRange: 0.9...1.4)
+        case .obsidianShard:
+            return DecorationSpec(kind: kind, spriteID: .decorObsidianShard, layer: .standing,
+                                  footprintRadius: 0.7, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.8...1.3)
+        case .voidRift:
+            return DecorationSpec(kind: kind, spriteID: .decorVoidRift, layer: .groundDecal,
+                                  footprintRadius: 1.2, blocksMovement: false, animation: .pulse,
+                                  scaleRange: 0.9...1.4)
+        case .floatingStone:
+            return DecorationSpec(kind: kind, spriteID: .decorFloatingStone, layer: .standing,
+                                  footprintRadius: 0.9, blocksMovement: false, animation: .pulse,
+                                  scaleRange: 0.85...1.2)
+        case .brokenStatue:
+            return DecorationSpec(kind: kind, spriteID: .decorBrokenStatue, layer: .standing,
+                                  footprintRadius: 0.8, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.9...1.15)
+        case .barricade:
+            return DecorationSpec(kind: kind, spriteID: .decorBarricade, layer: .standing,
+                                  footprintRadius: 1.2, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.9...1.1)
+        case .skullPile:
+            return DecorationSpec(kind: kind, spriteID: .decorSkullPile, layer: .standing,
+                                  footprintRadius: 0.8, blocksMovement: false, animation: .none,
+                                  scaleRange: 0.85...1.2)
+        case .blackObelisk:
+            return DecorationSpec(kind: kind, spriteID: .decorBlackObelisk, layer: .standing,
+                                  footprintRadius: 0.8, blocksMovement: true, animation: .pulse,
+                                  scaleRange: 0.9...1.2)
         }
     }
 }

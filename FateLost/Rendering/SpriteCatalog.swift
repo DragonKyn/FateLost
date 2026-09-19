@@ -90,6 +90,10 @@ final class SpriteCatalog {
         .decorDeadTree, .decorDeadTreeSmall, .decorGravestone, .decorGraveCross,
         .decorRuinedPillar, .decorRuinedWall, .decorBrokenCart, .decorCampfire,
         .decorOldShrine, .decorRock, .decorGrassTuft, .decorBones,
+        .decorReeds, .decorStandingWater, .decorBogStump, .decorPineTree, .decorForestStump, .decorMushrooms,
+        .decorIceSpire, .decorFrozenCorpse, .decorGibbet, .decorWarBanner, .decorLavaVent, .decorObsidianShard,
+        .decorVoidRift, .decorFloatingStone, .decorBrokenStatue, .decorBarricade, .decorSkullPile,
+        .decorBlackObelisk,
         .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxSpark, .fxRing, .fxSplat,
     ]
 }

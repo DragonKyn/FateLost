@@ -2,9 +2,10 @@ import CoreGraphics
 
 /// Visual themes for each realm's arena.
 ///
-/// The Ashen Wilds is fully dressed. Later realms currently share its set
-/// dressing under their own palettes; each gains bespoke decorations and
-/// hazards as its realm is built out.
+/// Every realm dresses its own set. A palette alone is not a biome: the Fen
+/// has standing water and reeds, the Forest has living pines close enough to
+/// lose sight in, the Wastes have ice spires and the people who sat down out
+/// of the wind. The props are what make a realm recognisable at a glance.
 enum ArenaThemes {
     /// Colours for one realm's ground, in the order `makeTheme` expects.
     struct GroundPalette {
@@ -75,7 +76,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 1, alongY: 1, width: 1.8, meanderAmplitude: 9,
                            meanderCycles: 3, brokenChance: 0.45),
-        decorations: sharedDecorations,
+        decorations: fenDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x0D1210), vignette: RGBA(hex: 0x020806, alpha: 0.8),
                                particles: .spores, particleColor: RGBA(hex: 0x9CC48A, alpha: 0.45), particleRate: 10)
     )
@@ -89,7 +90,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 1, alongY: 2, width: 1.6, meanderAmplitude: 7,
                            meanderCycles: 2, brokenChance: 0.3),
-        decorations: denseForestDecorations,
+        decorations: forestDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x0C0B08), vignette: RGBA(hex: 0x000000, alpha: 0.85),
                                particles: .motes, particleColor: RGBA(hex: 0xD8C27A, alpha: 0.4), particleRate: 8)
     )
@@ -103,7 +104,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 2, alongY: 1, width: 2, meanderAmplitude: 5,
                            meanderCycles: 2, brokenChance: 0.35),
-        decorations: sharedDecorations,
+        decorations: wasteDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x1A1F26), vignette: RGBA(hex: 0x05080C, alpha: 0.7),
                                particles: .snow, particleColor: RGBA(hex: 0xF2F6FA, alpha: 0.8), particleRate: 30)
     )
@@ -117,7 +118,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 3, alongY: 3, width: 2.4, meanderAmplitude: 3,
                            meanderCycles: 1, brokenChance: 0.28),
-        decorations: sharedDecorations,
+        decorations: kingdomDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x100D0E), vignette: RGBA(hex: 0x060203, alpha: 0.8),
                                particles: .ash, particleColor: RGBA(hex: 0x8F8A7A, alpha: 0.5), particleRate: 16)
     )
@@ -131,7 +132,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 1, alongY: 1, width: 2, meanderAmplitude: 8,
                            meanderCycles: 2, brokenChance: 0.5),
-        decorations: sharedDecorations,
+        decorations: depthsDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x140806), vignette: RGBA(hex: 0x100200, alpha: 0.8),
                                particles: .embers, particleColor: RGBA(hex: 0xFF8A3A, alpha: 0.85), particleRate: 22)
     )
@@ -145,7 +146,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 2, alongY: 2, width: 1.8, meanderAmplitude: 10,
                            meanderCycles: 3, brokenChance: 0.55),
-        decorations: sharedDecorations,
+        decorations: shatteredDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x0B0914), vignette: RGBA(hex: 0x05020E, alpha: 0.82),
                                particles: .motes, particleColor: RGBA(hex: 0xB08CFF, alpha: 0.6), particleRate: 18)
     )
@@ -159,7 +160,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 3, alongY: 3, width: 3, meanderAmplitude: 1,
                            meanderCycles: 1, brokenChance: 0.3),
-        decorations: sharedDecorations,
+        decorations: citadelDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x0E0D0C), vignette: RGBA(hex: 0x000000, alpha: 0.8),
                                particles: .ash, particleColor: RGBA(hex: 0x9A948C, alpha: 0.5), particleRate: 12)
     )
@@ -173,7 +174,7 @@ enum ArenaThemes {
         ),
         roads: RoadNetwork(alongX: 2, alongY: 2, width: 2.5, meanderAmplitude: 4,
                            meanderCycles: 1, brokenChance: 0.6),
-        decorations: sharedDecorations,
+        decorations: gateDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x0D0606), vignette: RGBA(hex: 0x0A0000, alpha: 0.85),
                                particles: .embers, particleColor: RGBA(hex: 0xE0442A, alpha: 0.7), particleRate: 20)
     )
@@ -186,34 +187,183 @@ enum ArenaThemes {
             brokenRoad: (0x201D28, 0x16141C)
         ),
         roads: nil,
-        decorations: sharedDecorations,
+        decorations: abyssDecorations,
         atmosphere: Atmosphere(background: RGBA(hex: 0x050408), vignette: RGBA(hex: 0x000000, alpha: 0.9),
                                particles: .motes, particleColor: RGBA(hex: 0xD04AA0, alpha: 0.5), particleRate: 12)
     )
 
-    // MARK: - Shared set dressing
+    // MARK: - Set dressing, one realm at a time
 
-    private static let sharedDecorations: [DecorationRule] = [
-        .cluster(ClusterRule(name: "Ruin", instances: 8, radius: 4.5, members: [
-            ClusterMember(kind: .ruinedPillar, count: 6, arrangement: .ring),
-            ClusterMember(kind: .ruinedWall, count: 2, arrangement: .ring),
-            ClusterMember(kind: .rock, count: 3, arrangement: .scattered),
+    /// The Fen: standing water, reeds and stumps, and a drowned graveyard
+    /// nobody has been able to reach for a long time.
+    private static let fenDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Drowned Graveyard", instances: 6, radius: 5, members: [
+            ClusterMember(kind: .gravestone, count: 7, arrangement: .scattered),
+            ClusterMember(kind: .standingWater, count: 3, arrangement: .scattered),
+            ClusterMember(kind: .bones, count: 5, arrangement: .scattered),
         ])),
-        .cluster(ClusterRule(name: "Shrine", instances: 4, radius: 3, members: [
-            ClusterMember(kind: .oldShrine, count: 1, arrangement: .center),
-            ClusterMember(kind: .rock, count: 5, arrangement: .ring),
+        .cluster(ClusterRule(name: "Mire", instances: 10, radius: 4.5, members: [
+            ClusterMember(kind: .standingWater, count: 4, arrangement: .scattered),
+            ClusterMember(kind: .reeds, count: 8, arrangement: .ring),
+            ClusterMember(kind: .bogStump, count: 2, arrangement: .scattered),
         ])),
-        .scatter(kind: .deadTree, count: 120, avoidRoads: true),
-        .scatter(kind: .rock, count: 180, avoidRoads: true),
-        .scatter(kind: .bones, count: 60, avoidRoads: false),
-        .scatter(kind: .grassTuft, count: 400, avoidRoads: true),
+        .scatter(kind: .reeds, count: 420, avoidRoads: true),
+        .scatter(kind: .standingWater, count: 120, avoidRoads: true),
+        .scatter(kind: .bogStump, count: 110, avoidRoads: true),
+        .scatter(kind: .mushrooms, count: 90, avoidRoads: true),
+        .scatter(kind: .bones, count: 80, avoidRoads: false),
+        .scatter(kind: .grassTuft, count: 380, avoidRoads: true),
     ]
 
-    private static let denseForestDecorations: [DecorationRule] = [
-        .scatter(kind: .deadTree, count: 420, avoidRoads: true),
-        .scatter(kind: .deadTreeSmall, count: 300, avoidRoads: true),
-        .scatter(kind: .rock, count: 120, avoidRoads: true),
+    /// The Forest: living pines close enough to lose sight in, with the
+    /// stumps of everything that used to be between them.
+    private static let forestDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Clearing", instances: 8, radius: 5, members: [
+            ClusterMember(kind: .forestStump, count: 5, arrangement: .scattered),
+            ClusterMember(kind: .mushrooms, count: 6, arrangement: .ring),
+            ClusterMember(kind: .oldShrine, count: 1, arrangement: .center),
+        ])),
+        .scatter(kind: .pineTree, count: 460, avoidRoads: true),
+        .scatter(kind: .deadTree, count: 120, avoidRoads: true),
+        .scatter(kind: .forestStump, count: 160, avoidRoads: true),
+        .scatter(kind: .mushrooms, count: 180, avoidRoads: true),
+        .scatter(kind: .rock, count: 110, avoidRoads: true),
         .scatter(kind: .grassTuft, count: 700, avoidRoads: true),
+    ]
+
+    /// The Wastes: ice spires, and the people who sat down out of the wind.
+    private static let wasteDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Ice Field", instances: 9, radius: 5.5, members: [
+            ClusterMember(kind: .iceSpire, count: 7, arrangement: .scattered),
+            ClusterMember(kind: .frozenCorpse, count: 2, arrangement: .scattered),
+        ])),
+        .cluster(ClusterRule(name: "Lost Column", instances: 5, radius: 4, members: [
+            ClusterMember(kind: .frozenCorpse, count: 4, arrangement: .rows),
+            ClusterMember(kind: .brokenCart, count: 1, arrangement: .center),
+            ClusterMember(kind: .warBanner, count: 1, arrangement: .scattered),
+        ])),
+        .scatter(kind: .iceSpire, count: 300, avoidRoads: true),
+        .scatter(kind: .frozenCorpse, count: 70, avoidRoads: false),
+        .scatter(kind: .deadTree, count: 90, avoidRoads: true),
+        .scatter(kind: .rock, count: 150, avoidRoads: true),
+        .scatter(kind: .bones, count: 50, avoidRoads: false),
+    ]
+
+    /// The Kingdom: a country that kept its gallows in working order.
+    private static let kingdomDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Gallows Road", instances: 7, radius: 5, members: [
+            ClusterMember(kind: .gibbet, count: 4, arrangement: .rows),
+            ClusterMember(kind: .skullPile, count: 1, arrangement: .center),
+            ClusterMember(kind: .bones, count: 4, arrangement: .scattered),
+        ])),
+        .cluster(ClusterRule(name: "Muster Ground", instances: 6, radius: 4.5, members: [
+            ClusterMember(kind: .warBanner, count: 4, arrangement: .ring),
+            ClusterMember(kind: .barricade, count: 2, arrangement: .scattered),
+            ClusterMember(kind: .campfire, count: 1, arrangement: .center),
+        ])),
+        .cluster(ClusterRule(name: "Chapel Ruin", instances: 5, radius: 4, members: [
+            ClusterMember(kind: .ruinedWall, count: 3, arrangement: .ring),
+            ClusterMember(kind: .graveCross, count: 6, arrangement: .rows),
+            ClusterMember(kind: .oldShrine, count: 1, arrangement: .center),
+        ])),
+        .scatter(kind: .gibbet, count: 60, avoidRoads: true),
+        .scatter(kind: .warBanner, count: 90, avoidRoads: true),
+        .scatter(kind: .gravestone, count: 130, avoidRoads: true),
+        .scatter(kind: .deadTree, count: 110, avoidRoads: true),
+        .scatter(kind: .rock, count: 120, avoidRoads: true),
+        .scatter(kind: .bones, count: 90, avoidRoads: false),
+        .scatter(kind: .grassTuft, count: 300, avoidRoads: true),
+    ]
+
+    /// The Depths: ground that is still cooling, and does not intend to stop.
+    private static let depthsDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Fissure", instances: 10, radius: 5, members: [
+            ClusterMember(kind: .lavaVent, count: 4, arrangement: .rows),
+            ClusterMember(kind: .obsidianShard, count: 5, arrangement: .scattered),
+        ])),
+        .cluster(ClusterRule(name: "Burnt Camp", instances: 5, radius: 3.5, members: [
+            ClusterMember(kind: .skullPile, count: 1, arrangement: .center),
+            ClusterMember(kind: .obsidianShard, count: 4, arrangement: .ring),
+            ClusterMember(kind: .bones, count: 3, arrangement: .scattered),
+        ])),
+        .scatter(kind: .lavaVent, count: 150, avoidRoads: true),
+        .scatter(kind: .obsidianShard, count: 300, avoidRoads: true),
+        .scatter(kind: .rock, count: 180, avoidRoads: true),
+        .scatter(kind: .bones, count: 70, avoidRoads: false),
+        .scatter(kind: .skullPile, count: 40, avoidRoads: true),
+    ]
+
+    /// The Shattered Realm: geography that stopped agreeing with itself.
+    private static let shatteredDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Tear", instances: 11, radius: 5, members: [
+            ClusterMember(kind: .voidRift, count: 3, arrangement: .scattered),
+            ClusterMember(kind: .floatingStone, count: 5, arrangement: .ring),
+        ])),
+        .cluster(ClusterRule(name: "Stranded Ruin", instances: 6, radius: 4.5, members: [
+            ClusterMember(kind: .ruinedPillar, count: 5, arrangement: .ring),
+            ClusterMember(kind: .floatingStone, count: 3, arrangement: .scattered),
+            ClusterMember(kind: .voidRift, count: 1, arrangement: .center),
+        ])),
+        .scatter(kind: .floatingStone, count: 260, avoidRoads: true),
+        .scatter(kind: .voidRift, count: 90, avoidRoads: true),
+        .scatter(kind: .ruinedPillar, count: 90, avoidRoads: true),
+        .scatter(kind: .rock, count: 140, avoidRoads: true),
+        .scatter(kind: .bones, count: 50, avoidRoads: false),
+    ]
+
+    /// The Citadel: a siege that was lost slowly, and tidily.
+    private static let citadelDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Held Street", instances: 9, radius: 5, members: [
+            ClusterMember(kind: .barricade, count: 3, arrangement: .rows),
+            ClusterMember(kind: .ruinedWall, count: 2, arrangement: .ring),
+            ClusterMember(kind: .warBanner, count: 1, arrangement: .scattered),
+        ])),
+        .cluster(ClusterRule(name: "Court of Saints", instances: 6, radius: 4.5, members: [
+            ClusterMember(kind: .brokenStatue, count: 4, arrangement: .ring),
+            ClusterMember(kind: .ruinedPillar, count: 4, arrangement: .ring),
+            ClusterMember(kind: .oldShrine, count: 1, arrangement: .center),
+        ])),
+        .scatter(kind: .brokenStatue, count: 110, avoidRoads: true),
+        .scatter(kind: .barricade, count: 120, avoidRoads: false),
+        .scatter(kind: .ruinedWall, count: 90, avoidRoads: true),
+        .scatter(kind: .ruinedPillar, count: 140, avoidRoads: true),
+        .scatter(kind: .rock, count: 150, avoidRoads: true),
+        .scatter(kind: .bones, count: 70, avoidRoads: false),
+    ]
+
+    /// The Gate: everything the campaign has already done to you, stacked up
+    /// where you can see it.
+    private static let gateDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Trophy Ground", instances: 10, radius: 5, members: [
+            ClusterMember(kind: .skullPile, count: 3, arrangement: .ring),
+            ClusterMember(kind: .blackObelisk, count: 1, arrangement: .center),
+            ClusterMember(kind: .warBanner, count: 2, arrangement: .scattered),
+        ])),
+        .cluster(ClusterRule(name: "Broken Line", instances: 7, radius: 4.5, members: [
+            ClusterMember(kind: .barricade, count: 2, arrangement: .rows),
+            ClusterMember(kind: .brokenStatue, count: 2, arrangement: .scattered),
+            ClusterMember(kind: .lavaVent, count: 2, arrangement: .scattered),
+        ])),
+        .scatter(kind: .skullPile, count: 160, avoidRoads: true),
+        .scatter(kind: .blackObelisk, count: 60, avoidRoads: true),
+        .scatter(kind: .gibbet, count: 50, avoidRoads: true),
+        .scatter(kind: .obsidianShard, count: 120, avoidRoads: true),
+        .scatter(kind: .ruinedPillar, count: 110, avoidRoads: true),
+        .scatter(kind: .bones, count: 120, avoidRoads: false),
+    ]
+
+    /// The Abyss: obelisks, rifts, and almost nothing else. There is not
+    /// much down here, and that is the point.
+    private static let abyssDecorations: [DecorationRule] = [
+        .cluster(ClusterRule(name: "Standing Stones", instances: 12, radius: 6, members: [
+            ClusterMember(kind: .blackObelisk, count: 4, arrangement: .ring),
+            ClusterMember(kind: .voidRift, count: 2, arrangement: .center),
+        ])),
+        .scatter(kind: .blackObelisk, count: 130, avoidRoads: false),
+        .scatter(kind: .voidRift, count: 120, avoidRoads: false),
+        .scatter(kind: .floatingStone, count: 150, avoidRoads: false),
+        .scatter(kind: .skullPile, count: 70, avoidRoads: false),
+        .scatter(kind: .bones, count: 60, avoidRoads: false),
     ]
 
     // MARK: - Builder

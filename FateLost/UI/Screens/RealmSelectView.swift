@@ -19,10 +19,11 @@ struct RealmSelectView: View {
                     LazyHStack(spacing: 16) {
                         ForEach(RealmCatalog.all) { realm in
                             let unlocked = services.isRealmUnlocked(realm)
+                            let previous = RealmUnlockRules.prerequisite(for: realm, catalog: RealmCatalog.all)
                             RealmCard(realm: realm,
                                       isUnlocked: unlocked,
                                       isConquered: services.realmProgress.conquered.contains(realm.id),
-                                      prerequisite: RealmUnlockRules.prerequisite(for: realm, catalog: RealmCatalog.all))
+                                      prerequisite: previous)
                                 .onTapGesture {
                                     guard unlocked else { return }
                                     services.haptics.play(.uiTap)
@@ -66,15 +67,23 @@ private struct RealmCard: View {
                 }
             }
 
-            groundSwatch
-                .frame(height: 74)
+            RealmMap(realm: realm, isUnlocked: isUnlocked)
+                .frame(height: 96)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
 
             Text(realm.name)
                 .font(FLTheme.Typeface.heading(20))
                 .foregroundStyle(isUnlocked ? FLTheme.Palette.parchment : FLTheme.Palette.locked)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
+
+            Text(realm.introduces.joined(separator: " · "))
+                .font(FLTheme.Typeface.label(10))
+                .foregroundStyle(accent.opacity(isUnlocked ? 0.9 : 0.4))
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
 
             Text(realm.tagline)
                 .font(FLTheme.Typeface.body(13))
@@ -97,24 +106,12 @@ private struct RealmCard: View {
             }
         }
         .padding(16)
-        .frame(width: 230, height: 290)
+        .frame(width: 244, height: 326)
         .flPanel(highlighted: isUnlocked && !isConquered)
         .opacity(isUnlocked ? 1 : 0.6)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityHint(isUnlocked ? "Opens weapon selection" : "Locked")
-    }
-
-    /// Stripes of the realm's ground palette as a quick visual identity.
-    private var groundSwatch: some View {
-        let styles = realm.arena.theme.groundStyles
-        return HStack(spacing: 0) {
-            ForEach(styles.indices, id: \.self) { index in
-                styles[index].base.color
-                    .overlay(styles[index].detail.color.opacity(0.35).frame(height: 10), alignment: .bottom)
-            }
-        }
-        .saturation(isUnlocked ? 1 : 0)
     }
 
     private func stat(label: String, value: String) -> some View {
@@ -129,5 +126,49 @@ private struct RealmCard: View {
     private func romanNumeral(_ number: Int) -> String {
         let numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
         return number >= 1 && number <= numerals.count ? numerals[number - 1] : "\(number)"
+    }
+}
+
+/// The realm's actual map, generated from the same terrain a run is played
+/// on: the ground palette, the road network and the set dressing, drawn from
+/// above.
+///
+/// Generated off the main actor the first time a card appears and cached
+/// after that, with the realm's own darkness showing through until it is
+/// ready, so the screen never waits on it.
+private struct RealmMap: View {
+    let realm: RealmDefinition
+    let isUnlocked: Bool
+
+    @State private var image: UIImage?
+
+    private static let size = CGSize(width: 244, height: 96)
+
+    var body: some View {
+        ZStack {
+            realm.arena.theme.atmosphere.background.color
+            if let image {
+                Image(uiImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+            }
+            if !isUnlocked {
+                Rectangle().fill(Color.black.opacity(0.45))
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundStyle(FLTheme.Palette.locked)
+            }
+        }
+        .saturation(isUnlocked ? 1 : 0.15)
+        .animation(.easeOut(duration: 0.3), value: image != nil)
+        .task(id: realm.id) {
+            guard image == nil else { return }
+            let definition = realm
+            let size = Self.size
+            image = await Task.detached(priority: .userInitiated) {
+                RealmMapImage.image(for: definition, size: size, scale: 2)
+            }.value
+        }
+        .accessibilityHidden(true)
     }
 }

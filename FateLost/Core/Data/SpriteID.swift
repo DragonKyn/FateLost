@@ -123,6 +123,26 @@ extension SpriteID {
     static let decorGrassTuft: SpriteID = "decor.grassTuft"
     static let decorBones: SpriteID = "decor.bones"
 
+    // Set dressing that belongs to one realm, drawn by tools/art/props.py.
+    static let decorReeds: SpriteID = "decor.reeds"
+    static let decorStandingWater: SpriteID = "decor.standingWater"
+    static let decorBogStump: SpriteID = "decor.bogStump"
+    static let decorPineTree: SpriteID = "decor.pineTree"
+    static let decorForestStump: SpriteID = "decor.forestStump"
+    static let decorMushrooms: SpriteID = "decor.mushrooms"
+    static let decorIceSpire: SpriteID = "decor.iceSpire"
+    static let decorFrozenCorpse: SpriteID = "decor.frozenCorpse"
+    static let decorGibbet: SpriteID = "decor.gibbet"
+    static let decorWarBanner: SpriteID = "decor.warBanner"
+    static let decorLavaVent: SpriteID = "decor.lavaVent"
+    static let decorObsidianShard: SpriteID = "decor.obsidianShard"
+    static let decorVoidRift: SpriteID = "decor.voidRift"
+    static let decorFloatingStone: SpriteID = "decor.floatingStone"
+    static let decorBrokenStatue: SpriteID = "decor.brokenStatue"
+    static let decorBarricade: SpriteID = "decor.barricade"
+    static let decorSkullPile: SpriteID = "decor.skullPile"
+    static let decorBlackObelisk: SpriteID = "decor.blackObelisk"
+
     // Effects
     static let fxGlow: SpriteID = "fx.glow"
     static let fxFlame: SpriteID = "fx.flame"
