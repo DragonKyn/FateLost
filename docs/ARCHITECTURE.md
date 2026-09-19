@@ -274,3 +274,17 @@ at once.
 radius. Levels come quickly at first (`ProgressionTuning`); each grants a
 point, heals a little, and releases a burst that clears space before the
 tree opens. Enemies gain health and damage with time.
+
+## 16. Generated creature art
+
+Summons and shapeshift forms are drawn in `tools/art/creatures.py` on top of
+a small vector sketchbook (`artkit.py`: polygons, smooth blobs, tapers,
+ovals, curves and glows). One run rasterises a preview sheet *and* emits
+`FateLost/Rendering/PlaceholderArt+Allies.swift`, so the art that is judged
+in the preview is exactly what the game draws. Edit the Python and rerun it;
+never hand-edit the generated Swift.
+
+A summon may carry `variants`: alternative `SpriteID`s picked per ally
+(`sprite(forAlly:)`), so a raised horde is not eleven identical figures.
+`ArtTests` fails the build if any sprite the game asks for has no art, or if
+a summon or form uses a sprite the gameplay atlas does not preload.
