@@ -168,6 +168,9 @@ struct GameSimulation {
         combat.rebuildGrid()
         enemyAI.step(&combat, player: &player, godMode: cheats.godMode, dt: dt)
         flush()
+        if alive && player.isDefeated {
+            dismissPlayerForces()
+        }
 
         combat.rebuildGrid()
         if alive {
@@ -201,6 +204,20 @@ struct GameSimulation {
             syncAuras()
         }
         syncPlayerSnapshot()
+    }
+
+    /// A fallen hero's power dies with them: missiles, companions, zones,
+    /// strikes still falling and afflictions on the horde all end at once.
+    private mutating func dismissPlayerForces() {
+        combat.projectiles.removeAll()
+        combat.allies.removeAll()
+        combat.zones.removeAll()
+        combat.strikes.removeAll()
+        combat.pendingActions.removeAll()
+        combat.tauntPoints.removeAll()
+        for index in combat.enemies.statusMask.indices {
+            combat.enemies.statusMask[index] = 0
+        }
     }
 
     private mutating func flush() {
