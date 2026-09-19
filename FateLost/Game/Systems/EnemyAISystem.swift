@@ -286,14 +286,16 @@ struct EnemyAISystem {
         let damage = definition.attackDamage * combat.enemyDamageScale * combat.enemies.damageScale[index]
             * max(0, weakened)
         let direction = toTarget.lengthSquared > 0.0001 ? toTarget.normalized : combat.enemies.heading[index]
+        // A blighted goblin's blows are poison, whatever its kind usually deals.
+        let damageType = combat.enemies.strain(at: index).damageType ?? definition.damageType
 
         switch definition.behavior {
         case .exploder(let radius):
             explode(index, radius: radius, damage: damage, player: &player, combat: &combat, godMode: godMode)
             return
         case .ranged(_, let speed, let sprite):
-            loose(index, definition: definition, damage: damage, direction: direction, speed: speed,
-                  sprite: sprite, combat: &combat)
+            loose(index, definition: definition, damage: damage, type: damageType, direction: direction,
+                  speed: speed, sprite: sprite, combat: &combat)
             return
         case .charger(_, let speed, let travel):
             beginCharge(index, direction: direction, speed: speed, distance: travel, combat: &combat)
@@ -315,7 +317,7 @@ struct EnemyAISystem {
         case .enemy(let other):
             guard distance <= landingReach, other < combat.enemies.count else { return }
             // A confused enemy's blow lands on its own kind, and the kill is yours.
-            let hit = Hit(amount: damage * 2.5, type: definition.damageType, tags: [.melee], direction: direction,
+            let hit = Hit(amount: damage * 2.5, type: damageType, tags: [.melee], direction: direction,
                           knockback: 0.6, canCrit: false, depth: 1, source: .environment)
             combat.strike(other, with: hit)
         case .flee, .wander:
@@ -332,12 +334,12 @@ struct EnemyAISystem {
 
     /// A shot on its way. Enemy projectiles fly through the same system as
     /// the player's, flagged so they look the other way for something to hit.
-    private func loose(_ index: Int, definition: EnemyDefinition, damage: Double, direction: CGPoint,
-                       speed: CGFloat, sprite: SpriteID, combat: inout CombatState) {
+    private func loose(_ index: Int, definition: EnemyDefinition, damage: Double, type: DamageType,
+                       direction: CGPoint, speed: CGFloat, sprite: SpriteID, combat: inout CombatState) {
         guard direction != .zero else { return }
         let origin = combat.enemies.positions[index]
         let range = engagementRange(definition, contact: definition.radius)
-        var hit = Hit(amount: damage, type: definition.damageType, tags: [.projectile], direction: direction,
+        var hit = Hit(amount: damage, type: type, tags: [.projectile], direction: direction,
                       knockback: 0.3, canCrit: false, depth: 1, source: .environment)
         hit.status = nil
         combat.projectiles.append(Projectile(
@@ -350,7 +352,7 @@ struct EnemyAISystem {
             radius: 0.22,
             splashRadius: 0,
             spriteID: sprite,
-            visual: VisualStyle.matching(definition.damageType),
+            visual: VisualStyle.matching(type),
             isHostile: true
         ))
         combat.events.append(.projectileFired(spriteID: sprite, origin: origin, direction: direction))

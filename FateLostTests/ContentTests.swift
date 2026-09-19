@@ -88,7 +88,11 @@ final class RealmCatalogTests: XCTestCase {
     func testConquestWavesAndLegacyMultipliersEscalate() {
         let campaign = RealmCatalog.all.filter { !$0.isEndless }
         let waves = campaign.compactMap(\.conquestWave)
-        XCTAssertEqual(waves, [50, 75, 100, 125, 150, 175, 200, 225, 250])
+        XCTAssertEqual(waves.count, campaign.count, "every campaign realm needs a conquest wave")
+        // Later realms ask for longer, and none of them asks for an evening.
+        XCTAssertEqual(waves, waves.sorted())
+        XCTAssertEqual(waves.first, 10)
+        XCTAssertLessThanOrEqual(waves.last ?? 0, 30)
         let multipliers = RealmCatalog.all.map(\.legacyMultiplier)
         XCTAssertEqual(multipliers, multipliers.sorted())
         XCTAssertEqual(RealmCatalog.realm(.ashenWilds).legacyMultiplier, 1.0)

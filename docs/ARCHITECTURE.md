@@ -275,16 +275,81 @@ radius. Levels come quickly at first (`ProgressionTuning`); each grants a
 point, heals a little, and releases a burst that clears space before the
 tree opens. Enemies gain health and damage with time.
 
-## 16. Generated creature art
+## 16. Generated art
 
-Summons and shapeshift forms are drawn in `tools/art/creatures.py` on top of
-a small vector sketchbook (`artkit.py`: polygons, smooth blobs, tapers,
-ovals, curves and glows). One run rasterises a preview sheet *and* emits
-`FateLost/Rendering/PlaceholderArt+Allies.swift`, so the art that is judged
-in the preview is exactly what the game draws. Edit the Python and rerun it;
-never hand-edit the generated Swift.
+Three generators sit on a small vector sketchbook (`tools/art/artkit.py`:
+polygons, smooth blobs, tapers, ovals, curves and glows):
+
+| Generator | Draws | Emits |
+| --- | --- | --- |
+| `creatures.py` | summons and shapeshift forms | `PlaceholderArt+Allies.swift` |
+| `bestiary.py` | the horde and the ten champions | `PlaceholderArt+Bestiary.swift` |
+| `props.py` | realm set dressing | `PlaceholderArt+Props.swift` |
+
+One run rasterises a preview sheet *and* emits the Swift, so the art that is
+judged in the preview is exactly what the game draws. Edit the Python and
+rerun it; never hand-edit the generated Swift. The drawing primitives they
+all call are hand-written once in `PlaceholderArt+Drawing.swift`.
+
+`bestiary.py` is built from archetypes — robed and armoured humanoid,
+quadruped, hulk, floater, flier, arachnid — each drawn in full detail once
+and then given a palette and a few switches. `build` on the hulk changes the
+silhouette rather than the texture, because nine creatures lean on it and a
+golem must not read as a corpse-pile in grey.
 
 A summon may carry `variants`: alternative `SpriteID`s picked per ally
 (`sprite(forAlly:)`), so a raised horde is not eleven identical figures.
 `ArtTests` fails the build if any sprite the game asks for has no art, or if
 a summon or form uses a sprite the gameplay atlas does not preload.
+
+## 17. Waves, champions and the bestiary
+
+A wave is a stretch of time, not a list of bodies. `WaveSystem` owns *when*
+things happen; `SpawnSystem` owns *what* and *where*. The wave number gates
+what a roster may field (`earliestWave`) and how hard it pushes
+(`WavePlan.pressure`), so a run gets harder by changing shape rather than
+only by multiplying numbers. Every `bossEvery` waves the realm sends a
+champion from its `WavePlan`; that wave stays open until the champion falls,
+and ordinary spawning is cut to `bossSpawnShare` so the fight is against the
+champion rather than the crowd. Putting the realm's conquest champion down
+ends the run a winner, which is what opens the next realm.
+
+Behaviour is per kind and each one has its own answer: `melee` closes,
+`exploder` lights a fuse, `ranged` holds a standoff and looses, `charger`
+winds up and hurls itself in a straight line, `summoner` hangs back calling
+more of its kind. Enemy shots use the player's projectile system with
+`isHostile` set, so there is one flight and impact path, not two.
+
+Every ordinary creature rolls an `EnemyStrain` on arrival — a small bend to
+its health, speed, damage, size, damage type and colour. Bosses and elites
+never roll: they are already exactly what they are meant to be.
+
+## 18. Summons that can be lost
+
+An ally with `vitality` carries health that scales with the hero rather than
+the clock (`SummonVitality`), takes the blows enemies aim at it, and leaves a
+corpse. A fallen companion's kind waits out `resummonCooldown` before the
+build rebuilds it. Conjured blades and orbs have no `vitality`, cannot be
+touched, and simply expire.
+
+Enemies choose between the hero and the minions in front of them: a taunting
+ally wins outright inside `tauntRadius`, an ordinary summon has to be both
+close and clearly closer than the hero. `AllySystem` publishes `allyAnchors`
+once per step so the AI never walks the ally array, which changes shape
+mid-step. The player can dismiss every summon from the HUD and recall their
+companions.
+
+## 19. Legacy and the record
+
+`LegacyTree` lays out five hundred permanent upgrades from a short table per
+strand rather than hand-writing them: every node in a tier costs the same and
+grants the same size of bonus, and only the stat differs. That is the
+anti-meta rule from the skill tree carried into meta-progression — the board
+rewards hours, not an opening. A tier opens once three of the tier above it
+are taken, in that strand alone.
+
+`LegacyProfile` is the whole save: echoes, the board, conquered realms and
+`LifetimeStats`. One `Codable` value in one versioned file, so saving is one
+write and a test can build a profile in a line. `AppServices` owns it, hands
+its `modifiers` to each new run's stat sheet, and writes it whenever it
+changes.

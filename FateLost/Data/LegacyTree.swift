@@ -47,7 +47,7 @@ enum LegacyTree {
                 Grain(stat: .meleeDamage, kind: .increased, base: 0.01, title: "Close Work"),
                 Grain(stat: .attackSpeed, kind: .increased, base: 0.006, title: "Loose Wrist"),
                 Grain(stat: .physicalDamage, kind: .increased, base: 0.01, title: "Weight Behind It"),
-                Grain(stat: .knockback, kind: .increased, base: 0.015, title: "Follow Through"),
+                Grain(stat: .knockback, kind: .increased, base: 0.014, title: "Follow Through"),
             ]
         case .focus:
             return [

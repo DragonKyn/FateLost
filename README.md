@@ -104,7 +104,7 @@ FateLost/
   Resources/    asset catalogue
 FateLostTests/  XCTest unit tests
 tools/audio/    the music and sound-effect synthesiser
-tools/art/      the creature sketchbook that generates placeholder art
+tools/art/      the sketchbook that generates creature, bestiary and prop art
 docs/           architecture notes
 ```
 

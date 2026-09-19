@@ -246,7 +246,8 @@ struct GameSimulation {
         let id = spawner.spawnNamed(definition, into: &combat, player: player,
                                     distance: spawner.spawnRadius * 0.8)
         guard let index = combat.index(ofEnemy: id) else { return }
-        waves.bossArrived(id: id, title: definition.name, health: combat.enemies.health[index], &combat)
+        let title = definition.epithet.map { "\(definition.name), \($0)" } ?? definition.name
+        waves.bossArrived(id: id, title: title, health: combat.enemies.health[index], &combat)
         spawner.spawnBurst(realm.waves.escortCount, into: &combat, player: player,
                            hardCap: tuning.enemyAI.hardCap, speedVariance: tuning.enemyAI.speedVariance)
     }
