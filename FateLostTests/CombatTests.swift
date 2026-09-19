@@ -366,8 +366,11 @@ final class GameSimulationTests: XCTestCase {
     func testFallenPlayerStopsFighting() {
         var simulation = run(seed: 5, steps: 1)
         simulation.cheats.spawningEnabled = false
-        simulation.spawnEnemies(500)
-        for _ in 0..<(60 * 60) where !simulation.isPlayerDefeated {
+        // Level-up bursts clear space and heal, so keep the horde coming.
+        for step in 0..<(60 * 240) where !simulation.isPlayerDefeated {
+            if step % 60 == 0 {
+                simulation.spawnEnemies(150)
+            }
             simulation.step(dt: Fixture.dt, intent: .idle)
         }
         XCTAssertTrue(simulation.isPlayerDefeated)
