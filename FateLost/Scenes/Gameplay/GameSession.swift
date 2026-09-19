@@ -42,6 +42,7 @@ final class GameSession {
 
     /// Starts the realm's music and ambience. Called when the run appears.
     func beginPresentation() {
+        audio.setMusicDucked(false)
         audio.playMusic(MusicDirector.battleTheme(for: realm.id))
         audio.playAmbience(MusicDirector.ambience(for: realm.id))
     }

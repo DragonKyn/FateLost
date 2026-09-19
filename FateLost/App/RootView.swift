@@ -54,6 +54,8 @@ struct RootView: View {
     /// itself when the run appears.
     private func updateMusic(for screen: AppScreen) {
         guard screen != .gameplay else { return }
+        // Leaving a paused run must not leave the menu music ducked.
+        services.audio.setMusicDucked(false)
         services.audio.stopAmbience()
         services.audio.playMusic(MusicDirector.menuTheme, fadeDuration: 2)
     }

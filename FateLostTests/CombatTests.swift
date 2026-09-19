@@ -112,6 +112,7 @@ final class SpawnSystemTests: XCTestCase {
         limited.maximumAlive = 20
         limited.initialDelay = 0
         limited.baseRate = 1000
+        limited.maximumRate = 1000
         var spawner = SpawnSystem(tuning: limited, roster: [EnemyCatalog.goblin])
         var combat = Fixture.combat()
         let player = PlayerState(position: Fixture.world.center, maxHealth: 100)
