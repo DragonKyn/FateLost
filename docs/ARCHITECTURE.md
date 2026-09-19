@@ -19,9 +19,11 @@ Core/ + Data/            math, persistence, settings, content tables
   imports only Foundation and CoreGraphics, so every rule can be unit-tested
   without a scene.
 - `GameScene` coordinates and holds no rules. Each frame it converts touches
-  into a `PlayerIntent`, steps the simulation, and hands the resulting state
-  to renderers (`WrappingGroundRenderer`, `DecorationRenderer`, `PlayerView`,
-  `CameraController`, `AtmosphereRenderer`, `GameHUDNode`).
+  into a `PlayerIntent`, steps the simulation, passes the step's
+  `CombatEvent`s to `CombatFeedback`, and hands the resulting state to
+  renderers (`WrappingGroundRenderer`, `DecorationRenderer`, `EnemyRenderer`,
+  `ProjectileRenderer`, `EffectsRenderer`, `PlayerView`, `CameraController`,
+  `AtmosphereRenderer`, `GameHUDNode`).
 - **Where new code goes:** gameplay rules become systems called from
   `GameSimulation.step`. Visuals become renderers called from
   `GameScene.render`. Neither goes directly into `GameScene`.
@@ -68,22 +70,26 @@ inside fixed z bands (`DepthSorting.Band`).
 
 ## 5. Built for hundreds of entities
 
-These are already in Phase 1, before enemies exist:
-
 - `ToroidalSpatialGrid` handles broad-phase "what's near here" queries that
-  wrap across the seam. Decorations use it statically. Enemies, projectiles and
-  pickups will rebuild it every tick; `removeAll` keeps bucket capacity, so a
-  rebuild allocates nothing.
-- `NodePool` recycles nodes. Decoration nodes are pooled per sprite, and
-  enemies and projectiles will follow the same pattern.
+  wrap across the seam. Decorations use it statically. Combat rebuilds an
+  enemy grid twice per tick (before crowding and before hits); `removeAll`
+  keeps bucket capacity, so a rebuild allocates nothing.
+- `EnemyStore` keeps enemies as parallel arrays (struct of arrays). Removal
+  swaps the last enemy into the gap, so it is O(1); renderers key their
+  views by a stable enemy id, not by index.
+- Enemy separation, the costly part of crowd AI, is recomputed for half the
+  enemies each tick and cached in between (`EnemyAITuning.separationGroups`).
+  Neighbour checks stop after 12, so extreme crowds cost a bounded amount.
+- `NodePool` recycles nodes: decorations per sprite, enemies, projectiles
+  and every effect kind. Effect kinds have ceilings (damage numbers, stains,
+  bodies) so a screen-filling brawl costs a bounded amount.
 - `DecorationRenderer` only re-queries when the camera crosses a grid cell,
   so most frames do no decoration work.
 - `SpriteCatalog` packs every sprite into one runtime texture atlas so
   SpriteKit can batch draws.
 
-Phase 2 adds centralised enemy storage (struct-of-arrays in the simulation),
-staggered AI updates, and targeting through the spatial grid instead of
-scanning every enemy.
+The developer panel can spawn 500 goblins, and the performance overlay shows
+simulation milliseconds per frame, so these limits can be checked on device.
 
 ## 6. Data-driven content
 
@@ -95,8 +101,10 @@ Balance numbers live in typed Swift tables, never in logic:
   decoration scatter and atmosphere for each realm
 - `Data/StarterWeapons.swift`: weapon definitions (damage, speed, range,
   damage type, tags, delivery, targeting, rarity, sprite)
-- `Game/Config/GameTuning.swift`: feel tuning for movement, camera, controls
-  and rendering
+- `Data/EnemyCatalog.swift`: enemy definitions (health, speed, size, strike
+  damage, reach, windup, cooldown, knockback resistance) and realm rosters
+- `Game/Config/GameTuning.swift`: feel tuning for movement, combat, spawning,
+  enemy AI, camera, controls and rendering
 
 These are plain value types, so moving them to JSON later only means adding
 decoding.
@@ -163,3 +171,57 @@ SpriteKit runs on the main actor. SpriteKit nodes inherit main-actor isolation
 through `UIResponder`, and renderers and services are annotated explicitly.
 Simulation types are value types with no isolation, so they can later move
 off the main thread if profiling shows a need.
+
+## 13. Combat
+
+A simulation step runs in a fixed order: the player moves, enemies spawn,
+enemies chase, crowd and strike, the weapon attacks, projectiles fly, and
+the dead are removed. Each system is a small value type that takes the
+shared `CombatState` (enemies, projectiles, grid, random stream, stats,
+events) as one `inout` argument.
+
+- **Events, not callbacks.** Systems append `CombatEvent`s (swing, hit,
+  kill, strike telegraph, burst, player hit, defeat). The scene drains them
+  once per frame and `CombatFeedback` turns them into flashes, sparks,
+  damage numbers, bodies, shake, hit-stop, sound and haptics. Game rules
+  never depend on presentation, and feel can be tuned without touching
+  rules. Events are presented *before* renderers update, so a killed
+  enemy's view still exists to spawn its falling body from.
+- **Readable danger.** Enemy strikes have a windup (the goblin crouches and
+  reddens). Stepping out of reach during it dodges the blow. After a hit the
+  player is briefly immune, which stops a crowd landing every blow in the same
+  instant.
+- **Responsive weapons.** A weapon with nothing in reach stays ready, so it
+  fires the moment an enemy steps in rather than on a fixed beat. Melee
+  swings hit everything in their arc, plus anything standing on top of the
+  player. Targeting (`Targeting.nearest`, `.densestCluster`) goes through
+  the spatial grid.
+- **Determinism.** Combat randomness (crits, damage variance, spawn
+  positions) uses its own seeded stream derived from the run seed, so a
+  seed plus a sequence of intents always gives the same fight. Tests rely on
+  this.
+- **Spawning** happens on a ring just outside the screen's farthest corner.
+  The scene measures that from the real screen size. Some spawns are biased
+  ahead of a moving player. Enemies left far behind are moved back to the
+  ring rather than trailing uselessly.
+
+## 14. Audio
+
+`AudioManager` runs everything through one `AVAudioEngine`.
+
+- **Effects** are decoded into memory once and played on 16 round-robin
+  voices, so a play costs no allocation and the oldest sound is the one cut
+  when all voices are busy. Each `SoundCue` can have several interchangeable
+  recordings and a minimum re-trigger interval, so forty simultaneous hits
+  produce one clean impact, not a wall of noise.
+- **Music and ambience** stream from disk on two decks each, and crossfade.
+  A looping track keeps two copies queued on its player node, which makes
+  the loop sample-accurate even for AAC. `AVAudioPlayer` leaves a gap
+  there. `MusicDirector` picks tracks by context (menu, realm, defeat).
+- **Content** is synthesised by `tools/audio/render_audio.py`, which is
+  deterministic and needs only numpy. CI renders it before each build and
+  encodes music as AAC. The rendered files are not committed. Loops are
+  rendered with their reverb tail folded back onto the start, so the seam
+  is inaudible.
+- The session category is `.ambient`: the game respects the silent switch
+  and mixes with the player's own music.

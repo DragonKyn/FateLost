@@ -23,6 +23,7 @@ enum PlaceholderArt {
         switch id {
         case .playerAdventurer: return adventurer()
         case .shadow: return shadow()
+        case .enemyGoblin: return goblin()
         case .weaponSword: return sword()
         case .weaponBow: return bow()
         case .weaponStaff: return staff()
@@ -43,6 +44,10 @@ enum PlaceholderArt {
         case .fxGlow: return radialDot(size: 64)
         case .fxAshFlake: return radialDot(size: 8)
         case .fxFlame: return flame()
+        case .fxSlash: return slash()
+        case .fxSpark: return spark()
+        case .fxRing: return ring()
+        case .fxSplat: return splat()
         default: return nil
         }
     }
@@ -106,6 +111,63 @@ enum PlaceholderArt {
             ctx.restoreGState()
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    private static func goblin() -> Sprite {
+        let size = CGSize(width: 34, height: 40)
+        let footY: CGFloat = 37
+        let image = render(size) { ctx in
+            let outline = UIColor(rgb: 0x0E0C08)
+            let skin = UIColor(rgb: 0x6B7A3C)
+            let skinShade = UIColor(rgb: 0x4E5A2A)
+
+            // Bandy legs
+            fill(ctx, CGRect(x: 11, y: 28, width: 3.5, height: 8), skinShade)
+            fill(ctx, CGRect(x: 19.5, y: 28, width: 3.5, height: 8), skinShade)
+            fill(ctx, CGRect(x: 9.5, y: 34.5, width: 6, height: 2.5), UIColor(rgb: 0x2A2016))
+            fill(ctx, CGRect(x: 18.5, y: 34.5, width: 6, height: 2.5), UIColor(rgb: 0x2A2016))
+
+            // Hunched body, lit from the upper left
+            let body = [CGPoint(x: 10, y: 16), CGPoint(x: 7, y: 26), CGPoint(x: 10, y: 31),
+                        CGPoint(x: 24, y: 31), CGPoint(x: 26, y: 22), CGPoint(x: 21, y: 14)]
+            fillPolygon(ctx, body, skin)
+            fillPolygon(ctx, [CGPoint(x: 21, y: 14), CGPoint(x: 26, y: 22), CGPoint(x: 24, y: 31),
+                              CGPoint(x: 17, y: 31)], skinShade)
+            strokePolygon(ctx, body, outline, width: 1.1)
+
+            // Ragged loincloth
+            fillPolygon(ctx, [CGPoint(x: 9, y: 26), CGPoint(x: 25, y: 26), CGPoint(x: 23, y: 32),
+                              CGPoint(x: 20, y: 30), CGPoint(x: 17, y: 33), CGPoint(x: 14, y: 30),
+                              CGPoint(x: 11, y: 32)], UIColor(rgb: 0x5A3A22))
+
+            // Rusted blade held low
+            fill(ctx, CGRect(x: 25, y: 23, width: 3, height: 3.5), UIColor(rgb: 0x3A2818))
+            fillPolygon(ctx, [CGPoint(x: 26, y: 23), CGPoint(x: 31.5, y: 12), CGPoint(x: 28.5, y: 23)],
+                        UIColor(rgb: 0x8C8272))
+            stroke(ctx, from: CGPoint(x: 28, y: 21), to: CGPoint(x: 30.5, y: 14), UIColor(rgb: 0x9A5A32), width: 0.7)
+
+            // Head with long drooping ears
+            fillPolygon(ctx, [CGPoint(x: 8, y: 9), CGPoint(x: 0.5, y: 6), CGPoint(x: 7, y: 12.5)], skinShade)
+            fillPolygon(ctx, [CGPoint(x: 23, y: 9), CGPoint(x: 31, y: 5.5), CGPoint(x: 24, y: 12.5)], skinShade)
+            let head = CGRect(x: 7, y: 3, width: 17, height: 15)
+            ctx.setFillColor(skin.cgColor)
+            ctx.fillEllipse(in: head)
+            ctx.setStrokeColor(outline.cgColor)
+            ctx.setLineWidth(1.1)
+            ctx.strokeEllipse(in: head)
+
+            // Brow shadow and glowing eyes: the part that reads at a distance
+            ctx.setFillColor(UIColor(rgb: 0x2C3318).cgColor)
+            ctx.fill(CGRect(x: 10, y: 8.5, width: 11, height: 3))
+            ctx.setFillColor(UIColor(rgb: 0xF2D23C).cgColor)
+            ctx.fillEllipse(in: CGRect(x: 11.2, y: 9.2, width: 3, height: 2))
+            ctx.fillEllipse(in: CGRect(x: 16.8, y: 9.2, width: 3, height: 2))
+            // Snaggle teeth
+            ctx.setFillColor(UIColor(rgb: 0xE6DDC4).cgColor)
+            ctx.fill(CGRect(x: 12.5, y: 14, width: 1.4, height: 2))
+            ctx.fill(CGRect(x: 17.5, y: 14, width: 1.4, height: 2))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: (size.height - footY) / size.height))
     }
 
     // MARK: - Weapons and projectiles
@@ -469,6 +531,67 @@ enum PlaceholderArt {
         let image = render(CGSize(width: size, height: size)) { ctx in
             radialGradient(ctx, center: CGPoint(x: size / 2, y: size / 2), radius: size / 2,
                            inner: .white, outer: UIColor(white: 1, alpha: 0))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    /// A 120° crescent pointing along +x, brightest at its leading rim.
+    private static func slash() -> Sprite {
+        let dimension: CGFloat = 128
+        let center = CGPoint(x: dimension / 2, y: dimension / 2)
+        let image = render(CGSize(width: dimension, height: dimension)) { ctx in
+            let outer = dimension / 2 - 1
+            let bands: [(inner: CGFloat, alpha: CGFloat)] = [(0.55, 0.10), (0.68, 0.22), (0.80, 0.45), (0.90, 0.85)]
+            for band in bands {
+                let path = UIBezierPath()
+                path.addArc(withCenter: center, radius: outer, startAngle: -.pi / 3, endAngle: .pi / 3,
+                            clockwise: true)
+                path.addArc(withCenter: center, radius: outer * band.inner, startAngle: .pi / 3,
+                            endAngle: -.pi / 3, clockwise: false)
+                path.close()
+                ctx.setFillColor(UIColor(rgb: 0xFFF3DC, alpha: band.alpha).cgColor)
+                ctx.addPath(path.cgPath)
+                ctx.fillPath()
+            }
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    private static func spark() -> Sprite {
+        let dimension: CGFloat = 24
+        let image = render(CGSize(width: dimension, height: dimension)) { ctx in
+            let c = dimension / 2
+            radialGradient(ctx, center: CGPoint(x: c, y: c), radius: c * 0.6,
+                           inner: UIColor(white: 1, alpha: 0.9), outer: UIColor(white: 1, alpha: 0))
+            fillPolygon(ctx, [CGPoint(x: c, y: 0), CGPoint(x: c + 2, y: c - 2), CGPoint(x: dimension, y: c),
+                              CGPoint(x: c + 2, y: c + 2), CGPoint(x: c, y: dimension), CGPoint(x: c - 2, y: c + 2),
+                              CGPoint(x: 0, y: c), CGPoint(x: c - 2, y: c - 2)], .white)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    private static func ring() -> Sprite {
+        let dimension: CGFloat = 64
+        let image = render(CGSize(width: dimension, height: dimension)) { ctx in
+            ctx.setStrokeColor(UIColor.white.cgColor)
+            ctx.setLineWidth(3)
+            ctx.strokeEllipse(in: CGRect(x: 2, y: 2, width: dimension - 4, height: dimension - 4))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    private static func splat() -> Sprite {
+        let size = CGSize(width: 40, height: 20)
+        let image = render(size) { ctx in
+            var random = SeededRandom(seed: 41)
+            ctx.setFillColor(UIColor(white: 1, alpha: 0.85).cgColor)
+            ctx.fillEllipse(in: CGRect(x: 10, y: 5, width: 20, height: 10))
+            for _ in 0..<7 {
+                let x = CGFloat(random.range(3, 33))
+                let y = CGFloat(random.range(3, 14))
+                let r = CGFloat(random.range(1.5, 4))
+                ctx.fillEllipse(in: CGRect(x: x, y: y, width: r * 2, height: r))
+            }
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
     }

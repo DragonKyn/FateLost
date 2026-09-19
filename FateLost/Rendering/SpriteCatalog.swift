@@ -51,6 +51,10 @@ final class SpriteCatalog {
         entries[id]?.size ?? CGSize(width: 16, height: 16)
     }
 
+    func anchor(_ id: SpriteID) -> CGPoint {
+        entries[id]?.anchor ?? fallbackAnchor
+    }
+
     /// A new sprite with the id's texture, point size and anchor. Missing ids
     /// produce a magenta square so they are obvious during development.
     func makeSprite(_ id: SpriteID) -> SKSpriteNode {
@@ -65,12 +69,12 @@ final class SpriteCatalog {
     /// Every sprite the gameplay scene may use, preloaded up front so no
     /// texture is generated mid-run.
     static let gameplaySprites: [SpriteID] = [
-        .playerAdventurer, .shadow,
+        .playerAdventurer, .shadow, .enemyGoblin,
         .weaponSword, .weaponBow, .weaponStaff,
         .projectileArrow, .projectileArcaneBolt,
         .decorDeadTree, .decorDeadTreeSmall, .decorGravestone, .decorGraveCross,
         .decorRuinedPillar, .decorRuinedWall, .decorBrokenCart, .decorCampfire,
         .decorOldShrine, .decorRock, .decorGrassTuft, .decorBones,
-        .fxGlow, .fxFlame, .fxAshFlake,
+        .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxSpark, .fxRing, .fxSplat,
     ]
 }

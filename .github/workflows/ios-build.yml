@@ -40,6 +40,22 @@ jobs:
           xcodebuild -version
           swift --version
 
+      # All music and sound effects are synthesised by a script in the repo,
+      # so they're rendered fresh for every build rather than committed.
+      # Music and ambience ship as AAC; short effects stay as PCM.
+      - name: Render audio
+        run: |
+          set -euo pipefail
+          python3 -m venv .audio-venv
+          .audio-venv/bin/pip install --quiet numpy
+          .audio-venv/bin/python tools/audio/render_audio.py | tee audio-render.log
+          cd FateLost/Resources/Audio
+          for f in mus_*.wav amb_*.wav; do
+            afconvert -f m4af -d aac -b 160000 "$f" "${f%.wav}.m4a"
+            rm "$f"
+          done
+          ls -la
+
       - name: Build for device (unsigned, Release + dev tools)
         id: build
         run: |
@@ -134,6 +150,9 @@ jobs:
             grep -nE "(error:|\*\* BUILD FAILED|The following build commands failed)" xcodebuild.log 2>&1 | head -200
             echo "=== build warnings in project sources (first 80)"
             grep -nE "/FateLost/.*warning:" xcodebuild.log 2>&1 | sort -u | head -80
+            echo "=== audio"
+            cat audio-render.log 2>&1
+            ls -la "$products/FateLost.app" | grep -E "\.(m4a|wav)$" 2>&1 | head -40
             echo "=== test results"
             grep -nE "(error:|Test Case .* failed|Executed [0-9]+ tests|\*\* TEST (SUCCEEDED|FAILED)|XCTAssert)" test.log 2>&1 | head -200
           } > build-report.txt 2>&1
@@ -147,7 +166,7 @@ jobs:
         run: |
           set -euo pipefail
           workdir=$(mktemp -d)
-          cp xcodebuild.log build-report.txt "$workdir/" 2>/dev/null || true
+          cp xcodebuild.log build-report.txt audio-render.log "$workdir/" 2>/dev/null || true
           cp test.log "$workdir/" 2>/dev/null || true
           cd "$workdir"
           echo "run ${{ github.run_number }} · commit ${{ github.sha }} · $(date -u)" > README.md

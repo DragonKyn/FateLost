@@ -16,6 +16,7 @@ struct WeaponSelectView: View {
             VStack(alignment: .leading, spacing: 18) {
                 FLScreenHeader(title: "Take Up a Weapon",
                                subtitle: "\(realm.name) — your weapon does not decide what you become.") {
+                    services.audio.play(.uiBack)
                     router.show(.realmSelect)
                 }
 
@@ -26,6 +27,7 @@ struct WeaponSelectView: View {
                             .onTapGesture {
                                 guard unlocked else { return }
                                 services.haptics.play(.uiTap)
+                                services.audio.play(.uiConfirm)
                                 selectedID = weapon.id
                             }
                     }
@@ -39,6 +41,7 @@ struct WeaponSelectView: View {
                     Spacer()
                     Button("Enter the Realm") {
                         services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
                         router.startRun(.new(realm: realm.id, weapon: selectedID), services: services)
                     }
                     .buttonStyle(.flPrimary)

@@ -25,6 +25,7 @@ struct MainMenuView: View {
                 VStack(spacing: 14) {
                     Button("Play") {
                         services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
                         router.show(.realmSelect)
                     }
                     .buttonStyle(.flPrimary)

@@ -35,8 +35,14 @@ final class AppRouter {
         show(.gameplay)
     }
 
-    /// Leaves the current run and returns to the menu. Later phases route
-    /// through the death / conquest summary before arriving here.
+    /// Starts a fresh run in the same realm with the same weapon.
+    func restartRun(services: AppServices) {
+        guard let previous = activeSession?.run else { return }
+        activeSession = nil
+        startRun(.new(realm: previous.realmID, weapon: previous.starterWeaponID), services: services)
+    }
+
+    /// Leaves the current run and returns to the menu.
     func endRun() {
         activeSession = nil
         show(.mainMenu)

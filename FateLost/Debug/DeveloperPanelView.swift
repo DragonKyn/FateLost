@@ -2,9 +2,8 @@ import SwiftUI
 
 /// Developer tools. Present only in builds compiled with `FATELOST_DEVTOOLS`.
 ///
-/// Phase 1 covers world and rendering checks. Later phases add the rest of
-/// the planned toolkit here: god mode, level and XP grants, enemy/elite/boss
-/// spawning, wave jumps, item grants and collision display.
+/// Covers rendering checks, combat cheats and stress spawning. Later phases
+/// add level and XP grants, elite/boss spawning, wave jumps and item grants.
 struct DeveloperPanelView: View {
     @Environment(AppServices.self) private var services
     @Environment(AppRouter.self) private var router
@@ -44,7 +43,27 @@ private struct DeveloperOptionsForm: View {
         Form {
             Section("Overlays") {
                 Toggle("Performance Overlay", isOn: $developer.showPerformanceOverlay)
+                Toggle("Show Hitboxes", isOn: $developer.showHitboxes)
                 Toggle("Show Wrap Seams", isOn: $developer.showWrapSeams)
+            }
+            Section {
+                Toggle("God Mode", isOn: $developer.godMode)
+                Toggle("Natural Spawning", isOn: $developer.spawningEnabled)
+                Button("Restore Health") { developer.send(.restoreHealth) }
+                Button("Kill All Enemies") { developer.send(.defeatAllEnemies) }
+            } header: {
+                Text("Combat")
+            } footer: {
+                Text("Commands run when you return to the game.")
+            }
+            Section {
+                ForEach([10, 100, 250, 500], id: \.self) { count in
+                    Button("Spawn \(count) Goblins") { developer.send(.spawnEnemies(count)) }
+                }
+            } header: {
+                Text("Stress Test")
+            } footer: {
+                Text("Pair with the performance overlay to check frame rate under load.")
             }
             Section("Simulation") {
                 Picker("Game Speed", selection: $developer.gameSpeed) {
@@ -53,7 +72,7 @@ private struct DeveloperOptionsForm: View {
                     }
                 }
                 Button("Test Camera Shake") {
-                    developer.shakeTestCounter += 1
+                    developer.send(.shakeCamera)
                 }
             }
             Section("Progression") {

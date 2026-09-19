@@ -11,6 +11,10 @@ struct PerformanceSnapshot {
     var playerLevel: Int = 1
     var playerPosition: CGPoint = .zero
     var activeDecorations: Int = 0
+    var activeEffects: Int = 0
+    /// Average milliseconds per frame spent advancing the simulation.
+    var simulationMilliseconds: Double = 0
+    var spawnRate: Double = 0
 }
 
 /// Averages frame times over a short window so the FPS readout is stable.
@@ -67,7 +71,8 @@ final class PerformanceOverlayNode: SKNode {
         label.text = """
         FPS \(Int(snapshot.framesPerSecond.rounded()))   nodes \(snapshot.nodeCount)
         enemies \(snapshot.enemyCount)   proj \(snapshot.projectileCount)   pickups \(snapshot.pickupCount)
-        wave \(snapshot.wave)   level \(snapshot.playerLevel)   decor \(snapshot.activeDecorations)
+        wave \(snapshot.wave)   level \(snapshot.playerLevel)   decor \(snapshot.activeDecorations)   fx \(snapshot.activeEffects)
+        sim \(String(format: "%.2f", snapshot.simulationMilliseconds)) ms   spawn \(String(format: "%.1f", snapshot.spawnRate))/s
         pos \(String(format: "%.1f, %.1f", snapshot.playerPosition.x, snapshot.playerPosition.y))
         """
         let frame = label.calculateAccumulatedFrame()

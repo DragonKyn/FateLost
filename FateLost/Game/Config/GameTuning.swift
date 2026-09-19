@@ -9,6 +9,9 @@ import Foundation
 struct GameTuning {
     var simulation = SimulationTuning()
     var player = PlayerTuning()
+    var combat = CombatTuning()
+    var spawning = SpawnTuning()
+    var enemyAI = EnemyAITuning()
     var camera = CameraTuning()
     var projection = ProjectionTuning()
     var controls = ControlsTuning()
@@ -33,6 +36,74 @@ struct PlayerTuning {
     /// acceleration so stopping feels crisp and dodges are precise.
     var deceleration: CGFloat = 55
     var baseMaxHealth: Double = 100
+    /// Exponential decay rate of knockback on the player, per second.
+    var knockbackDecay: CGFloat = 11
+}
+
+struct CombatTuning {
+    /// World-unit radius of the player's body for enemy contact.
+    var playerRadius: CGFloat = 0.34
+    /// Seconds of immunity after the player is hit, so a crowd can't land
+    /// every blow in the same instant.
+    var invulnerabilityDuration: Double = 0.6
+    /// Speed the player is shoved at when hit, in world units per second.
+    var playerKnockbackSpeed: CGFloat = 6
+    /// Exponential decay rate of knockback on enemies, per second. Higher
+    /// stops sooner.
+    var knockbackDecay: CGFloat = 11
+    /// Speed an enemy is shoved at by a full-strength weapon hit.
+    var weaponKnockbackSpeed: CGFloat = 6.5
+    var critChance: Double = 0.05
+    var critMultiplier: Double = 1.75
+    /// Each hit rolls within ±this fraction of its base damage, so numbers
+    /// don't repeat identically.
+    var damageVariance: Double = 0.12
+    /// Extra reach beyond the weapon range when choosing a melee target, so
+    /// the swing starts as an enemy steps in rather than after it arrives.
+    var meleeAcquireSlack: CGFloat = 0.25
+    /// Enemies closer than this are hit by a melee swing whatever its arc,
+    /// so nothing standing on top of the player is missed.
+    var meleePointBlank: CGFloat = 0.55
+}
+
+struct SpawnTuning {
+    /// Quiet seconds at the start of a run to get your bearings.
+    var initialDelay: Double = 2
+    /// Enemies per second at the start.
+    var baseRate: Double = 0.7
+    /// Added to the rate every minute.
+    var rateGrowthPerMinute: Double = 0.55
+    var maximumRate: Double = 9
+    /// Natural spawning stops at this many living enemies. Developer
+    /// spawning can go past it, up to `EnemyAITuning.hardCap`.
+    var maximumAlive: Int = 300
+    /// Distance from the player enemies appear at. The scene raises it to
+    /// just beyond the visible area of the actual screen.
+    var spawnRadius: CGFloat = 12
+    /// Share of spawns placed ahead of a moving player, so running in one
+    /// direction doesn't leave the horde behind.
+    var aheadBias: Double = 0.4
+    var aheadConeDegrees: Double = 70
+    /// Enemies left this far behind are moved back to the spawn ring.
+    var recycleDistance: CGFloat = 22
+}
+
+struct EnemyAITuning {
+    /// Hard ceiling on living enemies, including developer spawns.
+    var hardCap: Int = 800
+    /// Speed, in world units per second per unit of overlap, at which
+    /// crowded enemies push apart.
+    var separationStrength: CGFloat = 5
+    /// Separation is recomputed for one of this many groups each tick, so
+    /// its cost is spread across frames.
+    var separationGroups: Int = 2
+    /// Spatial grid cell size in world units.
+    var gridCellSize: CGFloat = 1.5
+    /// Fraction of normal speed an enemy moves at while winding up a strike.
+    var windupSpeedFactor: CGFloat = 0.25
+    /// Enemies vary their speed by up to ± this fraction so crowds don't
+    /// march in lockstep.
+    var speedVariance: CGFloat = 0.12
 }
 
 struct CameraTuning {

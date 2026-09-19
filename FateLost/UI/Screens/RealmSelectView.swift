@@ -11,6 +11,7 @@ struct RealmSelectView: View {
             VStack(alignment: .leading, spacing: 18) {
                 FLScreenHeader(title: "Choose a Realm",
                                subtitle: "Each conquered realm opens the way to the next.") {
+                    services.audio.play(.uiBack)
                     router.show(.mainMenu)
                 }
 
@@ -25,6 +26,7 @@ struct RealmSelectView: View {
                                 .onTapGesture {
                                     guard unlocked else { return }
                                     services.haptics.play(.uiTap)
+                                    services.audio.play(.uiConfirm)
                                     router.show(.weaponSelect(realm.id))
                                 }
                         }

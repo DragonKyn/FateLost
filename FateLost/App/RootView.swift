@@ -28,6 +28,8 @@ struct RootView: View {
             case .gameplay:
                 if let session = router.activeSession {
                     GameplayScreen(session: session)
+                        // A restarted run is a new screen, with fresh state.
+                        .id(ObjectIdentifier(session))
                         .transition(.opacity)
                 }
             }
@@ -38,11 +40,21 @@ struct RootView: View {
         .sheet(isPresented: $router.isDeveloperPanelPresented) {
             DeveloperPanelView()
         }
+        .onAppear { updateMusic(for: router.screen) }
+        .onChange(of: router.screen) { _, screen in updateMusic(for: screen) }
         .onChange(of: scenePhase) { _, phase in
             // Never let the run continue unattended in the background.
             if phase != .active {
                 router.activeSession?.pause()
             }
         }
+    }
+
+    /// Menus share one theme; the gameplay screen starts its realm's music
+    /// itself when the run appears.
+    private func updateMusic(for screen: AppScreen) {
+        guard screen != .gameplay else { return }
+        services.audio.stopAmbience()
+        services.audio.playMusic(MusicDirector.menuTheme, fadeDuration: 2)
     }
 }

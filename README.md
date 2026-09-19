@@ -12,15 +12,20 @@ iOS 17 or later.
 
 ## Status
 
-**Phase 1: Playground.** You can launch the game, go through the menus, pick
-The Ashen Wilds and a starter weapon, and walk around a generated isometric
-arena that wraps seamlessly at every edge, using a floating touch joystick.
+**Phase 2: Combat.** Goblins pour in from beyond the edge of the screen in
+ever-growing numbers, chase you across the wrapping arena and telegraph their
+strikes. Your weapon attacks automatically: the Sword sweeps an arc, the Bow
+looses arrows, the Staff bursts arcane bolts on the densest cluster. Hits
+flash, knock back and throw damage numbers; bodies fall; the camera shakes
+and the phone buzzes when you're struck. When your health runs out, your fate
+is sealed and a summary offers another run. Original music and sound effects
+play throughout.
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 Playground | App shell, menus, isometric wrapping world, joystick, camera | **Done** |
-| 2 Combat | Enemies, spawning, health, auto-attacks, Sword | Next |
-| 3 Roguelite loop | XP, levels, skill points, skills, death, summary | |
+| 2 Combat | Enemies, spawning, health, auto-attacks, Sword; music and sound | **Done** |
+| 3 Roguelite loop | XP, levels, skill points, skills, death, summary | Next |
 | 4 Variety | Bow, Staff, more enemies, pickups, shrines, loot | |
 | 5 Waves | WaveManager, elites, milestones, the Grave Warden | |
 | 6 Legacy | Legacy XP and upgrades, save/load, realm unlocks | |
@@ -33,10 +38,14 @@ The project is authored on Windows, so builds happen on a Mac or in CI.
 - **Xcode (Mac):** open `FateLost.xcodeproj`, select the `FateLost` scheme, and run.
   You need Xcode 16 or later, because the project uses folder-synchronised groups.
   New `.swift` files under `FateLost/` or `FateLostTests/` are picked up automatically.
+- **Audio:** run `python3 tools/audio/render_audio.py` once (needs numpy) before
+  building in Xcode. It writes the game's music and effects into
+  `FateLost/Resources/Audio/`, which is not committed. Without it the game runs silently.
 - **CI:** every push to `main` runs `.github/workflows/ios-build.yml`. It:
-  1. builds an unsigned Release `.ipa` with developer tools included (artifact `FateLost-unsigned-ipa`),
-  2. runs the unit tests on an iPhone simulator, and
-  3. commits `xcodebuild.log`, `test.log` and `build-report.txt` to the `ci-logs` branch.
+  1. renders the audio and converts the music to AAC,
+  2. builds an unsigned Release `.ipa` with developer tools included (artifact `FateLost-unsigned-ipa`),
+  3. runs the unit tests on an iPhone simulator, and
+  4. commits `xcodebuild.log`, `test.log`, `audio-render.log` and `build-report.txt` to the `ci-logs` branch.
 - **On device:** install the IPA with Sideloadly, which re-signs it with your Apple ID.
 
 ## Developer tools
@@ -44,11 +53,28 @@ The project is authored on Windows, so builds happen on a Mac or in CI.
 Builds compiled with `FATELOST_DEVTOOLS` (Debug, plus the CI sideload IPA) show a
 wrench button on the main menu and in the gameplay HUD. The panel currently has:
 
-- a performance overlay (FPS, node count, entity counts, wave, level, position),
-- a wrap-seam visualiser that draws the arena boundaries so you can confirm they're invisible,
-- a game speed control (0.25× to 4×),
-- a camera shake test,
+- a performance overlay (FPS, simulation time per frame, node/enemy/projectile/effect counts, spawn rate),
+- hitbox display and a wrap-seam visualiser,
+- god mode, restore health, kill all enemies, and a toggle for natural spawning,
+- stress spawns of 10, 100, 250 or 500 goblins,
+- a game speed control (0.25× to 4×) and a camera shake test,
 - an "unlock all realms" toggle.
+
+## Music and sound
+
+Every sound in Fate Lost is original, synthesised by
+[`tools/audio/render_audio.py`](tools/audio/render_audio.py) from oscillators,
+plucked-string models, FM bells, filtered noise and convolution reverb. No
+samples, loops or third-party recordings are used, so there is nothing to
+license. The score shares one leitmotif, *Fate* (D minor: a rising fifth
+falling back by step):
+
+- **Fate Lost** (menu): solo cello, then choir, over harp and a low drone.
+- **The Ashen Wilds** (battle): taiko and driving low strings, the motif on horns and then choir.
+- **Fate Sealed** (defeat): a falling chord and the motif on a lone music box.
+
+Music loops are sample-accurate. To replace any sound with a recording, drop a
+file with the same name (`.m4a`, `.caf` or `.wav`) into the app bundle.
 
 ## Layout
 
@@ -56,15 +82,17 @@ wrench button on the main menu and in the gameplay HUD. The panel currently has:
 FateLost/
   App/          entry point, router, service container
   Core/         math, time, persistence, settings, audio, haptics (no SpriteKit)
-  Data/         content tables: realms, arena themes, starter weapons
+  Data/         content tables: realms, arena themes, starter weapons, enemies
   Game/         pure simulation: world topology, arena generation, player,
-                movement, input models, tuning. Unit-testable, no SpriteKit
+                enemies, combat systems, input models, tuning. Unit-testable,
+                no SpriteKit
   Rendering/    sprite catalogue, placeholder art, node pooling
   Scenes/       SpriteKit: GameScene coordinator, renderers, camera, HUD nodes
   UI/           SwiftUI theme, components, screens
   Debug/        developer options, overlays, panel
   Resources/    asset catalogue
 FateLostTests/  XCTest unit tests
+tools/audio/    the music and sound-effect synthesiser
 docs/           architecture notes
 ```
 

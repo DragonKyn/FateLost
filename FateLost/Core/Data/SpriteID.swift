@@ -23,6 +23,9 @@ extension SpriteID {
     static let playerAdventurer: SpriteID = "player.adventurer"
     static let shadow: SpriteID = "fx.shadow"
 
+    // Enemies
+    static let enemyGoblin: SpriteID = "enemy.goblin"
+
     // Weapons (held and icon)
     static let weaponSword: SpriteID = "weapon.sword"
     static let weaponBow: SpriteID = "weapon.bow"
@@ -51,4 +54,13 @@ extension SpriteID {
     static let fxFlame: SpriteID = "fx.flame"
     static let fxAshFlake: SpriteID = "fx.ashFlake"
     static let fxVignette: SpriteID = "fx.vignette"
+    /// Crescent sweep of a melee swing, drawn pointing along +x.
+    static let fxSlash: SpriteID = "fx.slash"
+    /// Small four-point star for hit sparks.
+    static let fxSpark: SpriteID = "fx.spark"
+    /// Circle outline, for hitboxes and shockwaves.
+    static let fxRing: SpriteID = "fx.ring"
+    /// Stain left on the ground where an enemy fell. Drawn white; tinted
+    /// per enemy.
+    static let fxSplat: SpriteID = "fx.splat"
 }

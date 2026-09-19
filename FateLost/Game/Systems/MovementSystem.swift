@@ -1,4 +1,5 @@
 import CoreGraphics
+import Foundation
 
 /// Integrates player movement on the wrapping arena.
 ///
@@ -24,7 +25,8 @@ struct MovementSystem {
             player.facing = input.normalized
         }
 
-        player.position = world.wrap(player.position + player.velocity * dt)
+        player.position = world.wrap(player.position + (player.velocity + player.knockback) * dt)
+        player.knockback = player.knockback * CGFloat(exp(-Double(tuning.knockbackDecay * dt)))
 
         if player.isMoving {
             player.strideTime += Double(dt) * Double(player.velocity.length / max(tuning.baseMoveSpeed, 0.001))

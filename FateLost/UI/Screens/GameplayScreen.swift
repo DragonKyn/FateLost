@@ -23,16 +23,39 @@ struct GameplayScreen: View {
                     .allowsHitTesting(false)
             }
 
-            if session.isPaused {
+            if let summary = session.summary {
+                RunSummaryView(
+                    summary: summary,
+                    realm: session.realm,
+                    weapon: session.weapon,
+                    onRetry: {
+                        services.audio.play(.uiConfirm)
+                        router.restartRun(services: services)
+                    },
+                    onMenu: {
+                        services.audio.play(.uiBack)
+                        router.endRun()
+                    }
+                )
+                .transition(.opacity)
+            } else if session.isPaused {
                 PauseMenu(
-                    onResume: { session.resume() },
+                    onResume: {
+                        services.audio.play(.uiConfirm)
+                        session.resume()
+                    },
                     onSettings: { router.isSettingsPresented = true },
-                    onAbandon: { router.endRun() }
+                    onAbandon: {
+                        services.audio.play(.uiBack)
+                        router.endRun()
+                    }
                 )
                 .transition(.opacity)
             }
         }
         .animation(.easeInOut(duration: 0.25), value: session.isPaused)
+        .animation(.easeInOut(duration: 0.8), value: session.summary)
+        .onAppear { session.beginPresentation() }
         .task {
             try? await Task.sleep(for: .seconds(3))
             withAnimation(.easeOut(duration: 1.2)) { showRealmTitle = false }
@@ -62,6 +85,9 @@ private struct GameplayHUDOverlay: View {
                         Text("LV \(session.hud.level)")
                         Text("WAVE \(session.hud.wave)")
                         Text(formatTime(session.hud.elapsedSeconds))
+                        Label("\(session.hud.kills)", systemImage: "flame")
+                            .labelStyle(.titleAndIcon)
+                            .accessibilityLabel("\(session.hud.kills) kills")
                     }
                     .font(FLTheme.Typeface.number(13))
                     .foregroundStyle(FLTheme.Palette.parchment)
