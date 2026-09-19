@@ -1,5 +1,16 @@
 import SpriteKit
 
+/// Sizes and colours of the slim health bar over a wounded summon.
+private enum HealthBarMetrics {
+    static let trackSize = CGSize(width: 26, height: 4)
+    static let fillSize = CGSize(width: 24, height: 2)
+    static let fillColor = UIColor(red: 0.53, green: 0.82, blue: 0.55, alpha: 1)
+    static let lowColor = UIColor(red: 0.82, green: 0.25, blue: 0.2, alpha: 1)
+    /// Seconds the bar stays fully lit after a blow.
+    static let holdSeconds: Double = 2.5
+    static let fadeSeconds: CGFloat = 1
+}
+
 /// Draws the player's allies: minions, companions and orbiting blades.
 @MainActor
 final class AllyRenderer {
@@ -7,6 +18,9 @@ final class AllyRenderer {
     private final class AllyView: SKNode {
         let shadowSprite: SKSpriteNode
         let body = SKSpriteNode()
+        /// A slim bar above the ally, shown only once it has been hurt.
+        private let healthTrack = SKSpriteNode(color: .black, size: HealthBarMetrics.trackSize)
+        private let healthFill = SKSpriteNode(color: HealthBarMetrics.fillColor, size: HealthBarMetrics.fillSize)
         var spriteID: SpriteID?
         var lastSeenFrame = 0
         var facing: CGFloat = 1
@@ -18,6 +32,28 @@ final class AllyRenderer {
             shadowSprite.zPosition = -0.5
             addChild(shadowSprite)
             addChild(body)
+            healthTrack.zPosition = 6
+            healthTrack.alpha = 0
+            healthFill.anchorPoint = CGPoint(x: 0, y: 0.5)
+            healthFill.position = CGPoint(x: -HealthBarMetrics.fillSize.width / 2, y: 0)
+            healthFill.zPosition = 1
+            healthTrack.addChild(healthFill)
+            addChild(healthTrack)
+        }
+
+        /// Fades the bar in while the ally is hurt and recently struck, and
+        /// away again once it has been left alone.
+        func showHealth(fraction: Double, timeSinceHurt: Double, height: CGFloat) {
+            guard fraction < 1 else {
+                healthTrack.alpha = 0
+                return
+            }
+            healthTrack.position = CGPoint(x: 0, y: height)
+            healthTrack.alpha = timeSinceHurt < HealthBarMetrics.holdSeconds
+                ? 1
+                : max(0, 1 - CGFloat(timeSinceHurt - HealthBarMetrics.holdSeconds) / HealthBarMetrics.fadeSeconds)
+            healthFill.xScale = max(0.001, CGFloat(fraction))
+            healthFill.color = fraction < 0.35 ? HealthBarMetrics.lowColor : HealthBarMetrics.fillColor
         }
 
         @available(*, unavailable)
@@ -42,6 +78,7 @@ final class AllyRenderer {
             view.spriteID = nil
             view.age = 0
             view.alpha = 1
+            view.showHealth(fraction: 1, timeSinceHurt: 99, height: 0)
         })
     }
 
@@ -87,6 +124,11 @@ final class AllyRenderer {
                 view.body.xScale = view.facing * scale * (1 + 0.1 * lunge)
                 view.body.yScale = scale * (1 - 0.06 * lunge)
                 view.body.zRotation = 0
+            }
+
+            if ally.isMortal {
+                view.showHealth(fraction: ally.healthFraction, timeSinceHurt: ally.timeSinceHurt,
+                                height: view.body.size.height * scale + 6)
             }
 
             // Summons rise in and fade as they expire.

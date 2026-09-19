@@ -16,6 +16,7 @@ struct GameplayScreen: View {
             GameplayHUDOverlay(session: session,
                                onPause: { session.pause() },
                                onSkills: { session.openSkillTree() },
+                               onSummons: { session.toggleSummons() },
                                onDeveloper: { openDeveloperPanel() })
 
             if showRealmTitle {
@@ -78,6 +79,7 @@ private struct GameplayHUDOverlay: View {
     let session: GameSession
     let onPause: () -> Void
     let onSkills: () -> Void
+    let onSummons: () -> Void
     let onDeveloper: () -> Void
 
     var body: some View {
@@ -102,6 +104,11 @@ private struct GameplayHUDOverlay: View {
                     .shadow(color: .black, radius: 2)
                 }
                 Spacer()
+                if session.hud.hasSummons {
+                    SummonsButton(count: session.hud.allyCount,
+                                  dismissed: session.hud.summonsDismissed,
+                                  action: onSummons)
+                }
                 SkillPointsButton(points: session.hud.unspentPoints, action: onSkills)
                 if DeveloperOptions.isAvailable {
                     hudButton(systemImage: "wrench.and.screwdriver", label: "Developer tools", action: onDeveloper)
@@ -227,6 +234,37 @@ struct ExperienceBar: View {
         .accessibilityElement()
         .accessibilityLabel("Experience")
         .accessibilityValue("\(Int(fraction * 100)) percent to next level")
+    }
+}
+
+/// Sends the player's summons away, or calls them back, and shows how many
+/// are still standing.
+private struct SummonsButton: View {
+    let count: Int
+    let dismissed: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: dismissed ? "person.badge.plus" : "person.2.slash")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(dismissed ? FLTheme.Palette.parchmentDim : FLTheme.Palette.parchment)
+                    .frame(width: 46, height: 46)
+                    .background(Circle().fill(Color.black.opacity(0.45)))
+                    .overlay(Circle().strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
+                if count > 0 {
+                    Text("\(count)")
+                        .font(FLTheme.Typeface.number(12))
+                        .foregroundStyle(FLTheme.Palette.abyss)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(Capsule().fill(FLTheme.Palette.emberBright))
+                        .offset(x: 4, y: -4)
+                }
+            }
+        }
+        .accessibilityLabel(dismissed ? "Recall your summons" : "Dismiss your summons, \(count) standing")
     }
 }
 

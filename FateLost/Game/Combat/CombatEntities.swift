@@ -18,6 +18,43 @@ struct Ally {
     let restAngle: CGFloat
     /// Seconds since it last attacked, for presentation.
     var timeSinceAttack: Double = 10
+    /// Life left. Zero max health means nothing can touch it.
+    var health: Double = 0
+    var maxHealth: Double = 0
+    /// Seconds since it was last hurt, so a health bar can fade out.
+    var timeSinceHurt: Double = 99
+
+    var isMortal: Bool { maxHealth > 0 }
+    var isSlain: Bool { maxHealth > 0 && health <= 0 }
+    var healthFraction: Double { maxHealth > 0 ? max(0, min(1, health / maxHealth)) : 1 }
+}
+
+/// One ally as the enemy AI sees it: enough to chase and strike without
+/// reaching into the ally array, which changes shape mid-step.
+struct AllyAnchor {
+    let index: Int
+    /// Stable id, checked before a blow lands in case the ally has gone.
+    let id: Int
+    let position: CGPoint
+    let radius: CGFloat
+    let taunts: Bool
+    let isMortal: Bool
+}
+
+/// How tough a conjured thing is.
+///
+/// Summons scale with the hero rather than with the clock: their life is a
+/// multiple of a footsoldier's, grown by level exactly as damage is. A
+/// summoner who never spends a point on minion toughness still fields
+/// minions that survive as long at level 40 as they did at level 4.
+enum SummonVitality {
+    /// Life of a `vitality: 1` summon at level 1.
+    static let reference: Double = 45
+
+    static func maxHealth(of spec: SummonSpec, level: Int, perLevel: Double) -> Double {
+        guard spec.vitality > 0 else { return 0 }
+        return (reference * spec.vitality * SkillPower.growth(level: level, perLevel: perLevel)).rounded()
+    }
 }
 
 /// A lasting area effect: a placed field or an aura following the player.

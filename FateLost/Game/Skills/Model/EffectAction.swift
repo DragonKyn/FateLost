@@ -229,6 +229,16 @@ struct SummonSpec: Equatable {
     /// Alternative looks, one picked per ally so a horde isn't identical.
     /// Empty means always `sprite`.
     var variants: [SpriteID] = []
+    /// Toughness, as a multiple of a footsoldier's life (see
+    /// `SummonVitality`). Zero means it cannot be hurt at all: conjured
+    /// blades and orbs have no body to cut.
+    var vitality: Double = 0
+    /// Seconds a fallen companion of this kind stays gone before it can be
+    /// called back. Heavier things take longer to rebuild.
+    var resummonCooldown: Double = 8
+
+    /// Whether enemies can hurt it.
+    var isMortal: Bool { vitality > 0 }
 
     /// The look for one particular ally.
     func sprite(forAlly id: Int) -> SpriteID {

@@ -6,8 +6,9 @@ import Foundation
 ///
 /// Each enemy heads straight for its target by the shortest route across
 /// the wrapping arena. Usually that's the player; a taunting ally nearby
-/// draws it instead, a confused enemy turns on its own kind, a terrified one
-/// flees, and a stealthed player simply can't be found. Crowding is handled
+/// draws it instead, a summon standing closer than the hero is mauled on the
+/// way past, a confused enemy turns on its own kind, a terrified one flees,
+/// and a stealthed player simply can't be found. Crowding is handled
 /// by separation: overlapping enemies push apart. That push is the expensive
 /// part, so it is recomputed for one group of enemies per tick
 /// (`separationGroups`) and cached in between.
@@ -21,6 +22,11 @@ struct EnemyAISystem {
 
     /// How close to a taunting ally an enemy must be to be drawn to it.
     static let tauntRadius: CGFloat = 3.2
+    /// How close a summon must be before an enemy bothers with it at all.
+    static let allyAggroRadius: CGFloat = 2.4
+    /// How much nearer than the hero a summon must be to be preferred. The
+    /// horde wants the player; minions are what it walks through.
+    static let allyPreferenceBias: CGFloat = 1.2
 
     init(tuning: EnemyAITuning, combatTuning: CombatTuning) {
         self.tuning = tuning
@@ -29,7 +35,7 @@ struct EnemyAISystem {
 
     private enum Goal {
         case player
-        case point(CGPoint)
+        case ally(AllyAnchor)
         case enemy(Int)
         case flee
         case wander
@@ -69,10 +75,11 @@ struct EnemyAISystem {
                 } else {
                     goal = .wander
                 }
+            } else if let anchor = preferredAlly(near: position, player: player, hidden: hidden,
+                                                 playerAlive: playerAlive, in: combat) {
+                goal = .ally(anchor)
             } else if hidden || !playerAlive {
                 goal = .wander
-            } else if let taunt = nearestTaunt(to: position, in: combat) {
-                goal = .point(taunt)
             } else {
                 goal = .player
             }
@@ -80,7 +87,7 @@ struct EnemyAISystem {
             let targetPosition: CGPoint?
             switch goal {
             case .player: targetPosition = player.position
-            case .point(let point): targetPosition = point
+            case .ally(let anchor): targetPosition = anchor.position
             case .enemy(let other): targetPosition = combat.enemies.positions[other]
             case .flee, .wander: targetPosition = nil
             }
@@ -93,6 +100,7 @@ struct EnemyAISystem {
             let contactDistance: CGFloat
             switch goal {
             case .player: contactDistance = combatTuning.playerRadius + definition.radius
+            case .ally(let anchor): contactDistance = anchor.radius + definition.radius
             case .enemy(let other): contactDistance = combat.enemies.definition(at: other).radius + definition.radius
             default: contactDistance = 0.45 + definition.radius
             }
@@ -130,7 +138,7 @@ struct EnemyAISystem {
             var chase = CGPoint.zero
             var heading = combat.enemies.heading[index]
             switch goal {
-            case .player, .point, .enemy:
+            case .player, .ally, .enemy:
                 let direction = distance > 0.0001 ? toTarget / distance : heading
                 let gap = max(0, distance - contactDistance)
                 chase = direction * min(speed, gap / max(step, 0.0001))
@@ -166,15 +174,35 @@ struct EnemyAISystem {
 
     // MARK: - Targets
 
-    private func nearestTaunt(to position: CGPoint, in combat: CombatState) -> CGPoint? {
-        guard !combat.tauntPoints.isEmpty else { return nil }
-        var best: CGPoint?
-        var bestDistance = Self.tauntRadius
-        for point in combat.tauntPoints {
-            let distance = combat.world.distance(position, point)
-            if distance < bestDistance {
-                bestDistance = distance
-                best = point
+    /// The ally this enemy would rather fight than the player, if any.
+    ///
+    /// A taunting ally wins outright inside its radius. Otherwise a summon
+    /// has to be both close and closer than the hero by a clear margin, so
+    /// minions screen their master without making them untouchable. With the
+    /// player hidden or fallen, anything within reach will do.
+    private func preferredAlly(near position: CGPoint, player: PlayerState, hidden: Bool, playerAlive: Bool,
+                               in combat: CombatState) -> AllyAnchor? {
+        guard !combat.allyAnchors.isEmpty else { return nil }
+        let unreachablePlayer = hidden || !playerAlive
+        let toPlayer = unreachablePlayer
+            ? CGFloat.greatestFiniteMagnitude
+            : combat.world.distance(position, player.position)
+
+        var best: AllyAnchor?
+        var bestScore = CGFloat.greatestFiniteMagnitude
+        for anchor in combat.allyAnchors {
+            let distance = combat.world.distance(position, anchor.position)
+            let reach = anchor.taunts ? Self.tauntRadius : Self.allyAggroRadius
+            guard distance < reach else { continue }
+            if !anchor.taunts {
+                guard anchor.isMortal else { continue }
+                guard distance + Self.allyPreferenceBias < toPlayer else { continue }
+            }
+            // Taunts come first, then whichever is nearest.
+            let score = anchor.taunts ? distance - Self.tauntRadius : distance
+            if score < bestScore {
+                bestScore = score
+                best = anchor
             }
         }
         return best
@@ -223,10 +251,19 @@ struct EnemyAISystem {
             let hit = Hit(amount: damage * 2.5, type: definition.damageType, tags: [.melee], direction: direction,
                           knockback: 0.6, canCrit: false, depth: 1, source: .environment)
             combat.strike(other, with: hit)
-        case .point, .flee, .wander:
-            // Allies can't be hurt yet; the blow glances off.
+        case .ally(let anchor):
+            guard distance <= landingReach else { return }
+            wound(anchor, amount: damage, combat: &combat)
+        case .flee, .wander:
             break
         }
+    }
+
+    /// An enemy's blow landing on a summon, if that summon is still there.
+    private func wound(_ anchor: AllyAnchor, amount: Double, combat: inout CombatState) {
+        guard anchor.isMortal, anchor.index < combat.allies.count,
+              combat.allies[anchor.index].id == anchor.id else { return }
+        AllySystem.wound(anchor.index, amount: amount, &combat)
     }
 
     /// A sapper's keg going off: hurts everything nearby, including goblins,
@@ -240,6 +277,13 @@ struct EnemyAISystem {
         let toPlayer = combat.world.delta(from: center, to: player.position)
         if !player.isDefeated, toPlayer.length <= radius + combatTuning.playerRadius {
             strikePlayer(&player, amount: damage, direction: toPlayer.normalized, combat: &combat, godMode: godMode)
+        }
+
+        // The blast takes summons with it, the same as any other bystander.
+        let anchors = combat.allyAnchors
+        for anchor in anchors where anchor.isMortal {
+            guard combat.world.distance(center, anchor.position) <= radius + anchor.radius else { continue }
+            wound(anchor, amount: damage, combat: &combat)
         }
 
         combat.nearbySecondary.removeAll(keepingCapacity: true)

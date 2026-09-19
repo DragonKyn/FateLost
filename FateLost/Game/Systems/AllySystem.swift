@@ -4,8 +4,12 @@ import Foundation
 /// Moves and fights with the player's allies: summoned minions, permanent
 /// companions and orbiting blades.
 ///
-/// Allies can't be hurt (yet): temporary ones expire, companions stay. A
-/// taunting ally draws nearby enemies to itself instead of the player.
+/// Anything with a body can be cut down: an ally with `vitality` carries
+/// health, is struck by the same blows the player would take, and leaves a
+/// corpse behind. A fallen companion stays gone for its `resummonCooldown`
+/// before the build calls it back, so losing one costs something. Conjured
+/// blades and orbs have no body and simply expire. A taunting ally draws
+/// nearby enemies to itself instead of the player.
 enum AllySystem {
     /// Ceiling on temporary allies, so summon-heavy builds stay affordable.
     static let maximumTemporary = 48
@@ -22,9 +26,54 @@ enum AllySystem {
             offset = 1.1
         }
         let position = combat.world.wrap(center + CGPoint(x: cos(angle), y: sin(angle)) * offset)
+        let life = SummonVitality.maxHealth(of: spec, level: combat.summonVitalityLevel,
+                                            perLevel: combat.summonVitalityGrowth)
         combat.allies.append(Ally(id: combat.makeEntityID(), spec: spec, position: position, remaining: duration,
                                   cooldown: combat.random.range(0, spec.attackInterval), angle: angle,
-                                  companionKey: companionKey, restAngle: angle))
+                                  companionKey: companionKey, restAngle: angle, health: life, maxHealth: life))
+    }
+
+    /// An enemy's blow landing on an ally. Returns true if it was slain.
+    @discardableResult
+    static func wound(_ index: Int, amount: Double, _ combat: inout CombatState) -> Bool {
+        guard index < combat.allies.count, combat.allies[index].isMortal else { return false }
+        combat.allies[index].health -= max(0, amount)
+        combat.allies[index].timeSinceHurt = 0
+        guard combat.allies[index].isSlain else { return false }
+        fall(index, &combat)
+        return true
+    }
+
+    /// Removes a slain ally and starts the wait before its kind returns.
+    private static func fall(_ index: Int, _ combat: inout CombatState) {
+        let ally = combat.allies[index]
+        combat.events.append(.allyFell(position: ally.position, visual: ally.spec.visual))
+        combat.stats.summonsLost += 1
+        if let key = ally.companionKey {
+            combat.summonCooldowns[key] = ally.spec.resummonCooldown
+        }
+        combat.allies.swapRemove(at: index)
+    }
+
+    /// Sends every ally away. Companions stay gone until recalled, so
+    /// dismissing them is a real choice rather than a blink.
+    static func dismissAll(_ combat: inout CombatState) {
+        combat.companionsDismissed = true
+        combat.allies.removeAll(keepingCapacity: true)
+        combat.allyAnchors.removeAll(keepingCapacity: true)
+    }
+
+    /// Counts down the wait on each fallen companion kind.
+    static func tickCooldowns(_ combat: inout CombatState, dt: TimeInterval) {
+        guard !combat.summonCooldowns.isEmpty else { return }
+        for (key, remaining) in combat.summonCooldowns {
+            let left = remaining - dt
+            if left <= 0 {
+                combat.summonCooldowns.removeValue(forKey: key)
+            } else {
+                combat.summonCooldowns[key] = left
+            }
+        }
     }
 
     /// Drops the oldest temporary allies beyond the ceiling.
@@ -45,6 +94,10 @@ enum AllySystem {
     /// Keeps the build's companions alive at the right number, replacing
     /// any whose skill has since ranked up.
     static func syncCompanions(_ combat: inout CombatState, player: PlayerState) {
+        guard !combat.companionsDismissed else {
+            combat.allies.removeAll { $0.companionKey != nil }
+            return
+        }
         let rules = combat.build.companions
         let extra = Int(combat.sheet[.summonCount])
         var counts: [String: Int] = [:]
@@ -60,6 +113,8 @@ enum AllySystem {
             let want = rule.count + extra
             let have = counts[rule.key, default: 0]
             guard want > have else { continue }
+            // A companion cut down does not walk back out of the dark at once.
+            guard combat.summonCooldowns[rule.key] == nil else { continue }
             for slot in have..<want {
                 spawn(rule.spec, around: player.position, duration: .infinity, companionKey: rule.key, slot: slot,
                       of: want, &combat)
@@ -68,7 +123,7 @@ enum AllySystem {
     }
 
     static func step(_ combat: inout CombatState, player: PlayerState, dt: TimeInterval) {
-        combat.tauntPoints.removeAll(keepingCapacity: true)
+        combat.allyAnchors.removeAll(keepingCapacity: true)
         guard !combat.allies.isEmpty else { return }
 
         var index = combat.allies.count - 1
@@ -80,6 +135,12 @@ enum AllySystem {
                 index -= 1
                 continue
             }
+            if ally.isSlain {
+                fall(index, &combat)
+                index -= 1
+                continue
+            }
+            ally.timeSinceHurt += dt
             ally.cooldown -= dt
             ally.timeSinceAttack += dt
 
@@ -92,8 +153,10 @@ enum AllySystem {
                 ranged(&ally, range: range, projectileSpeed: projectileSpeed, sprite: sprite, player: player, dt: dt,
                        &combat)
             }
-            if ally.spec.taunts {
-                combat.tauntPoints.append(ally.position)
+            if ally.spec.taunts || ally.isMortal {
+                combat.allyAnchors.append(AllyAnchor(index: index, id: ally.id, position: ally.position,
+                                                     radius: ally.spec.radius, taunts: ally.spec.taunts,
+                                                     isMortal: ally.isMortal))
             }
             combat.allies[index] = ally
             index -= 1

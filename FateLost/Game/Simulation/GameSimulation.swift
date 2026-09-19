@@ -91,6 +91,14 @@ struct GameSimulation {
     var stats: RunStats { combat.stats }
     var sheet: StatSheet { combat.sheet }
     var isPlayerDefeated: Bool { player.isDefeated }
+    var allies: [Ally] { combat.allies }
+    /// True while the player has sent their companions away.
+    var areSummonsDismissed: Bool { combat.companionsDismissed }
+    /// Companion kinds waiting to be rebuilt, with the seconds left.
+    var summonCooldowns: [String: Double] { combat.summonCooldowns }
+    /// Whether this build fields summons at all, so the HUD can stay clear
+    /// for everyone else.
+    var hasSummons: Bool { !combat.build.companions.isEmpty || !combat.allies.isEmpty }
     /// Seconds until the weapon may attack again.
     var weaponCooldown: Double { weaponSystem.cooldown }
 
@@ -198,9 +206,13 @@ struct GameSimulation {
         if combat.killsThisStep > 0 {
             player.timeSinceKill = 0
         }
+        if alive {
+            // Cheap, and it has to run every step now that a companion can
+            // fall and its replacement has to wait its cooldown out.
+            AllySystem.syncCompanions(&combat, player: player)
+        }
         if alliesNeedSync {
             alliesNeedSync = false
-            AllySystem.syncCompanions(&combat, player: player)
             syncAuras()
         }
         syncPlayerSnapshot()
@@ -214,7 +226,7 @@ struct GameSimulation {
         combat.zones.removeAll()
         combat.strikes.removeAll()
         combat.pendingActions.removeAll()
-        combat.tauntPoints.removeAll()
+        combat.allyAnchors.removeAll()
         for index in combat.enemies.statusMask.indices {
             combat.enemies.statusMask[index] = 0
         }
@@ -266,6 +278,7 @@ struct GameSimulation {
             }
         }
         combat.cheatDeathCooldown = max(0, combat.cheatDeathCooldown - dt)
+        AllySystem.tickCooldowns(&combat, dt: dt)
     }
 
     private mutating func updateConditions() {
@@ -354,6 +367,8 @@ struct GameSimulation {
         }
         combat.sheet = sheet
         combat.level = progression.level
+        combat.summonVitalityLevel = progression.level
+        combat.summonVitalityGrowth = tuning.progression.damageGrowthPerLevel
         combat.skillPower = SkillPower.reference
             * SkillPower.growth(level: progression.level, perLevel: tuning.progression.damageGrowthPerLevel)
 
@@ -482,6 +497,28 @@ struct GameSimulation {
         ActionExecutor.affect(around: player.position, radius: scaling.levelUpBurstRadius, damage: burst, status: nil,
                               depth: 2, source: .levelUp, &combat)
         resolveDeaths()
+    }
+
+    // MARK: - Summons
+
+    /// Sends every summon away, or calls the companions back.
+    ///
+    /// Dismissing is instant and free: it is a tactical choice, not a cost.
+    /// Recalling still respects any kind that is waiting out its death.
+    mutating func setSummonsDismissed(_ dismissed: Bool) {
+        guard dismissed != combat.companionsDismissed else { return }
+        if dismissed {
+            AllySystem.dismissAll(&combat)
+            combat.events.append(.summonsDismissed)
+        } else {
+            combat.companionsDismissed = false
+            AllySystem.syncCompanions(&combat, player: player)
+            combat.events.append(.summonsRecalled)
+        }
+    }
+
+    mutating func toggleSummonsDismissed() {
+        setSummonsDismissed(!combat.companionsDismissed)
     }
 
     // MARK: - Build

@@ -52,8 +52,16 @@ struct CombatState {
     var attackCount = 0
     var abilityCooldowns: [AbilityID: Double] = [:]
     var cheatDeathCooldown: Double = 0
-    /// Where taunting allies stand; nearby enemies go for them instead.
-    var tauntPoints: [CGPoint] = []
+    /// Where the player's allies stand, as enemies see them. Rebuilt each
+    /// step so enemy AI never walks the ally array itself.
+    var allyAnchors: [AllyAnchor] = []
+    /// Seconds before a fallen companion of each summon kind returns.
+    var summonCooldowns: [String: Double] = [:]
+    /// Set while the player has sent their companions away.
+    var companionsDismissed = false
+    /// Level and growth the next summon's toughness is built from.
+    var summonVitalityLevel = 1
+    var summonVitalityGrowth: Double = 0
 
     // MARK: Enemy scaling
 

@@ -198,6 +198,15 @@ final class CombatFeedback {
                 effects.motes(at: position, count: 8, color: visual.color, spread: 0.8, lifetime: 0.8)
                 audio.play(.summon)
 
+            case let .allyFell(position, visual):
+                // Whatever held it together comes apart and sinks away.
+                effects.motes(at: position, count: 10, color: visual.color, spread: 1, lifetime: 0.7)
+                effects.splat(at: position, color: UIColor(rgb: 0x1A1A22))
+                audio.play(.summon)
+
+            case .summonsDismissed, .summonsRecalled:
+                audio.play(.uiBack)
+
             case let .enemyExploded(position, radius):
                 effects.burst(at: position, radius: radius, color: VisualStyle.fire.color)
                 effects.motes(at: position, count: 10, color: UIColor(rgb: 0xFFB040), spread: radius * 0.5,

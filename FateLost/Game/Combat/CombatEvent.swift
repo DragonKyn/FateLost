@@ -27,6 +27,11 @@ enum CombatEvent: Equatable {
     case dash(from: CGPoint, to: CGPoint, visual: VisualStyle)
     case abilityCast(id: AbilityID, visual: VisualStyle)
     case summoned(position: CGPoint, visual: VisualStyle)
+    /// A summon was cut down.
+    case allyFell(position: CGPoint, visual: VisualStyle)
+    /// The player sent their companions away, or called them back.
+    case summonsDismissed
+    case summonsRecalled
     /// An enemy's powder keg went off.
     case enemyExploded(position: CGPoint, radius: CGFloat)
     /// `direction` points from the attacker toward the player.
@@ -54,6 +59,8 @@ struct RunStats: Equatable {
     var healingReceived: Double = 0
     var experience = 0
     var dodges = 0
+    /// Summons cut down over the run.
+    var summonsLost = 0
     /// Times each ability was used.
     var abilityUses: [AbilityID: Int] = [:]
 

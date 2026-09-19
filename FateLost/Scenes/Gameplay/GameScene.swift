@@ -13,6 +13,11 @@ struct GameplayHUDState: Equatable {
     var experienceFraction: Double = 0
     var unspentPoints: Int = 0
     var kills: Int = 0
+    /// Living summons, and whether the player has sent them away.
+    var allyCount: Int = 0
+    var summonsDismissed = false
+    /// True when the build has summons at all, so the control can hide.
+    var hasSummons = false
 }
 
 /// The build as the skill tree screen needs it. Published when it changes.
@@ -430,7 +435,9 @@ final class GameScene: SKScene {
         let state = GameplayHUDState(health: player.health, maxHealth: player.maxHealth, barrier: player.barrier,
                                      elapsedSeconds: Int(simulation.elapsed), wave: 1, level: progression.level,
                                      experienceFraction: min(1, fraction), unspentPoints: progression.unspentPoints,
-                                     kills: simulation.stats.kills)
+                                     kills: simulation.stats.kills, allyCount: simulation.allies.count,
+                                     summonsDismissed: simulation.areSummonsDismissed,
+                                     hasSummons: simulation.hasSummons)
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
@@ -483,6 +490,12 @@ final class GameScene: SKScene {
         publishHUDStateIfChanged()
         updateAbilityButtons()
         return accepted
+    }
+
+    /// Sends the player's summons away, or calls them back.
+    func toggleSummons() {
+        simulation.toggleSummonsDismissed()
+        publishHUDStateIfChanged()
     }
 
     func equipAbilities(_ slots: [AbilityID?]) {

@@ -109,6 +109,11 @@ final class GameSession {
         }
     }
 
+    /// Sends the player's summons away, or calls them back.
+    func toggleSummons() {
+        scene.toggleSummons()
+    }
+
     func openSkillTree() {
         guard summary == nil else { return }
         if pauseReason == .menu {
