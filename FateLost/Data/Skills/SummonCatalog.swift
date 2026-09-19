@@ -7,12 +7,13 @@ enum SummonCatalog {
         key: "summon.skeleton", name: "Risen Skeleton", sprite: .allySkeleton,
         behavior: .melee(range: 0.45),
         damage: DamageSpec(0.8, .physical, tags: [.summon, .melee]),
-        attackInterval: 1.0, moveSpeed: 3.6, radius: 0.28, visual: .shadow
+        attackInterval: 1.0, moveSpeed: 3.6, radius: 0.28, visual: .shadow,
+        variants: [.allySkeleton, .allySkeletonBrute, .allySkeletonArcher]
     )
 
     static let boneColossus = SummonSpec(
-        key: "summon.boneColossus", name: "Bone Colossus", sprite: .allySkeleton, tint: RGBA(hex: 0xD8CCB0),
-        scale: 1.7, behavior: .melee(range: 0.6),
+        key: "summon.boneColossus", name: "Bone Colossus", sprite: .allyBoneColossus,
+        scale: 1.1, behavior: .melee(range: 0.6),
         damage: DamageSpec(RankValue(1.6, 0.5), .physical, tags: [.summon, .melee, .area], knockback: 1),
         attackInterval: 1.4, moveSpeed: 2.8, radius: 0.5, splash: 1.1, taunts: true, visual: .shadow
     )
@@ -21,7 +22,8 @@ enum SummonCatalog {
         key: "summon.tiger", name: "Tiger", sprite: .allyTiger,
         behavior: .melee(range: 0.5),
         damage: DamageSpec(RankValue(1.0, 0.35), .physical, tags: [.summon, .melee]),
-        attackInterval: 0.65, moveSpeed: 5.6, radius: 0.36, visual: .physical
+        attackInterval: 0.65, moveSpeed: 5.6, radius: 0.36, visual: .physical,
+        variants: [.allyTiger, .allyTigerWhite]
     )
 
     static let owl = SummonSpec(
@@ -54,16 +56,16 @@ enum SummonCatalog {
     )
 
     static let hellhound = SummonSpec(
-        key: "summon.hellhound", name: "Hellhound", sprite: .allyWolf, tint: RGBA(hex: 0xE0502A),
-        scale: 1.1, behavior: .melee(range: 0.5),
+        key: "summon.hellhound", name: "Hellhound", sprite: .allyHellhound,
+        scale: 1.05, behavior: .melee(range: 0.5),
         damage: DamageSpec(RankValue(1.0, 0.35), .fire, tags: [.summon, .melee]),
         attackInterval: 0.8, moveSpeed: 5.4, radius: 0.34,
         status: StatusApplication(.burn, chance: 0.5, potency: 0.4, duration: 3), visual: .fire
     )
 
     static let fiend = SummonSpec(
-        key: "summon.fiend", name: "Pit Fiend", sprite: .allyImp, tint: RGBA(hex: 0xB0302A),
-        scale: 2.1, behavior: .melee(range: 0.8),
+        key: "summon.fiend", name: "Pit Fiend", sprite: .allyPitFiend,
+        scale: 1.15, behavior: .melee(range: 0.8),
         damage: DamageSpec(RankValue(4, 1), .fire, tags: [.summon, .melee, .area], knockback: 1.4),
         attackInterval: 1.5, moveSpeed: 3.6, radius: 0.6, splash: 1.5, taunts: true,
         status: StatusApplication(.burn, chance: 1, potency: 0.8, duration: 3), visual: .fire
@@ -78,7 +80,7 @@ enum SummonCatalog {
 
     static let treant = SummonSpec(
         key: "summon.treant", name: "Ancient", sprite: .allyTreant,
-        scale: 1.35, behavior: .melee(range: 0.8),
+        scale: 1.2, behavior: .melee(range: 0.8),
         damage: DamageSpec(RankValue(3, 1), .physical, tags: [.summon, .melee, .area], knockback: 1.3),
         attackInterval: 1.6, moveSpeed: 2.4, radius: 0.6, splash: 1.5, taunts: true,
         status: StatusApplication(.root, chance: 0.5, duration: 1.5), visual: .nature
@@ -112,6 +114,12 @@ enum SummonCatalog {
         attackInterval: 0.4, moveSpeed: 0, radius: 0.22,
         status: StatusApplication(.poison, chance: 0.6, potency: 0.25, duration: 4), visual: .poison
     )
+
+    /// Every base summon, for validation and tooling.
+    static let all: [SummonSpec] = [
+        skeleton, boneColossus, tiger, owl, bear, spiritWolf, imp, hellhound, fiend, shadowClone, treant,
+        blade, arcaneOrb, lightOrb, hornet,
+    ]
 
     /// A copy with a different count and lifetime.
     static func with(_ base: SummonSpec, count: RankValue, duration: RankValue) -> SummonSpec {

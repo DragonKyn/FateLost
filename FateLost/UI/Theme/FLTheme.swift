@@ -59,15 +59,20 @@ struct FLButtonStyle: ButtonStyle {
     }
 
     var kind: Kind = .primary
+    /// Smaller type and padding, for toolbars and tight panels.
+    var compact = false
     @Environment(\.isEnabled) private var isEnabled
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(FLTheme.Typeface.heading(19))
-            .tracking(1.5)
+            .font(FLTheme.Typeface.heading(compact ? 16 : 19))
+            .tracking(compact ? 0.8 : 1.5)
+            // Labels shrink a little rather than ever wrapping mid-word.
+            .lineLimit(1)
+            .minimumScaleFactor(0.7)
             .foregroundStyle(foreground)
-            .padding(.horizontal, 28)
-            .frame(maxWidth: .infinity, minHeight: FLTheme.Metrics.minimumTouchTarget)
+            .padding(.horizontal, compact ? 14 : 28)
+            .frame(maxWidth: .infinity, minHeight: compact ? 44 : FLTheme.Metrics.minimumTouchTarget)
             .background(
                 RoundedRectangle(cornerRadius: FLTheme.Metrics.cornerRadius, style: .continuous)
                     .fill(fill)
@@ -114,6 +119,8 @@ extension ButtonStyle where Self == FLButtonStyle {
     static var flPrimary: FLButtonStyle { FLButtonStyle(kind: .primary) }
     static var flSecondary: FLButtonStyle { FLButtonStyle(kind: .secondary) }
     static var flDestructive: FLButtonStyle { FLButtonStyle(kind: .destructive) }
+    static var flPrimaryCompact: FLButtonStyle { FLButtonStyle(kind: .primary, compact: true) }
+    static var flSecondaryCompact: FLButtonStyle { FLButtonStyle(kind: .secondary, compact: true) }
 }
 
 // MARK: - Panels

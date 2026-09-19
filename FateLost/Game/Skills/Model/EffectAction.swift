@@ -226,6 +226,14 @@ struct SummonSpec: Equatable {
     /// Seconds it lasts. Zero or less means it stays (companions).
     var duration: RankValue = 0
     var visual: VisualStyle = .physical
+    /// Alternative looks, one picked per ally so a horde isn't identical.
+    /// Empty means always `sprite`.
+    var variants: [SpriteID] = []
+
+    /// The look for one particular ally.
+    func sprite(forAlly id: Int) -> SpriteID {
+        variants.isEmpty ? sprite : variants[id % variants.count]
+    }
 
     func resolved(_ rank: Int) -> SummonSpec {
         var copy = self

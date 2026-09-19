@@ -37,6 +37,15 @@ extension SpriteID {
 
     // Allies and forms
     static let allySkeleton: SpriteID = "ally.skeleton"
+    static let allySkeletonArcher: SpriteID = "ally.skeleton.archer"
+    static let allySkeletonBrute: SpriteID = "ally.skeleton.brute"
+    static let allyBoneColossus: SpriteID = "ally.boneColossus"
+    static let allyTigerWhite: SpriteID = "ally.tiger.white"
+    static let allyWolfBlack: SpriteID = "ally.wolf.black"
+    static let allyHellhound: SpriteID = "ally.hellhound"
+    static let allyPitFiend: SpriteID = "ally.pitFiend"
+    static let formWarBear: SpriteID = "form.warBear"
+    static let formDireWolf: SpriteID = "form.direWolf"
     static let allyBear: SpriteID = "ally.bear"
     static let allyTiger: SpriteID = "ally.tiger"
     static let allyOwl: SpriteID = "ally.owl"

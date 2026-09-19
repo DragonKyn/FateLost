@@ -74,6 +74,8 @@ final class SpriteCatalog {
         .enemyGoblinSpearman, .enemyGoblinSpearmanRed, .enemyGoblinBrute, .enemyGoblinBruteScarred,
         .enemyGoblinSapper,
         .allySkeleton, .allyBear, .allyTiger, .allyOwl, .allyImp, .allyWolf, .allyTreant, .allyBlade, .allyWisp,
+        .allySkeletonArcher, .allySkeletonBrute, .allyBoneColossus, .allyTigerWhite, .allyWolfBlack, .allyHellhound,
+        .allyPitFiend, .formWarBear, .formDireWolf,
         .weaponSword, .weaponBow, .weaponStaff,
         .projectileArrow, .projectileArcaneBolt, .projectileKnife, .projectileShard, .projectileBolt,
         .fxEmber, .fxCone, .fxDisc, .fxPillar,

@@ -66,8 +66,11 @@ extension CombatState {
 
         let dealt = min(amount, enemies.health[index])
         enemies.health[index] -= amount
-        stats.damageDealt += dealt
-        stats.highestHit = max(stats.highestHit, amount)
+        // A sapper's keg felling its own kin is not the hero's doing.
+        if hit.source != .environment {
+            stats.damageDealt += dealt
+            stats.highestHit = max(stats.highestHit, amount)
+        }
         if isCritical {
             stats.criticalHits += 1
         }

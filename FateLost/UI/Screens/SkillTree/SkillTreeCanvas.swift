@@ -8,12 +8,13 @@ struct SkillTreeCanvas: View {
     let committed: SkillAllocation
     let available: Int
     @Binding var selectedSkillID: SkillID?
+    let onSelect: (SkillDefinition) -> Void
 
     fileprivate enum Metrics {
-        static let node: CGFloat = 64
-        static let gap: CGFloat = 6
-        static let connector: CGFloat = 14
-        static let pathLabel: CGFloat = 78
+        static let node: CGFloat = 60
+        static let gap: CGFloat = 5
+        static let connector: CGFloat = 12
+        static let pathLabel: CGFloat = 68
     }
 
     private var definition: ArchetypeDefinition? { SkillCatalog.archetype(archetype) }
@@ -21,16 +22,24 @@ struct SkillTreeCanvas: View {
     private var color: Color { definition?.color.color ?? FLTheme.Palette.ember }
 
     var body: some View {
-        ScrollView([.horizontal, .vertical], showsIndicators: false) {
-            HStack(alignment: .center, spacing: 16) {
-                coreColumn
-                Rectangle()
-                    .fill(FLTheme.Palette.rim.opacity(0.5))
-                    .frame(width: 1)
-                    .padding(.vertical, 8)
-                pathsGrid
+        ScrollViewReader { proxy in
+            ScrollView([.horizontal, .vertical], showsIndicators: false) {
+                HStack(alignment: .center, spacing: 12) {
+                    coreColumn
+                    Rectangle()
+                        .fill(FLTheme.Palette.rim.opacity(0.5))
+                        .frame(width: 1)
+                        .padding(.vertical, 8)
+                    pathsGrid
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
             }
-            .padding(10)
+            // Keep the selected skill in view when the panel slides in over it.
+            .onChange(of: selectedSkillID) { _, id in
+                guard let id else { return }
+                withAnimation(.easeOut(duration: 0.2)) { proxy.scrollTo(id, anchor: .center) }
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
@@ -46,7 +55,7 @@ struct SkillTreeCanvas: View {
     // MARK: Columns
 
     private var coreColumn: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             TierHeader(tier: .one, unlocked: true, threshold: 0)
                 .frame(width: Metrics.node)
             ForEach(skills.filter { $0.path == nil }) { skill in
@@ -128,7 +137,8 @@ struct SkillTreeCanvas: View {
         return SkillNodeView(skill: skill, rank: rank, isNew: rank > committed.rank(of: skill.id), state: state,
                              color: color, isSelected: selectedSkillID == skill.id)
             .frame(width: Metrics.node)
-            .onTapGesture { selectedSkillID = skill.id }
+            .id(skill.id)
+            .onTapGesture { onSelect(skill) }
     }
 }
 
@@ -211,15 +221,15 @@ struct SkillNodeView: View {
         VStack(spacing: 3) {
             ZStack {
                 sigil
-                    .frame(width: 50, height: 50)
+                    .frame(width: 46, height: 46)
                 Image(systemName: skill.symbol)
-                    .font(.system(size: 19, weight: .semibold))
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(iconColor)
                 if isNew {
                     Image(systemName: "plus.circle.fill")
                         .font(.system(size: 13))
                         .foregroundStyle(FLTheme.Palette.emberBright)
-                        .offset(x: 20, y: -20)
+                        .offset(x: 18, y: -18)
                 }
                 Text("\(rank)/\(skill.maxRank)")
                     .font(FLTheme.Typeface.number(9))
@@ -228,16 +238,16 @@ struct SkillNodeView: View {
                     .padding(.vertical, 1)
                     .background(Capsule().fill(rank > 0 ? AnyShapeStyle(FLTheme.Palette.parchment)
                                                         : AnyShapeStyle(FLTheme.Palette.stone)))
-                    .offset(y: 24)
+                    .offset(y: 22)
             }
-            .frame(width: 58, height: 58)
+            .frame(width: 54, height: 54)
             Text(skill.name)
                 .font(.system(size: 9, weight: .semibold))
                 .foregroundStyle(state == .locked ? FLTheme.Palette.locked : FLTheme.Palette.parchment)
                 .multilineTextAlignment(.center)
                 .lineLimit(2)
-                .minimumScaleFactor(0.8)
-                .frame(height: 24, alignment: .top)
+                .minimumScaleFactor(0.75)
+                .frame(height: 22, alignment: .top)
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .ignore)

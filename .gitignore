@@ -20,3 +20,7 @@ Payload/
 FateLost/Resources/Audio/
 .audio-venv/
 __pycache__/
+
+# Art previews
+tools/art/*.png
+__pycache__/

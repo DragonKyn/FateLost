@@ -1,7 +1,8 @@
 import SwiftUI
 
-/// The right-hand panel: the selected skill in full (or the archetype's
-/// overview when none is selected), with learning and equipping controls.
+/// The panel that slides in from the right: the selected skill in full, or
+/// the archetype's overview when no skill is selected, with the controls for
+/// learning it and choosing its slot.
 struct SkillDetailPanel: View {
     let archetype: ArchetypeID
     let skill: SkillDefinition?
@@ -11,27 +12,52 @@ struct SkillDetailPanel: View {
     @Binding var slots: [AbilityID?]
     let onLearn: (SkillDefinition) -> Void
     let onUndo: (SkillDefinition) -> Void
+    let onClose: () -> Void
 
     private var rules: SkillTreeRules { .standard }
 
     var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 10) {
-                if let skill {
-                    SkillDetails(skill: skill, rank: draft.rank(of: skill.id))
-                    actions(for: skill)
+        VStack(spacing: 0) {
+            ScrollView(.vertical, showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 10) {
+                    if let skill {
+                        SkillDetails(skill: skill, rank: draft.rank(of: skill.id))
+                    } else if let definition = SkillCatalog.archetype(archetype) {
+                        ArchetypeOverview(definition: definition, allocation: draft)
+                    }
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            // The controls stay put at the foot of the panel, always in reach
+            // of a thumb, however long the description runs.
+            if let skill {
+                VStack(alignment: .leading, spacing: 8) {
                     if let ability = skill.ability, draft.rank(of: skill.id) > 0 {
                         EquipControls(ability: ability, slots: $slots)
                     }
-                } else if let definition = SkillCatalog.archetype(archetype) {
-                    ArchetypeOverview(definition: definition, allocation: draft)
+                    actions(for: skill)
                 }
+                .padding(12)
+                .background(FLTheme.Palette.abyss.opacity(0.5))
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxHeight: .infinity)
         .flPanel()
+        .overlay(alignment: .topTrailing) {
+            Button(action: onClose) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    .frame(width: 34, height: 34)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Close details")
+        }
+        .clipShape(RoundedRectangle(cornerRadius: FLTheme.Metrics.cornerRadius, style: .continuous))
     }
 
     @ViewBuilder
@@ -47,12 +73,12 @@ struct SkillDetailPanel: View {
             }
             HStack(spacing: 8) {
                 if rank < skill.maxRank {
-                    Button(rank == 0 ? "Learn" : "Rank Up") { onLearn(skill) }
-                        .buttonStyle(.flPrimary)
+                    Button(rank == 0 ? "Learn · 1 pt" : "Rank Up · 1 pt") { onLearn(skill) }
+                        .buttonStyle(.flPrimaryCompact)
                         .disabled(denial != nil)
                 } else {
                     Text("Mastered")
-                        .font(FLTheme.Typeface.heading(16))
+                        .font(FLTheme.Typeface.heading(15))
                         .foregroundStyle(Color(red: 1, green: 0.84, blue: 0.45))
                         .frame(maxWidth: .infinity, minHeight: 44)
                 }
@@ -62,8 +88,8 @@ struct SkillDetailPanel: View {
                     } label: {
                         Image(systemName: "arrow.uturn.backward")
                     }
-                    .buttonStyle(.flSecondary)
-                    .frame(width: 64)
+                    .buttonStyle(.flSecondaryCompact)
+                    .frame(width: 52)
                     .accessibilityLabel("Take back a point")
                 }
             }
@@ -106,12 +132,12 @@ private struct SkillDetails: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 10) {
                 Image(systemName: skill.symbol)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(FLTheme.Palette.emberBright)
-                    .frame(width: 30)
+                    .frame(width: 28)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(skill.name)
-                        .font(FLTheme.Typeface.title(19))
+                        .font(FLTheme.Typeface.title(18))
                         .foregroundStyle(FLTheme.Palette.parchment)
                         .fixedSize(horizontal: false, vertical: true)
                     Text("\(skill.kind.displayName) · \(pathName) · \(skill.tier.displayName)")
@@ -119,6 +145,7 @@ private struct SkillDetails: View {
                         .foregroundStyle(FLTheme.Palette.parchmentDim)
                 }
             }
+            .padding(.trailing, 24)
             if let ability = skill.ability {
                 Text("Cooldown \(SkillDefinition.format(ability.cooldown.at(max(rank, 1)))) s")
                     .font(FLTheme.Typeface.number(12))
@@ -214,6 +241,7 @@ private struct ArchetypeOverview: View {
                     .font(FLTheme.Typeface.title(22))
                     .foregroundStyle(FLTheme.Palette.parchment)
             }
+            .padding(.trailing, 24)
             Text(definition.tagline)
                 .font(FLTheme.Typeface.heading(14))
                 .italic()
@@ -248,46 +276,5 @@ private struct ArchetypeOverview: View {
                 .foregroundStyle(FLTheme.Palette.parchmentDim)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-}
-
-// MARK: - Loadout bar
-
-/// The equipped abilities along the bottom of the tree.
-struct AbilityLoadoutBar: View {
-    let slots: [AbilityID?]
-    let onSelect: (AbilityID) -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            FLSectionLabel(text: "Abilities")
-            ForEach(0..<AbilitySlots.count, id: \.self) { slot in
-                chip(slot)
-            }
-            Spacer(minLength: 0)
-        }
-    }
-
-    private func chip(_ slot: Int) -> some View {
-        let ability = slots[slot].flatMap { SkillCatalog.ability($0) }
-        let isUltimate = slot == AbilitySlots.ultimate
-        return Button {
-            if let ability { onSelect(ability.id) }
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: ability?.symbol ?? (isUltimate ? "star" : "circle.dashed"))
-                    .font(.system(size: 14, weight: .semibold))
-                Text(ability?.name ?? (isUltimate ? "Ultimate" : "Empty"))
-                    .font(.system(size: 12, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(ability == nil ? FLTheme.Palette.parchmentDim : FLTheme.Palette.parchment)
-            .padding(.horizontal, 10)
-            .frame(minHeight: 36)
-            .background(Capsule().fill(FLTheme.Palette.stoneRaised.opacity(0.85)))
-            .overlay(Capsule().strokeBorder(isUltimate ? FLTheme.Palette.ember : FLTheme.Palette.rim, lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-        .disabled(ability == nil)
     }
 }

@@ -60,7 +60,7 @@ final class AllyRenderer {
                 view = pool.acquire()
                 layer.addChild(view)
                 views[ally.id] = view
-                configure(view, for: ally.spec)
+                configure(view, for: ally.spec, id: ally.id)
             }
             view.lastSeenFrame = frameNumber
             view.age += dt
@@ -106,11 +106,12 @@ final class AllyRenderer {
         }
     }
 
-    private func configure(_ view: AllyView, for spec: SummonSpec) {
-        view.spriteID = spec.sprite
-        view.body.texture = catalog.texture(spec.sprite)
-        view.body.size = catalog.size(spec.sprite)
-        view.body.anchorPoint = catalog.anchor(spec.sprite)
+    private func configure(_ view: AllyView, for spec: SummonSpec, id: Int) {
+        let sprite = spec.sprite(forAlly: id)
+        view.spriteID = sprite
+        view.body.texture = catalog.texture(sprite)
+        view.body.size = catalog.size(sprite)
+        view.body.anchorPoint = catalog.anchor(sprite)
         if let tint = spec.tint {
             view.body.color = tint.uiColor
             view.body.colorBlendFactor = spec.sprite == .allyWisp ? 1 : 0.65

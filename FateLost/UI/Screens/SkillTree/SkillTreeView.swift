@@ -3,8 +3,11 @@ import SwiftUI
 /// The skill tree: spend points across eleven archetypes, each with a shared
 /// core and three subclass paths, and choose which abilities to carry.
 ///
-/// Choices are a draft until confirmed, so a point can be taken back while
-/// the screen is open. Unspent points can be banked for later.
+/// Laid out for a phone held in landscape: one bar of controls across the
+/// top, the tree filling the rest, and a detail panel that slides in only
+/// while something is selected. Choices are a draft until confirmed, so a
+/// point can be taken back while the screen is open, and unspent points can
+/// be banked for later.
 struct SkillTreeView: View {
     let session: GameSession
 
@@ -13,6 +16,7 @@ struct SkillTreeView: View {
     @State private var slots: [AbilityID?]
     @State private var archetype: ArchetypeID
     @State private var selectedSkillID: SkillID?
+    @State private var showsArchetype = true
 
     private let committed: SkillAllocation
     private let earnedPoints: Int
@@ -33,6 +37,8 @@ struct SkillTreeView: View {
 
     private var available: Int { max(0, earnedPoints - draft.spent) }
     private var selectedSkill: SkillDefinition? { selectedSkillID.flatMap { SkillCatalog.skill($0) } }
+    private var showsPanel: Bool { selectedSkillID != nil || showsArchetype }
+    private var hasChanges: Bool { draft != committed }
 
     var body: some View {
         ZStack {
@@ -40,66 +46,113 @@ struct SkillTreeView: View {
                            startPoint: .top, endPoint: .bottom)
                 .ignoresSafeArea()
 
-            VStack(spacing: 10) {
-                header
-                HStack(alignment: .top, spacing: 12) {
-                    ArchetypeRail(selection: $archetype, allocation: draft) {
-                        selectedSkillID = nil
+            VStack(spacing: 8) {
+                toolbar
+                HStack(spacing: 8) {
+                    ArchetypeRail(selection: $archetype, allocation: draft) { tapped in
+                        select(archetype: tapped)
                     }
-                    .frame(width: 64)
+                    .frame(width: 56)
 
                     SkillTreeCanvas(archetype: archetype, draft: draft, committed: committed, available: available,
-                                    selectedSkillID: $selectedSkillID)
+                                    selectedSkillID: $selectedSkillID) { skill in
+                        select(skill: skill)
+                    }
 
-                    SkillDetailPanel(archetype: archetype, skill: selectedSkill, draft: draft, committed: committed,
-                                     available: available, slots: $slots,
-                                     onLearn: learn, onUndo: undo)
-                        .frame(width: 262)
-                }
-                AbilityLoadoutBar(slots: slots) { id in
-                    if let skillID = SkillCatalog.skillID(forAbility: id), let skill = SkillCatalog.skill(skillID) {
-                        archetype = skill.archetype
-                        selectedSkillID = skillID
+                    if showsPanel {
+                        SkillDetailPanel(archetype: archetype, skill: selectedSkill, draft: draft,
+                                         committed: committed, available: available, slots: $slots,
+                                         onLearn: learn, onUndo: undo, onClose: closePanel)
+                            .frame(width: 272)
+                            .transition(.move(edge: .trailing).combined(with: .opacity))
                     }
                 }
             }
-            .padding(.horizontal, FLTheme.Metrics.screenPadding)
-            .padding(.vertical, 12)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
+        .animation(.easeOut(duration: 0.18), value: showsPanel)
+        .animation(.easeOut(duration: 0.18), value: selectedSkillID)
     }
 
-    // MARK: Header
+    // MARK: Toolbar
 
-    private var header: some View {
+    private var toolbar: some View {
         let title = BuildTitle.title(for: draft)
-        return HStack(alignment: .center, spacing: 14) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Level \(session.progression.level) · \(title.name)")
-                    .font(FLTheme.Typeface.title(24))
+        return HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 0) {
+                Text(title.name)
+                    .font(FLTheme.Typeface.title(20))
                     .foregroundStyle(FLTheme.Palette.parchment)
-                Text(title.subtitle ?? "Where your points go, you become.")
-                    .font(FLTheme.Typeface.body(13))
-                    .italic()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text("Level \(session.progression.level) · \(title.subtitle ?? "spend your points")")
+                    .font(FLTheme.Typeface.body(11))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            Spacer()
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            LoadoutStrip(slots: slots) { id in
+                if let skillID = SkillCatalog.skillID(forAbility: id), let skill = SkillCatalog.skill(skillID) {
+                    archetype = skill.archetype
+                    select(skill: skill)
+                }
+            }
             PointsBadge(points: available)
-            if draft != committed {
-                Button("Undo All") {
+            if hasChanges {
+                Button {
                     draft = committed
                     slots = session.progression.abilitySlots
                     services.audio.play(.uiBack)
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
                 }
-                .buttonStyle(.flSecondary)
-                .frame(width: 130)
+                .buttonStyle(.flSecondaryCompact)
+                .frame(width: 48)
+                .accessibilityLabel("Undo all changes")
             }
-            Button(available > 0 && draft == committed ? "Later" : "Confirm") {
+            Button(confirmTitle) {
                 services.audio.play(.uiConfirm)
                 session.closeSkillTree(committing: draft, slots: slots)
             }
-            .buttonStyle(.flPrimary)
-            .frame(width: 140)
+            .buttonStyle(hasChanges ? .flPrimaryCompact : .flSecondaryCompact)
+            .fixedSize(horizontal: true, vertical: false)
         }
+        .frame(height: 46)
+    }
+
+    private var confirmTitle: String {
+        if hasChanges { return "Confirm" }
+        return available > 0 ? "Later" : "Close"
+    }
+
+    // MARK: Selection
+
+    private func select(archetype tapped: ArchetypeID) {
+        let sameAgain = tapped == archetype && showsArchetype && selectedSkillID == nil
+        archetype = tapped
+        selectedSkillID = nil
+        showsArchetype = !sameAgain
+        services.haptics.play(.uiTap)
+    }
+
+    private func select(skill: SkillDefinition) {
+        if selectedSkillID == skill.id {
+            selectedSkillID = nil
+            showsArchetype = false
+        } else {
+            selectedSkillID = skill.id
+            showsArchetype = false
+        }
+        services.haptics.play(.uiTap)
+    }
+
+    private func closePanel() {
+        selectedSkillID = nil
+        showsArchetype = false
+        services.audio.play(.uiBack)
     }
 
     // MARK: Actions
@@ -143,19 +196,57 @@ private struct PointsBadge: View {
     let points: Int
 
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 5) {
             Image(systemName: "sparkles")
-            Text(points == 1 ? "1 point" : "\(points) points")
-                .font(FLTheme.Typeface.number(16))
+                .font(.system(size: 13, weight: .semibold))
+            Text("\(points)")
+                .font(FLTheme.Typeface.number(17))
         }
         .foregroundStyle(points > 0 ? FLTheme.Palette.abyss : FLTheme.Palette.parchmentDim)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 12)
+        .frame(height: 44)
         .background(Capsule().fill(points > 0 ? AnyShapeStyle(FLTheme.Palette.emberBright)
                                               : AnyShapeStyle(FLTheme.Palette.stoneRaised)))
         .overlay(Capsule().strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(points) skill points available")
+    }
+}
+
+// MARK: - Loadout
+
+/// The four equipped abilities, as they appear on the HUD.
+private struct LoadoutStrip: View {
+    let slots: [AbilityID?]
+    let onSelect: (AbilityID) -> Void
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<AbilitySlots.count, id: \.self) { slot in
+                button(slot)
+            }
+        }
+    }
+
+    private func button(_ slot: Int) -> some View {
+        let ability = slots[slot].flatMap { SkillCatalog.ability($0) }
+        let isUltimate = slot == AbilitySlots.ultimate
+        return Button {
+            if let ability { onSelect(ability.id) }
+        } label: {
+            Image(systemName: ability?.symbol ?? (isUltimate ? "star" : "circle.dashed"))
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundStyle(ability == nil ? FLTheme.Palette.locked : FLTheme.Palette.parchment)
+                .frame(width: 42, height: 44)
+                .background(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(FLTheme.Palette.stoneRaised.opacity(0.85)))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(isUltimate ? FLTheme.Palette.ember.opacity(0.9) : FLTheme.Palette.rim,
+                                  lineWidth: 1))
+        }
+        .buttonStyle(.plain)
+        .disabled(ability == nil)
+        .accessibilityLabel(ability.map { "\($0.name) in slot \(slot + 1)" } ?? "Empty ability slot \(slot + 1)")
     }
 }
 
@@ -165,22 +256,20 @@ private struct PointsBadge: View {
 private struct ArchetypeRail: View {
     @Binding var selection: ArchetypeID
     let allocation: SkillAllocation
-    let onSelect: () -> Void
+    let onSelect: (ArchetypeID) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(spacing: 8) {
+            VStack(spacing: 6) {
                 ForEach(SkillCatalog.archetypes) { archetype in
                     ArchetypeSigil(archetype: archetype, points: allocation.points(in: archetype.id),
                                    isSelected: archetype.id == selection)
-                        .onTapGesture {
-                            selection = archetype.id
-                            onSelect()
-                        }
+                        .onTapGesture { onSelect(archetype.id) }
                 }
             }
-            .padding(.vertical, 4)
+            .padding(.vertical, 2)
         }
+        .scrollBounceBehavior(.basedOnSize)
     }
 }
 
@@ -190,33 +279,39 @@ private struct ArchetypeSigil: View {
     let isSelected: Bool
 
     var body: some View {
-        VStack(spacing: 2) {
-            ZStack(alignment: .topTrailing) {
-                Circle()
-                    .fill(archetype.color.color.opacity(isSelected ? 0.9 : 0.35))
-                    .frame(width: 46, height: 46)
-                    .overlay(Circle().strokeBorder(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.rim,
-                                                   lineWidth: isSelected ? 2 : 1))
-                    .overlay(Image(systemName: archetype.symbol)
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(FLTheme.Palette.parchment))
-                if points > 0 {
-                    Text("\(points)")
-                        .font(FLTheme.Typeface.number(11))
-                        .foregroundStyle(FLTheme.Palette.abyss)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 1)
-                        .background(Capsule().fill(FLTheme.Palette.emberBright))
-                        .offset(x: 6, y: -3)
+        HStack(spacing: 0) {
+            // A lit bar marks the archetype on show.
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(isSelected ? FLTheme.Palette.emberBright : Color.clear)
+                .frame(width: 3, height: 34)
+            VStack(spacing: 1) {
+                ZStack(alignment: .topTrailing) {
+                    Circle()
+                        .fill(archetype.color.color.opacity(isSelected ? 0.9 : 0.3))
+                        .frame(width: 38, height: 38)
+                        .overlay(Circle().strokeBorder(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.rim,
+                                                       lineWidth: isSelected ? 2 : 1))
+                        .overlay(Image(systemName: archetype.symbol)
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundStyle(FLTheme.Palette.parchment))
+                    if points > 0 {
+                        Text("\(points)")
+                            .font(FLTheme.Typeface.number(10))
+                            .foregroundStyle(FLTheme.Palette.abyss)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 0.5)
+                            .background(Capsule().fill(FLTheme.Palette.emberBright))
+                            .offset(x: 5, y: -2)
+                    }
                 }
+                Text(archetype.name)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(isSelected ? FLTheme.Palette.parchment : FLTheme.Palette.parchmentDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
             }
-            Text(archetype.name)
-                .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(isSelected ? FLTheme.Palette.parchment : FLTheme.Palette.parchmentDim)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
+            .frame(maxWidth: .infinity)
         }
-        .frame(maxWidth: .infinity)
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
         .accessibilityLabel("\(archetype.name), \(points) points")

@@ -20,9 +20,9 @@ enum FormCatalog {
             ModifierSpec(.moveSpeed, .increased, RankValue(-0.12)),
             ModifierSpec(.knockback, .increased, RankValue(0.5)),
         ],
-        sprite: .allyBear,
-        tint: RGBA(hex: 0x8A6A4A),
-        scale: 1.15,
+        sprite: .formWarBear,
+        tint: nil,
+        scale: 1,
         hidesWeapon: true
     )
 
@@ -40,9 +40,9 @@ enum FormCatalog {
             ModifierSpec(.critChance, .flat, RankValue(0.08, 0.02)),
             ModifierSpec(.dodgeChance, .flat, RankValue(0.05)),
         ],
-        sprite: .allyWolf,
+        sprite: .formDireWolf,
         tint: nil,
-        scale: 1.1,
+        scale: 1,
         hidesWeapon: true
     )
 
