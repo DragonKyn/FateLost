@@ -142,6 +142,12 @@ extension SpriteID {
     static let decorBarricade: SpriteID = "decor.barricade"
     static let decorSkullPile: SpriteID = "decor.skullPile"
     static let decorBlackObelisk: SpriteID = "decor.blackObelisk"
+    static let decorPlagueBell: SpriteID = "decor.plagueBell"
+    static let decorMoltenChain: SpriteID = "decor.moltenChain"
+    static let decorBrokenStair: SpriteID = "decor.brokenStair"
+    static let decorSiegeRam: SpriteID = "decor.siegeRam"
+    static let decorRuinedArch: SpriteID = "decor.ruinedArch"
+    static let decorHollowThrone: SpriteID = "decor.hollowThrone"
 
     // Effects
     static let fxGlow: SpriteID = "fx.glow"

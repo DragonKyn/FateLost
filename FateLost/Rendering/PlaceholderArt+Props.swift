@@ -532,4 +532,260 @@ extension PlaceholderArt {
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
     }
+
+    // MARK: - plagueBell
+
+    /// The bell a village rang until nobody was left to ring it.
+    static func plagueBell() -> Sprite {
+        let image = render(CGSize(width: 40, height: 58)) { ctx in
+            fillOval(ctx, CGRect(x: 6, y: 52, width: 28, height: 7), UIColor(rgb: 0x46433E))
+            fillPolygon(ctx, [P(12, 55.07), P(12.17, 47.48), P(12.33, 40.07), P(12.5, 32.81), P(12.67, 25.73), P(12.83, 18.81), P(13, 12.06), P(10.2, 11.94), P(9.83, 18.69), P(9.47, 25.61), P(9.1, 32.69), P(8.73, 39.93), P(8.37, 47.35), P(8, 54.93)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(12, 55.07), P(12.17, 47.48), P(12.33, 40.07), P(12.5, 32.81), P(12.67, 25.73), P(12.83, 18.81), P(13, 12.06), P(10.2, 11.94), P(9.83, 18.69), P(9.47, 25.61), P(9.1, 32.69), P(8.73, 39.93), P(8.37, 47.35), P(8, 54.93)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(32, 54.93), P(31.63, 47.35), P(31.27, 39.93), P(30.9, 32.69), P(30.53, 25.61), P(30.17, 18.69), P(29.8, 11.94), P(27, 12.06), P(27.17, 18.81), P(27.33, 25.73), P(27.5, 32.81), P(27.67, 40.07), P(27.83, 47.48), P(28, 55.07)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(32, 54.93), P(31.63, 47.35), P(31.27, 39.93), P(30.9, 32.69), P(30.53, 25.61), P(30.17, 18.69), P(29.8, 11.94), P(27, 12.06), P(27.17, 18.81), P(27.33, 25.73), P(27.5, 32.81), P(27.67, 40.07), P(27.83, 47.48), P(28, 55.07)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(11.29, 14.57), P(14.23, 13.98), P(17.11, 13.61), P(20, 13.45), P(22.9, 13.51), P(25.8, 13.78), P(28.76, 14.28), P(29.24, 11.72), P(26.2, 11.11), P(23.1, 10.71), P(20, 10.55), P(16.89, 10.62), P(13.77, 10.91), P(10.71, 11.43)], UIColor(rgb: 0x6A5438))
+            strokePolygon(ctx, [P(11.29, 14.57), P(14.23, 13.98), P(17.11, 13.61), P(20, 13.45), P(22.9, 13.51), P(25.8, 13.78), P(28.76, 14.28), P(29.24, 11.72), P(26.2, 11.11), P(23.1, 10.71), P(20, 10.55), P(16.89, 10.62), P(13.77, 10.91), P(10.71, 11.43)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(12, 16), P(17, 14), P(17, 17), P(12.5, 19)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(12, 16), P(17, 14), P(17, 17), P(12.5, 19)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(28, 16), P(23, 14), P(23, 17), P(27.5, 19)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(28, 16), P(23, 14), P(23, 17), P(27.5, 19)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            stroke(ctx, from: P(20, 12), to: P(20, 18), UIColor(rgb: 0x5E5A54), width: 1)
+            fillSmooth(ctx, [P(20, 17), P(27, 23), P(29, 36), P(11, 36), P(13, 23)], UIColor(rgb: 0x826930))
+            strokeSmooth(ctx, [P(20, 17), P(27, 23), P(29, 36), P(11, 36), P(13, 23)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            fillSmooth(ctx, [P(20, 18), P(24, 23), P(25, 35), P(19, 35)], UIColor(rgb: 0xC9A24A))
+            fillPolygon(ctx, [P(10, 35), P(30, 35), P(29, 39), P(11, 39)], UIColor(rgb: 0xAA893E))
+            strokePolygon(ctx, [P(10, 35), P(30, 35), P(29, 39), P(11, 39)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(24, 39), P(25.5, 30), P(23, 22)], UIColor(rgb: 0x3C3016), width: 1.1)
+            stroke(ctx, from: P(20, 36), to: P(20, 42), UIColor(rgb: 0x8E8A80), width: 0.8)
+            fillOval(ctx, CGRect(x: 18.6, y: 42, width: 3, height: 3.4), UIColor(rgb: 0x5E5A54))
+            strokeOval(ctx, CGRect(x: 18.6, y: 42, width: 3, height: 3.4), UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillSmooth(ctx, [P(30, 14), P(36, 15), P(35, 22), P(30, 21)], UIColor(rgb: 0x5A6A32))
+            strokeSmooth(ctx, [P(30, 14), P(36, 15), P(35, 22), P(30, 21)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillSmooth(ctx, [P(31, 20), P(35, 21), P(34, 29), P(31, 28)], UIColor(rgb: 0x434F25))
+            strokeSmooth(ctx, [P(31, 20), P(35, 21), P(34, 29), P(31, 28)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(30.51, 28.11), P(32.1, 35.02), P(32.5, 34.98), P(32.49, 27.89)], UIColor(rgb: 0x5A6A32))
+            fillPolygon(ctx, [P(32.51, 28.11), P(34.1, 35.02), P(34.5, 34.98), P(34.49, 27.89)], UIColor(rgb: 0x5A6A32))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
+    }
+
+    // MARK: - moltenChain
+
+    /// Chain heavy enough to hold something, sunk in rock that is still cooling.
+    static func moltenChain() -> Sprite {
+        let image = render(CGSize(width: 48, height: 28)) { ctx in
+            fillSmooth(ctx, [P(3, 14), P(12, 5), P(30, 4), P(44, 11), P(40, 23), P(16, 25)], UIColor(rgb: 0x1E1A24))
+            strokeSmooth(ctx, [P(3, 14), P(12, 5), P(30, 4), P(44, 11), P(40, 23), P(16, 25)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            radialGradient(ctx, center: P(24, 14), radius: 22, inner: UIColor(rgb: 0xE2601A, alpha: 0.45), outer: UIColor(rgb: 0xE2601A, alpha: 0))
+            strokeCurve(ctx, [P(5, 19), P(18, 9), P(32, 17), P(45, 9)], UIColor(rgb: 0xCB5617), width: 2.2)
+            fillOval(ctx, CGRect(x: 4.4, y: 14.6, width: 5.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 4.4, y: 14.6, width: 5.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 5.7, y: 15.8, width: 2.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(5, 15.6), P(7, 14.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 10.9, y: 9.6, width: 4.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 10.9, y: 9.6, width: 4.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 12.2, y: 10.8, width: 1.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(11.5, 10.6), P(13, 9.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 16.4, y: 6.6, width: 5.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 16.4, y: 6.6, width: 5.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 17.7, y: 7.8, width: 2.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(17, 7.6), P(19, 6.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 22.9, y: 8.6, width: 4.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 22.9, y: 8.6, width: 4.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 24.2, y: 9.8, width: 1.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(23.5, 9.6), P(25, 8.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 28.4, y: 12.6, width: 5.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 28.4, y: 12.6, width: 5.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 29.7, y: 13.8, width: 2.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(29, 13.6), P(31, 12.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 34.9, y: 9.6, width: 4.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 34.9, y: 9.6, width: 4.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 36.2, y: 10.8, width: 1.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(35.5, 10.6), P(37, 9.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillOval(ctx, CGRect(x: 40.4, y: 6.6, width: 5.2, height: 6.8), UIColor(rgb: 0x46433F))
+            strokeOval(ctx, CGRect(x: 40.4, y: 6.6, width: 5.2, height: 6.8), UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 41.7, y: 7.8, width: 2.6, height: 4.4), UIColor(rgb: 0x1E1A24))
+            strokeCurve(ctx, [P(41, 7.6), P(43, 6.8)], UIColor(rgb: 0x8E8A80), width: 0.7)
+            fillSmooth(ctx, [P(20, 20), P(28, 18), P(33, 21), P(24, 24)], UIColor(rgb: 0xE2601A))
+            fillSmooth(ctx, [P(23, 20.5), P(28, 19.5), P(29, 21.5), P(24.5, 22.5)], UIColor(rgb: 0xFFC24A))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    // MARK: - brokenStair
+
+    /// A stair that climbs four steps and then gives up on the ground.
+    static func brokenStair() -> Sprite {
+        let image = render(CGSize(width: 44, height: 50)) { ctx in
+            fillOval(ctx, CGRect(x: 4, y: 44, width: 26, height: 7), UIColor(rgb: 0x46433E))
+            fillPolygon(ctx, [P(6, 47), P(13.6, 47), P(13.6, 43), P(6, 43)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(6, 47), P(13.6, 47), P(13.6, 43), P(6, 43)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(6, 43), P(13.6, 43), P(15.2, 40.4), P(7.6, 40.4)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(6, 43), P(13.6, 43), P(15.2, 40.4), P(7.6, 40.4)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(8.4, 44.4), to: P(7.8, 47.4), UIColor(rgb: 0x46433E), width: 0.5)
+            stroke(ctx, from: P(11.6, 44.4), to: P(11, 47.4), UIColor(rgb: 0x46433E), width: 0.5)
+            fillPolygon(ctx, [P(12.4, 47), P(20, 47), P(20, 36.5), P(12.4, 36.5)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(12.4, 47), P(20, 47), P(20, 36.5), P(12.4, 36.5)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(12.4, 36.5), P(20, 36.5), P(21.6, 33.9), P(14, 33.9)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(12.4, 36.5), P(20, 36.5), P(21.6, 33.9), P(14, 33.9)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(14.8, 37.9), to: P(14.2, 40.9), UIColor(rgb: 0x46433E), width: 0.5)
+            stroke(ctx, from: P(18, 37.9), to: P(17.4, 40.9), UIColor(rgb: 0x46433E), width: 0.5)
+            fillPolygon(ctx, [P(18.8, 47), P(26.4, 47), P(26.4, 30), P(18.8, 30)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(18.8, 47), P(26.4, 47), P(26.4, 30), P(18.8, 30)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(18.8, 30), P(26.4, 30), P(28, 27.4), P(20.4, 27.4)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(18.8, 30), P(26.4, 30), P(28, 27.4), P(20.4, 27.4)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(21.2, 31.4), to: P(20.6, 34.4), UIColor(rgb: 0x46433E), width: 0.5)
+            stroke(ctx, from: P(24.4, 31.4), to: P(23.8, 34.4), UIColor(rgb: 0x46433E), width: 0.5)
+            fillPolygon(ctx, [P(25.2, 47), P(32.8, 47), P(32.8, 23.5), P(25.2, 23.5)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(25.2, 47), P(32.8, 47), P(32.8, 23.5), P(25.2, 23.5)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(25.2, 23.5), P(32.8, 23.5), P(34.4, 20.9), P(26.8, 20.9)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(25.2, 23.5), P(32.8, 23.5), P(34.4, 20.9), P(26.8, 20.9)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(27.6, 24.9), to: P(27, 27.9), UIColor(rgb: 0x46433E), width: 0.5)
+            stroke(ctx, from: P(30.8, 24.9), to: P(30.2, 27.9), UIColor(rgb: 0x46433E), width: 0.5)
+            fillPolygon(ctx, [P(31.6, 47), P(39.2, 47), P(39.2, 17), P(31.6, 17)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(31.6, 47), P(39.2, 47), P(39.2, 17), P(31.6, 17)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(31.6, 17), P(39.2, 17), P(40.8, 14.4), P(33.2, 14.4)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(31.6, 17), P(39.2, 17), P(40.8, 14.4), P(33.2, 14.4)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(34, 18.4), to: P(33.4, 21.4), UIColor(rgb: 0x46433E), width: 0.5)
+            stroke(ctx, from: P(37.2, 18.4), to: P(36.6, 21.4), UIColor(rgb: 0x46433E), width: 0.5)
+            fillPolygon(ctx, [P(36, 12), P(43, 10), P(43, 16), P(36, 18)], UIColor(rgb: 0x7B7873))
+            strokePolygon(ctx, [P(36, 12), P(43, 10), P(43, 16), P(36, 18)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(33, 3), P(41, 1), P(41, 6), P(33, 8)], UIColor(rgb: 0x87847F))
+            strokePolygon(ctx, [P(33, 3), P(41, 1), P(41, 6), P(33, 8)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            radialGradient(ctx, center: P(38, 7), radius: 12, inner: UIColor(rgb: 0x5A3F8C, alpha: 0.35), outer: UIColor(rgb: 0x5A3F8C, alpha: 0))
+            fillOval(ctx, CGRect(x: 29.9, y: 13.9, width: 2.2, height: 2.2), UIColor(rgb: 0xC79BFF))
+            fillOval(ctx, CGRect(x: 41.1, y: 21.1, width: 1.8, height: 1.8), UIColor(rgb: 0xC79BFF))
+            fillOval(ctx, CGRect(x: 27.2, y: 4.2, width: 1.6, height: 1.6), UIColor(rgb: 0xC79BFF))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.04))
+    }
+
+    // MARK: - siegeRam
+
+    /// A ram that reached the door and stopped there.
+    static func siegeRam() -> Sprite {
+        let image = render(CGSize(width: 54, height: 40)) { ctx in
+            fillOval(ctx, CGRect(x: 4, y: 35, width: 46, height: 8), UIColor(rgb: 0x46433E))
+            fillPolygon(ctx, [P(8.79, 38.1), P(24.11, 11.68), P(21.89, 10.32), P(5.21, 35.9)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(8.79, 38.1), P(24.11, 11.68), P(21.89, 10.32), P(5.21, 35.9)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(26.79, 35.9), P(10.11, 10.32), P(7.89, 11.68), P(23.21, 38.1)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(26.79, 35.9), P(10.11, 10.32), P(7.89, 11.68), P(23.21, 38.1)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(9, 27.3), P(23, 27.3), P(23, 24.7), P(9, 24.7)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(9, 27.3), P(23, 27.3), P(23, 24.7), P(9, 24.7)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 13, y: 14, width: 6, height: 5), UIColor(rgb: 0x7A5A40))
+            strokeOval(ctx, CGRect(x: 13, y: 14, width: 6, height: 5), UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(16, 16), P(16.6, 21)], UIColor(rgb: 0x7A5A40), width: 1.1)
+            fillPolygon(ctx, [P(28.79, 38.1), P(44.11, 11.68), P(41.89, 10.32), P(25.21, 35.9)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(28.79, 38.1), P(44.11, 11.68), P(41.89, 10.32), P(25.21, 35.9)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(46.79, 35.9), P(30.11, 10.32), P(27.89, 11.68), P(43.21, 38.1)], UIColor(rgb: 0x4A3A28))
+            strokePolygon(ctx, [P(46.79, 35.9), P(30.11, 10.32), P(27.89, 11.68), P(43.21, 38.1)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(29, 27.3), P(43, 27.3), P(43, 24.7), P(29, 24.7)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(29, 27.3), P(43, 27.3), P(43, 24.7), P(29, 24.7)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 33, y: 14, width: 6, height: 5), UIColor(rgb: 0x7A5A40))
+            strokeOval(ctx, CGRect(x: 33, y: 14, width: 6, height: 5), UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(36, 16), P(36.6, 21)], UIColor(rgb: 0x7A5A40), width: 1.1)
+            fillPolygon(ctx, [P(6.44, 25.48), P(12.93, 24.8), P(19.2, 24.39), P(25.37, 24.25), P(31.43, 24.38), P(37.4, 24.77), P(43.37, 25.46), P(44.63, 16.54), P(38.49, 15.5), P(32.12, 14.73), P(25.63, 14.25), P(19.02, 14.06), P(12.3, 14.15), P(5.56, 14.52)], UIColor(rgb: 0x6A5438))
+            strokePolygon(ctx, [P(6.44, 25.48), P(12.93, 24.8), P(19.2, 24.39), P(25.37, 24.25), P(31.43, 24.38), P(37.4, 24.77), P(43.37, 25.46), P(44.63, 16.54), P(38.49, 15.5), P(32.12, 14.73), P(25.63, 14.25), P(19.02, 14.06), P(12.3, 14.15), P(5.56, 14.52)], UIColor(rgb: 0x0E0C08), width: 1)
+            strokeCurve(ctx, [P(9, 19), P(26, 17), P(42, 20)], UIColor(rgb: 0x2E2418), width: 1)
+            strokeCurve(ctx, [P(10, 22), P(24, 20.5), P(40, 23)], UIColor(rgb: 0x4F3F2A), width: 0.8)
+            fillPolygon(ctx, [P(12.8, 15), P(12.8, 26), P(15.2, 26), P(15.2, 15)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(12.8, 15), P(12.8, 26), P(15.2, 26), P(15.2, 15)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(20.8, 15), P(20.8, 26), P(23.2, 26), P(23.2, 15)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(20.8, 15), P(20.8, 26), P(23.2, 26), P(23.2, 15)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(30.8, 15), P(30.8, 26), P(33.2, 26), P(33.2, 15)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(30.8, 15), P(30.8, 26), P(33.2, 26), P(33.2, 15)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(7, 16), P(10, 14), P(9, 25), P(6, 24)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(7, 16), P(10, 14), P(9, 25), P(6, 24)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(41, 15), P(49, 17), P(50, 25), P(42, 26)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(41, 15), P(49, 17), P(50, 25), P(42, 26)], UIColor(rgb: 0x0E0C08), width: 1)
+            fillPolygon(ctx, [P(46, 16), P(49, 17), P(50, 25), P(46.5, 25.5)], UIColor(rgb: 0x8E8A80))
+            fillPolygon(ctx, [P(49, 18), P(53, 20), P(53, 23), P(49.5, 24)], UIColor(rgb: 0x413F3A))
+            strokePolygon(ctx, [P(49, 18), P(53, 20), P(53, 23), P(49.5, 24)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            stroke(ctx, from: P(42, 18), to: P(49, 18.4), UIColor(rgb: 0x7A5A40), width: 0.8)
+            stroke(ctx, from: P(42, 22), to: P(49, 22.4), UIColor(rgb: 0x7A5A40), width: 0.8)
+            fillOval(ctx, CGRect(x: 43.1, y: 19.1, width: 1.8, height: 1.8), UIColor(rgb: 0x7A5A40))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.05))
+    }
+
+    // MARK: - ruinedArch
+
+    /// The gate itself: two piers, and most of what used to join them.
+    static func ruinedArch() -> Sprite {
+        let image = render(CGSize(width: 56, height: 66)) { ctx in
+            fillOval(ctx, CGRect(x: 4, y: 59, width: 48, height: 9), UIColor(rgb: 0x2A2825))
+            radialGradient(ctx, center: P(28, 34), radius: 26, inner: UIColor(rgb: 0x5A3F8C, alpha: 0.28), outer: UIColor(rgb: 0x5A3F8C, alpha: 0))
+            fillPolygon(ctx, [P(7, 63), P(19, 63), P(18, 12), P(8, 12)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(7, 63), P(19, 63), P(18, 12), P(8, 12)], UIColor(rgb: 0x0E0C08), width: 1)
+            fillPolygon(ctx, [P(13, 63), P(19, 63), P(18, 12), P(13, 12)], UIColor(rgb: 0x4A4743))
+            stroke(ctx, from: P(7.8, 61), to: P(18.6, 61), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(7.8, 53), to: P(18.6, 53), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(7.8, 45), to: P(18.6, 45), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(7.8, 37), to: P(18.6, 37), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(7.8, 29), to: P(18.6, 29), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(7.8, 21), to: P(18.6, 21), UIColor(rgb: 0x46433E), width: 0.6)
+            fillPolygon(ctx, [P(37, 63), P(49, 63), P(48, 18), P(38, 18)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(37, 63), P(49, 63), P(48, 18), P(38, 18)], UIColor(rgb: 0x0E0C08), width: 1)
+            fillPolygon(ctx, [P(43, 63), P(49, 63), P(48, 18), P(43, 18)], UIColor(rgb: 0x4A4743))
+            stroke(ctx, from: P(37.8, 61), to: P(48.6, 61), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(37.8, 53), to: P(48.6, 53), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(37.8, 45), to: P(48.6, 45), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(37.8, 37), to: P(48.6, 37), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(37.8, 29), to: P(48.6, 29), UIColor(rgb: 0x46433E), width: 0.6)
+            stroke(ctx, from: P(37.8, 21), to: P(48.6, 21), UIColor(rgb: 0x46433E), width: 0.6)
+            fillPolygon(ctx, [P(8, 12), P(16, 4), P(24, 2), P(24, 8), P(17, 10), P(12, 16)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(8, 12), P(16, 4), P(24, 2), P(24, 8), P(17, 10), P(12, 16)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            fillPolygon(ctx, [P(48, 18), P(44, 8), P(36, 4), P(35, 10), P(41, 14), P(43, 21)], UIColor(rgb: 0x8A8680))
+            strokePolygon(ctx, [P(48, 18), P(44, 8), P(36, 4), P(35, 10), P(41, 14), P(43, 21)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            fillOval(ctx, CGRect(x: 20.1, y: 5.1, width: 1.8, height: 1.8), UIColor(rgb: 0xC79BFF))
+            fillOval(ctx, CGRect(x: 36.1, y: 6.1, width: 1.8, height: 1.8), UIColor(rgb: 0xC79BFF))
+            fillOval(ctx, CGRect(x: 11.1, y: 19.1, width: 1.8, height: 1.8), UIColor(rgb: 0xC79BFF))
+            fillOval(ctx, CGRect(x: 44.1, y: 23.1, width: 1.8, height: 1.8), UIColor(rgb: 0xC79BFF))
+            fillPolygon(ctx, [P(26, 61), P(34, 58), P(37, 63), P(27, 63)], UIColor(rgb: 0x6A6660))
+            strokePolygon(ctx, [P(26, 61), P(34, 58), P(37, 63), P(27, 63)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(17, 62), P(23, 57), P(26, 63), P(18, 63)], UIColor(rgb: 0x46433E))
+            strokePolygon(ctx, [P(17, 62), P(23, 57), P(26, 63), P(18, 63)], UIColor(rgb: 0x0E0C08), width: 0.6)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
+    }
+
+    // MARK: - hollowThrone
+
+    /// A throne with nothing on it, which is worse than a throne with something on it.
+    static func hollowThrone() -> Sprite {
+        let image = render(CGSize(width: 40, height: 60)) { ctx in
+            fillOval(ctx, CGRect(x: 5, y: 54, width: 30, height: 8), UIColor(rgb: 0x1B1720))
+            radialGradient(ctx, center: P(20, 32), radius: 22, inner: UIColor(rgb: 0x5A3F8C, alpha: 0.4), outer: UIColor(rgb: 0x5A3F8C, alpha: 0))
+            fillPolygon(ctx, [P(11, 40), P(29, 40), P(28, 14), P(20, 4), P(12, 14)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(11, 40), P(29, 40), P(28, 14), P(20, 4), P(12, 14)], UIColor(rgb: 0x0E0C08), width: 1)
+            fillPolygon(ctx, [P(20, 4), P(28, 14), P(29, 40), P(20.5, 40)], UIColor(rgb: 0x423E47))
+            fillPolygon(ctx, [P(10, 16), P(13, 6), P(15, 15)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(10, 16), P(13, 6), P(15, 15)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(26, 16), P(29, 6), P(31, 15)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(26, 16), P(29, 6), P(31, 15)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            stroke(ctx, from: P(17, 10), to: P(23, 10), UIColor(rgb: 0xC79BFF), width: 0.8)
+            stroke(ctx, from: P(17, 16), to: P(23, 16), UIColor(rgb: 0xC79BFF), width: 0.5)
+            stroke(ctx, from: P(17, 22), to: P(23, 22), UIColor(rgb: 0xC79BFF), width: 0.8)
+            stroke(ctx, from: P(17, 28), to: P(23, 28), UIColor(rgb: 0xC79BFF), width: 0.5)
+            stroke(ctx, from: P(17, 34), to: P(23, 34), UIColor(rgb: 0xC79BFF), width: 0.8)
+            fillPolygon(ctx, [P(9, 40), P(31, 40), P(32, 45), P(8, 45)], UIColor(rgb: 0x343039))
+            strokePolygon(ctx, [P(9, 40), P(31, 40), P(32, 45), P(8, 45)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            fillPolygon(ctx, [P(8, 34), P(13, 34), P(13, 45), P(8, 45)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(8, 34), P(13, 34), P(13, 45), P(8, 45)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 8, y: 31, width: 5, height: 5), UIColor(rgb: 0x18141C))
+            strokeOval(ctx, CGRect(x: 8, y: 31, width: 5, height: 5), UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 9.7, y: 32.7, width: 1.6, height: 1.6), UIColor(rgb: 0xC79BFF))
+            fillPolygon(ctx, [P(27, 34), P(32, 34), P(32, 45), P(27, 45)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(27, 34), P(32, 34), P(32, 45), P(27, 45)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillOval(ctx, CGRect(x: 27, y: 31, width: 5, height: 5), UIColor(rgb: 0x18141C))
+            strokeOval(ctx, CGRect(x: 27, y: 31, width: 5, height: 5), UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 28.7, y: 32.7, width: 1.6, height: 1.6), UIColor(rgb: 0xC79BFF))
+            fillPolygon(ctx, [P(10, 45), P(14, 45), P(14, 57), P(10, 57)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(10, 45), P(14, 45), P(14, 57), P(10, 57)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(26, 45), P(30, 45), P(30, 57), P(26, 57)], UIColor(rgb: 0x1E1A24))
+            strokePolygon(ctx, [P(26, 45), P(30, 45), P(30, 57), P(26, 57)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillSmooth(ctx, [P(14, 52), P(26, 52), P(25, 57), P(15, 57)], UIColor(rgb: 0x16110E))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
+    }
 }

@@ -114,6 +114,14 @@ enum RealmMapImage {
             return UIColor(red: 0.55, green: 0.15, blue: 0.13, alpha: 0.95)
         case .brokenCart, .rock:
             return UIColor(red: 0.35, green: 0.32, blue: 0.28, alpha: 0.85)
+        case .plagueBell, .siegeRam:
+            return UIColor(red: 0.42, green: 0.32, blue: 0.20, alpha: 0.95)
+        case .moltenChain:
+            return UIColor(red: 0.89, green: 0.38, blue: 0.10, alpha: 0.95)
+        case .brokenStair, .ruinedArch:
+            return UIColor(red: 0.58, green: 0.56, blue: 0.52, alpha: 0.95)
+        case .hollowThrone:
+            return UIColor(red: 0.40, green: 0.28, blue: 0.62, alpha: 0.95)
         default:
             return UIColor(white: 0.3, alpha: 0.8)
         }

@@ -94,6 +94,8 @@ final class SpriteCatalog {
         .decorIceSpire, .decorFrozenCorpse, .decorGibbet, .decorWarBanner, .decorLavaVent, .decorObsidianShard,
         .decorVoidRift, .decorFloatingStone, .decorBrokenStatue, .decorBarricade, .decorSkullPile,
         .decorBlackObelisk,
+        .decorPlagueBell, .decorMoltenChain, .decorBrokenStair,
+        .decorSiegeRam, .decorRuinedArch, .decorHollowThrone,
         .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxSpark, .fxRing, .fxSplat,
     ]
 }

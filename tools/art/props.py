@@ -15,6 +15,11 @@ the Kingdom, vents and obsidian in the Depths, rifts and floating stone in
 the Shattered Realm, statues and barricades in the Citadel, skull piles and
 black obelisks at the Gate and in the Abyss.
 
+On top of that every realm has one signature prop that appears nowhere else
+at all, so no two places can ever read as the same place: the plague bell,
+the molten chain, the broken stair, the siege ram, the ruined arch and the
+hollow throne.
+
 Standing props are drawn with their base at the bottom of the canvas; ground
 decals are drawn flat and anchored at their centre.
 """
@@ -463,6 +468,171 @@ def blackObelisk():
     return s
 
 
+# ---------------------------------------------------------------------------
+# Signature props: one per realm, fielded nowhere else
+# ---------------------------------------------------------------------------
+
+def plagueBell():
+    s = standing("plagueBell", 40, 58, "The bell a village rang until nobody was left to ring it.")
+    ground = 56
+    s.ellipse(6, ground - 4, 28, 7, STONE_DARK)
+    for x in (10, 30):
+        s.taper([(x, ground - 1), (x + (20 - x) * 0.08, ground - 24), (x + (20 - x) * 0.16, ground - 44)],
+                WOOD, 4.0, 2.8, outline=INK, width=0.8)
+    s.taper([(11, ground - 43), (20, ground - 45), (29, ground - 43)], WOOD_LIGHT, 3.2, 2.6,
+            outline=INK, width=0.7)
+    s.poly([(12, ground - 40), (17, ground - 42), (17, ground - 39), (12.5, ground - 37)], WOOD_DARK,
+           outline=INK, width=0.5)
+    s.poly([(28, ground - 40), (23, ground - 42), (23, ground - 39), (27.5, ground - 37)], WOOD_DARK,
+           outline=INK, width=0.5)
+    s.line((20, ground - 44), (20, ground - 38), IRON, 1.0)
+    # The bell, cracked from lip to shoulder.
+    s.blob([(20, ground - 39), (27, ground - 33), (29, ground - 20), (11, ground - 20), (13, ground - 33)],
+           _shade(GOLD, 0.35), outline=INK, width=0.9)
+    s.blob([(20, ground - 38), (24, ground - 33), (25, ground - 21), (19, ground - 21)], GOLD)
+    s.poly([(10, ground - 21), (30, ground - 21), (29, ground - 17), (11, ground - 17)],
+           _shade(GOLD, 0.15), outline=INK, width=0.7)
+    s.curve([(24, ground - 17), (25.5, ground - 26), (23, ground - 34)], _shade(GOLD, 0.7), 1.1)
+    s.line((20, ground - 20), (20, ground - 14), IRON_LIGHT, 0.8)
+    s.ellipse(18.6, ground - 14, 3, 3.4, IRON, outline=INK, width=0.5)
+    # A plague cloth knotted to the frame and left hanging.
+    s.blob([(30, ground - 42), (36, ground - 41), (35, ground - 34), (30, ground - 35)], ROT,
+           outline=INK, width=0.6)
+    s.blob([(31, ground - 36), (35, ground - 35), (34, ground - 27), (31, ground - 28)],
+           _shade(ROT, 0.25), outline=INK, width=0.5)
+    for tx in (31.5, 33.5):
+        s.taper([(tx, ground - 28), (tx + 0.8, ground - 21)], ROT, 2.0, 0.4)
+    return s
+
+
+def moltenChain():
+    s = decal("moltenChain", 48, 28, "Chain heavy enough to hold something, sunk in rock that is still cooling.")
+    s.blob([(3, 14), (12, 5), (30, 4), (44, 11), (40, 23), (16, 25)], OBSIDIAN, outline=INK, width=0.9)
+    s.glow(24, 14, 22, LAVA, 0.45)
+    s.curve([(5, 19), (18, 9), (32, 17), (45, 9)], _shade(LAVA, 0.1), 2.2)
+    for index, (x, y) in enumerate(((7, 18), (13, 13), (19, 10), (25, 12), (31, 16), (37, 13), (43, 10))):
+        tilt = 5.2 if index % 2 == 0 else 4.2
+        s.ellipse(x - tilt / 2, y - 3.4, tilt, 6.8, _shade(IRON, 0.25), outline=INK, width=0.8)
+        s.ellipse(x - tilt / 2 + 1.3, y - 2.2, tilt - 2.6, 4.4, OBSIDIAN)
+        s.curve([(x - tilt / 2 + 0.6, y - 2.4), (x, y - 3.2)], IRON_LIGHT, 0.7)
+    s.blob([(20, 20), (28, 18), (33, 21), (24, 24)], LAVA)
+    s.blob([(23, 20.5), (28, 19.5), (29, 21.5), (24.5, 22.5)], LAVA_HOT)
+    return s
+
+
+def brokenStair():
+    s = standing("brokenStair", 44, 50, "A stair that climbs four steps and then gives up on the ground.")
+    ground = 48
+    s.ellipse(4, ground - 4, 26, 7, STONE_DARK)
+    for index in range(5):
+        x = 6 + index * 6.4
+        top = ground - 5 - index * 6.5
+        s.poly([(x, ground - 1), (x + 7.6, ground - 1), (x + 7.6, top), (x, top)], STONE,
+               outline=INK, width=0.8)
+        s.poly([(x, top), (x + 7.6, top), (x + 9.2, top - 2.6), (x + 1.6, top - 2.6)], STONE_LIGHT,
+               outline=INK, width=0.6)
+        for crack in (x + 2.4, x + 5.6):
+            s.line((crack, top + 1.4), (crack - 0.6, top + 4.4), STONE_DARK, 0.5)
+    # The last flight carries on without anything under it.
+    s.poly([(36, ground - 36), (43, ground - 38), (43, ground - 32), (36, ground - 30)],
+           _light(STONE, 0.12), outline=INK, width=0.7)
+    s.poly([(33, ground - 45), (41, ground - 47), (41, ground - 42), (33, ground - 40)],
+           _light(STONE, 0.2), outline=INK, width=0.7)
+    s.glow(38, ground - 41, 12, VOID, 0.35)
+    for dx, dy, r in ((31, ground - 33, 1.1), (42, ground - 26, 0.9), (28, ground - 43, 0.8)):
+        s.dot(dx, dy, r, VOID_HOT)
+    return s
+
+
+def siegeRam():
+    s = standing("siegeRam", 54, 40, "A ram that reached the door and stopped there.")
+    ground = 38
+    s.ellipse(4, ground - 3, 46, 8, STONE_DARK)
+    # Two trestles, each a pair of crossed legs with a collar where they meet.
+    for cx in (16, 36):
+        s.taper([(cx - 9, ground - 1), (cx + 7, ground - 27)], WOOD, 4.2, 2.6, outline=INK, width=0.8)
+        s.taper([(cx + 9, ground - 1), (cx - 7, ground - 27)], WOOD, 4.2, 2.6, outline=INK, width=0.8)
+        s.taper([(cx - 7, ground - 12), (cx + 7, ground - 12)], WOOD_DARK, 2.6, 2.6, outline=INK, width=0.6)
+        s.ellipse(cx - 3, ground - 24, 6, 5, RUST, outline=INK, width=0.7)
+        s.curve([(cx, ground - 22), (cx + 0.6, ground - 17)], RUST, 1.1)
+    # The beam, split along its length and hanging out of its slings.
+    s.taper([(6, ground - 18), (26, ground - 20), (44, ground - 17)], WOOD_LIGHT, 11.0, 9.0,
+            outline=INK, width=1.0)
+    s.curve([(9, ground - 19), (26, ground - 21), (42, ground - 18)], WOOD_DARK, 1.0)
+    s.curve([(10, ground - 16), (24, ground - 17.5), (40, ground - 15)], _shade(WOOD_LIGHT, 0.25), 0.8)
+    for ring in (14, 22, 32):
+        s.taper([(ring, ground - 23), (ring, ground - 12)], IRON, 2.4, 2.4, outline=INK, width=0.6)
+    s.poly([(7, ground - 22), (10, ground - 24), (9, ground - 13), (6, ground - 14)], WOOD_DARK,
+           outline=INK, width=0.7)
+    # The head: a cast iron cap, dented where the door was.
+    s.poly([(41, ground - 23), (49, ground - 21), (50, ground - 13), (42, ground - 12)], IRON,
+           outline=INK, width=1.0)
+    s.poly([(46, ground - 22), (49, ground - 21), (50, ground - 13), (46.5, ground - 12.5)], IRON_LIGHT)
+    s.poly([(49, ground - 20), (53, ground - 18), (53, ground - 15), (49.5, ground - 14)],
+           _shade(IRON, 0.3), outline=INK, width=0.7)
+    for ry in (ground - 20, ground - 16):
+        s.line((42, ry), (49, ry + 0.4), RUST, 0.8)
+    s.dot(44, ground - 18, 0.9, RUST)
+    return s
+
+
+def ruinedArch():
+    s = standing("ruinedArch", 56, 66, "The gate itself: two piers, and most of what used to join them.")
+    ground = 64
+    s.ellipse(4, ground - 5, 48, 9, _shade(STONE_DARK, 0.4))
+    s.glow(28, ground - 30, 26, VOID, 0.28)
+    for x, tall in ((7, 52), (37, 46)):
+        s.poly([(x, ground - 1), (x + 12, ground - 1), (x + 11, ground - tall), (x + 1, ground - tall)],
+               STONE, outline=INK, width=1.0)
+        s.poly([(x + 6, ground - 1), (x + 12, ground - 1), (x + 11, ground - tall), (x + 6, ground - tall)],
+               _shade(STONE, 0.3))
+        for course in range(3, tall - 2, 8):
+            s.line((x + 0.8, ground - course), (x + 11.6, ground - course), STONE_DARK, 0.6)
+    # The arch, broken open in the middle.
+    s.poly([(8, ground - 52), (16, ground - 60), (24, ground - 62), (24, ground - 56), (17, ground - 54),
+            (12, ground - 48)], STONE_LIGHT, outline=INK, width=0.9)
+    s.poly([(48, ground - 46), (44, ground - 56), (36, ground - 60), (35, ground - 54), (41, ground - 50),
+            (43, ground - 43)], STONE_LIGHT, outline=INK, width=0.9)
+    for gx, gy in ((21, ground - 58), (37, ground - 57), (12, ground - 44), (45, ground - 40)):
+        s.dot(gx, gy, 0.9, VOID_HOT)
+    s.poly([(26, ground - 3), (34, ground - 6), (37, ground - 1), (27, ground - 1)], STONE,
+           outline=INK, width=0.7)
+    s.poly([(17, ground - 2), (23, ground - 7), (26, ground - 1), (18, ground - 1)], STONE_DARK,
+           outline=INK, width=0.6)
+    return s
+
+
+def hollowThrone():
+    s = standing("hollowThrone", 40, 60,
+                 "A throne with nothing on it, which is worse than a throne with something on it.")
+    ground = 58
+    s.ellipse(5, ground - 4, 30, 8, _shade(OBSIDIAN, 0.1))
+    s.glow(20, ground - 26, 22, VOID, 0.4)
+    # Back, rising into points.
+    s.poly([(11, ground - 18), (29, ground - 18), (28, ground - 44), (20, ground - 54), (12, ground - 44)],
+           OBSIDIAN, outline=INK, width=1.0)
+    s.poly([(20, ground - 54), (28, ground - 44), (29, ground - 18), (20.5, ground - 18)],
+           _light(OBSIDIAN, 0.16))
+    for px, py in ((12, ground - 44), (28, ground - 44)):
+        s.poly([(px - 2, py + 2), (px + 1, py - 8), (px + 3, py + 1)], OBSIDIAN, outline=INK, width=0.7)
+    for index, y in enumerate(range(int(ground - 48), int(ground - 22), 6)):
+        s.line((20 - 3, y), (20 + 3, y), VOID_HOT, 0.8 if index % 2 == 0 else 0.5)
+    # Seat and arms.
+    s.poly([(9, ground - 18), (31, ground - 18), (32, ground - 13), (8, ground - 13)],
+           _light(OBSIDIAN, 0.1), outline=INK, width=0.9)
+    for ax in (8, 27):
+        s.poly([(ax, ground - 24), (ax + 5, ground - 24), (ax + 5, ground - 13), (ax, ground - 13)],
+               OBSIDIAN, outline=INK, width=0.8)
+        s.ellipse(ax, ground - 27, 5, 5, _shade(OBSIDIAN, 0.2), outline=INK, width=0.6)
+        s.dot(ax + 2.5, ground - 24.5, 0.8, VOID_HOT)
+    s.poly([(10, ground - 13), (14, ground - 13), (14, ground - 1), (10, ground - 1)], OBSIDIAN,
+           outline=INK, width=0.8)
+    s.poly([(26, ground - 13), (30, ground - 13), (30, ground - 1), (26, ground - 1)], OBSIDIAN,
+           outline=INK, width=0.8)
+    s.blob([(14, ground - 6), (26, ground - 6), (25, ground - 1), (15, ground - 1)], HOLLOW)
+    return s
+
+
 def all_sprites():
     return [
         reeds(), standingWater(), bogStump(),
@@ -473,6 +643,8 @@ def all_sprites():
         voidRift(), floatingStone(),
         brokenStatue(), barricade(),
         skullPile(), blackObelisk(),
+        plagueBell(), moltenChain(), brokenStair(),
+        siegeRam(), ruinedArch(), hollowThrone(),
     ]
 
 

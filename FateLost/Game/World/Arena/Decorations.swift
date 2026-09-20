@@ -34,6 +34,14 @@ enum DecorationKind: String, Codable, CaseIterable {
     case barricade
     case skullPile
     case blackObelisk
+
+    // One signature prop per realm, fielded nowhere else.
+    case plagueBell
+    case moltenChain
+    case brokenStair
+    case siegeRam
+    case ruinedArch
+    case hollowThrone
 }
 
 /// How a decoration is layered.
@@ -188,6 +196,30 @@ enum DecorationCatalog {
             return DecorationSpec(kind: kind, spriteID: .decorBlackObelisk, layer: .standing,
                                   footprintRadius: 0.8, blocksMovement: true, animation: .pulse,
                                   scaleRange: 0.9...1.2)
+        case .plagueBell:
+            return DecorationSpec(kind: kind, spriteID: .decorPlagueBell, layer: .standing,
+                                  footprintRadius: 1.0, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.9...1.15)
+        case .moltenChain:
+            return DecorationSpec(kind: kind, spriteID: .decorMoltenChain, layer: .groundDecal,
+                                  footprintRadius: 1.3, blocksMovement: false, animation: .flicker,
+                                  scaleRange: 0.9...1.35)
+        case .brokenStair:
+            return DecorationSpec(kind: kind, spriteID: .decorBrokenStair, layer: .standing,
+                                  footprintRadius: 1.1, blocksMovement: true, animation: .pulse,
+                                  scaleRange: 0.9...1.25)
+        case .siegeRam:
+            return DecorationSpec(kind: kind, spriteID: .decorSiegeRam, layer: .standing,
+                                  footprintRadius: 1.3, blocksMovement: true, animation: .none,
+                                  scaleRange: 0.95...1.1)
+        case .ruinedArch:
+            return DecorationSpec(kind: kind, spriteID: .decorRuinedArch, layer: .standing,
+                                  footprintRadius: 1.5, blocksMovement: true, animation: .pulse,
+                                  scaleRange: 0.95...1.2)
+        case .hollowThrone:
+            return DecorationSpec(kind: kind, spriteID: .decorHollowThrone, layer: .standing,
+                                  footprintRadius: 1.0, blocksMovement: true, animation: .pulse,
+                                  scaleRange: 0.95...1.15)
         }
     }
 }
