@@ -93,7 +93,6 @@ final class AppServices {
     func sealFate() {
         // Multiplayer goes too: the name, the identity and any party.
         multiplayer.eraseEverything()
-        storedMultiplayer = nil
         legacyStore.erase()
         heroStore.erase()
         settings.reset()

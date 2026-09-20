@@ -118,12 +118,17 @@ final class NetSnapshotTests: XCTestCase {
                     weaponSprite: .weaponBow, form: "form.bear"),
         ]
         snapshot.markers = [NetMarker(slot: 2, position: CGPoint(x: 70, y: 32), progress: 0.5, reviver: 0)]
-        snapshot.enemies = (0..<40).map { index in
-            NetEnemy(id: UInt32(1000 + index), kind: NetTables.hash16(EnemyCatalog.goblin.id), strain: UInt8(index % 3),
-                     position: CGPoint(x: 60 + Double(index) * 0.5, y: 28), healthFraction: 0.75,
-                     heading: CGPoint(x: -1, y: 0), statusMask: UInt16(index % 4), windupFraction: index % 5 == 0 ? 0.5 : 0,
-                     aim: CGPoint(x: 0, y: 1), isCharging: index == 7)
+        var enemies: [NetEnemy] = []
+        for index in 0..<40 {
+            let x: Double = 60 + Double(index) * 0.5
+            let windup: Double = index % 5 == 0 ? 0.5 : 0
+            let enemy = NetEnemy(id: UInt32(1000 + index), kind: NetTables.hash16(EnemyCatalog.goblin.id),
+                                 strain: UInt8(index % 3), position: CGPoint(x: x, y: 28), healthFraction: 0.75,
+                                 heading: CGPoint(x: -1, y: 0), statusMask: UInt16(index % 4), windupFraction: windup,
+                                 aim: CGPoint(x: 0, y: 1), isCharging: index == 7)
+            enemies.append(enemy)
         }
+        snapshot.enemies = enemies
         snapshot.projectiles = [
             NetProjectile(id: 9, position: CGPoint(x: 65, y: 31), velocity: CGPoint(x: 12, y: 0),
                           sprite: NetTables.hash(of: .projectileArrow), visual: 1, radius: 0.25, isHostile: false),
@@ -172,35 +177,50 @@ final class NetSnapshotTests: XCTestCase {
         XCTAssertEqual(NetTables.shrine(decoded.shrines[0].kind), .ruin)
     }
 
+    private func crowd(_ count: Int) -> [NetEnemy] {
+        var list: [NetEnemy] = []
+        let kind = NetTables.hash16(EnemyCatalog.goblin.id)
+        let right = CGPoint(x: 1, y: 0)
+        for index in 0..<count {
+            list.append(NetEnemy(id: UInt32(index), kind: kind, strain: 1, position: CGPoint(x: 10, y: 10),
+                                 healthFraction: 1, heading: right, statusMask: 0xFFFF, windupFraction: 1, aim: right,
+                                 isCharging: true))
+        }
+        return list
+    }
+
     func testAFullFightStillFitsTheRelaysLimit() {
         var snapshot = rich()
-        snapshot.enemies = (0..<NetSnapshot.Limit.enemies).map { index in
-            NetEnemy(id: UInt32(index), kind: NetTables.hash16(EnemyCatalog.goblin.id), strain: 1,
-                     position: CGPoint(x: 10, y: 10), healthFraction: 1, heading: CGPoint(x: 1, y: 0), statusMask: 0xFFFF,
-                     windupFraction: 1, aim: CGPoint(x: 1, y: 0), isCharging: true)
+        snapshot.enemies = crowd(NetSnapshot.Limit.enemies)
+        var shots: [NetProjectile] = []
+        for index in 0..<NetSnapshot.Limit.projectiles {
+            shots.append(NetProjectile(id: UInt32(index), position: .zero, velocity: .zero, sprite: 1, visual: 0,
+                                       radius: 0.2, isHostile: true))
         }
-        snapshot.projectiles = (0..<NetSnapshot.Limit.projectiles).map { index in
-            NetProjectile(id: UInt32(index), position: .zero, velocity: .zero, sprite: 1, visual: 0, radius: 0.2, isHostile: true)
+        snapshot.projectiles = shots
+        var friends: [NetAlly] = []
+        for index in 0..<NetSnapshot.Limit.allies {
+            friends.append(NetAlly(id: UInt32(index), position: .zero, heading: CGPoint(x: 1, y: 0), sprite: 1, scale: 1,
+                                   tint: [1, 2, 3], behavior: 1, visual: 0, healthFraction: 1, attackedRecently: true))
         }
-        snapshot.allies = (0..<NetSnapshot.Limit.allies).map { index in
-            NetAlly(id: UInt32(index), position: .zero, heading: CGPoint(x: 1, y: 0), sprite: 1, scale: 1, tint: [1, 2, 3],
-                    behavior: 1, visual: 0, healthFraction: 1, attackedRecently: true)
+        snapshot.allies = friends
+        var orbs: [NetOrb] = []
+        for index in 0..<NetSnapshot.Limit.orbs {
+            orbs.append(NetOrb(id: UInt32(index), position: .zero, value: 1, attracted: true))
         }
-        snapshot.orbs = (0..<NetSnapshot.Limit.orbs).map { NetOrb(id: UInt32($0), position: .zero, value: 1, attracted: true) }
-        snapshot.zones = (0..<NetSnapshot.Limit.zones).map {
-            NetZone(id: UInt32($0), position: .zero, radius: 3, visual: 0, isAura: false, remaining: 5)
+        snapshot.orbs = orbs
+        var zones: [NetZone] = []
+        for index in 0..<NetSnapshot.Limit.zones {
+            zones.append(NetZone(id: UInt32(index), position: .zero, radius: 3, visual: 0, isAura: false, remaining: 5))
         }
+        snapshot.zones = zones
         let size = snapshot.encoded().count
         XCTAssertLessThan(size, PartyProtocol.maxHostFrame, "\(size) bytes")
     }
 
     func testMoreThanTheLimitIsCutNotSent() {
         var snapshot = NetSnapshot()
-        snapshot.enemies = (0..<(NetSnapshot.Limit.enemies + 200)).map { index in
-            NetEnemy(id: UInt32(index), kind: NetTables.hash16(EnemyCatalog.goblin.id), strain: 0, position: .zero,
-                     healthFraction: 1, heading: CGPoint(x: 1, y: 0), statusMask: 0, windupFraction: 0,
-                     aim: CGPoint(x: 1, y: 0), isCharging: false)
-        }
+        snapshot.enemies = crowd(NetSnapshot.Limit.enemies + 200)
         let decoded = NetSnapshot.decode(snapshot.encoded())
         XCTAssertEqual(decoded?.enemies.count, NetSnapshot.Limit.enemies)
     }

@@ -12,7 +12,7 @@ import Observation
 @Observable
 final class MultiplayerHub {
     let client: PartyClient
-    let identity: MultiplayerIdentity
+    private(set) var identity: MultiplayerIdentity
     private(set) var displayName: String?
 
     /// The weapon this player starts multiplayer runs with.
@@ -130,6 +130,8 @@ final class MultiplayerHub {
         displayName = nil
         MultiplayerIdentity.erase(from: secrets)
         PartySessionVault(store: secrets).clear()
+        // What follows is a fresh install: a new identity, made on the spot.
+        identity = MultiplayerIdentity.load(from: secrets)
     }
 
     // MARK: - Runs

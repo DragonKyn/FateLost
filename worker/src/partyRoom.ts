@@ -177,7 +177,8 @@ export class PartyRoom extends DurableObject<Env> {
       password,
       phase: "lobby",
       runNumber: 0,
-      realm: "goblin-warrens",
+      // The campaign's first realm, which every player has open.
+      realm: "ashenWilds",
       run: null,
       lastRun: null,
       members: [host],

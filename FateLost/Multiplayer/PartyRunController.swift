@@ -273,15 +273,10 @@ final class PartyRunController: PartyRunDriver {
         clock += dt
         for index in 1..<max(1, simulation.heroCount) {
             let slot = simulation.members[index].slot
-            var intent = PlayerIntent.idle
-            if let input = inputs[slot], clock - (lastInputTime[slot] ?? -10) < Self.inputTimeout {
-                intent.move = input.move
-                simulation.setMenuOpen(input.menuOpen, forHero: index)
-                adopt(hint: input.position, forHero: index, in: &simulation)
-            }
-            intent.abilityPresses = pendingPresses[slot] ?? 0
-            intent.interact = pendingInteract.contains(slot)
-            simulation.setIntent(intent, forHero: index)
+            // A guest that has gone quiet lets go of the stick.
+            let fresh = clock - (lastInputTime[slot] ?? -10) < Self.inputTimeout
+            HostInput.apply(fresh ? inputs[slot] : nil, presses: pendingPresses[slot] ?? 0,
+                            interact: pendingInteract.contains(slot), toHero: index, in: &simulation)
             pendingPresses[slot] = 0
         }
         pendingInteract.removeAll()
@@ -293,42 +288,8 @@ final class PartyRunController: PartyRunDriver {
         commands.removeAll()
     }
 
-    /// Takes the client's word for where it is, if that is believable: it
-    /// makes movement feel immediate without letting anyone teleport.
-    private func adopt(hint: CGPoint, forHero index: Int, in simulation: inout GameSimulation) {
-        let state = simulation.playerState(of: index)
-        guard !state.isDefeated else { return }
-        if simulation.world.distance(state.position, hint) <= 1.6 {
-            simulation.perform(as: index) { sim in
-                sim.player.position = sim.world.wrap(hint)
-                sim.combat.playerPosition = sim.player.position
-            }
-        }
-    }
-
     private func apply(_ command: NetCommand, toHero index: Int, in simulation: inout GameSimulation) {
-        simulation.perform(as: index) { sim in
-            switch command.kind {
-            case .commit:
-                guard let ranks = command.ranks else { return }
-                var draft = SkillAllocation()
-                for (id, rank) in ranks {
-                    guard let skill = SkillCatalog.skill(id) else { continue }
-                    for _ in 0..<rank { draft.add(skill) }
-                }
-                sim.commit(draft, slots: (command.slots ?? []).map { $0 })
-            case .equip:
-                sim.equip((command.slots ?? []).map { $0 })
-            case .chooseRelic:
-                if let choice = command.index { sim.chooseRelic(at: choice) }
-            case .chooseWeapon:
-                sim.chooseWeapon()
-            case .rerollOffer:
-                sim.rerollOffer()
-            case .toggleSummons:
-                sim.toggleSummonsDismissed()
-            }
-        }
+        HostInput.apply(command, toHero: index, in: &simulation)
         // The player sees the outcome at once.
         resyncSlots.insert(simulation.members[index].slot)
     }
