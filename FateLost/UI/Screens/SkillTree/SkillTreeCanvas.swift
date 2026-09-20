@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// One archetype's tree: the shared core on the left, then each subclass
-/// path as a row running through tiers II, III, IV and its capstone.
+/// One board: an archetype's tree — the shared core on the left, then each
+/// subclass path as a row through tiers II, III, IV and its capstone — or an
+/// order, which is a single row of the same shape with two ways in.
 struct SkillTreeCanvas: View {
-    let archetype: ArchetypeID
+    let board: TreeBoard
     let draft: SkillAllocation
     let committed: SkillAllocation
     let available: Int
@@ -17,20 +18,27 @@ struct SkillTreeCanvas: View {
         static let pathLabel: CGFloat = 68
     }
 
+    private var archetype: ArchetypeID { board.primary }
     private var definition: ArchetypeDefinition? { SkillCatalog.archetype(archetype) }
-    private var skills: [SkillDefinition] { SkillCatalog.skills(for: archetype) }
-    private var color: Color { definition?.color.color ?? FLTheme.Palette.ember }
+    private var skills: [SkillDefinition] { board.skills }
+    private var color: Color { board.tint }
 
     var body: some View {
         ScrollViewReader { proxy in
             ScrollView([.horizontal, .vertical], showsIndicators: false) {
-                HStack(alignment: .center, spacing: 12) {
-                    coreColumn
-                    Rectangle()
-                        .fill(FLTheme.Palette.rim.opacity(0.5))
-                        .frame(width: 1)
-                        .padding(.vertical, 8)
-                    pathsGrid
+                Group {
+                    if let order = board.orderID {
+                        orderBoard(order)
+                    } else {
+                        HStack(alignment: .center, spacing: 12) {
+                            coreColumn
+                            Rectangle()
+                                .fill(FLTheme.Palette.rim.opacity(0.5))
+                                .frame(width: 1)
+                                .padding(.vertical, 8)
+                            pathsGrid
+                        }
+                    }
                 }
                 .padding(10)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
@@ -119,6 +127,66 @@ struct SkillTreeCanvas: View {
             .offset(y: -8)
     }
 
+    // MARK: Orders
+
+    /// An order is one row: two ways in, then the three nodes that follow.
+    /// The tier headers carry both requirements, because an order always
+    /// asks for points in two trees and the board should say so plainly.
+    @ViewBuilder
+    private func orderBoard(_ id: HybridID) -> some View {
+        let order = HybridOrders.order(id)
+        let nodes = skills
+        VStack(alignment: .leading, spacing: 10) {
+            if let order {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(order.tagline)
+                        .font(FLTheme.Typeface.body(12))
+                        .italic()
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    Text(requirementLine(order))
+                        .font(FLTheme.Typeface.body(11))
+                        .foregroundStyle(color)
+                }
+            }
+            HStack(spacing: 0) {
+                orderTierHeader(.two, nodes: 2)
+                Color.clear.frame(width: Metrics.connector, height: 1)
+                orderTierHeader(.three, nodes: 1)
+                Color.clear.frame(width: Metrics.connector, height: 1)
+                orderTierHeader(.four, nodes: 1)
+                Color.clear.frame(width: Metrics.connector, height: 1)
+                orderTierHeader(.capstone, nodes: 1)
+            }
+            HStack(spacing: 0) {
+                tierGroup(nodes, .two)
+                connector(lit: learnedAny(nodes, .three))
+                tierGroup(nodes, .three)
+                connector(lit: learnedAny(nodes, .four))
+                tierGroup(nodes, .four)
+                connector(lit: learnedAny(nodes, .capstone))
+                tierGroup(nodes, .capstone)
+            }
+        }
+    }
+
+    private func requirementLine(_ order: HybridOrderDefinition) -> String {
+        let primaryName = SkillCatalog.archetype(order.primary)?.name ?? ""
+        let synergyName = SkillCatalog.archetype(order.synergy)?.name ?? ""
+        return "\(draft.points(in: order.primary)) in \(primaryName)"
+            + " · \(draft.points(in: order.synergy)) in \(synergyName)"
+    }
+
+    private func orderTierHeader(_ tier: SkillTier, nodes: Int) -> some View {
+        let rules = SkillTreeRules.standard
+        let primaryNeed = rules.threshold(for: tier)
+        let synergyNeed = rules.synergyThreshold(for: tier)
+        let synergy = HybridOrders.order(board.orderID ?? .spellblade)?.synergy
+        let unlocked = draft.points(in: archetype, below: tier) >= primaryNeed
+            && (synergy.map { draft.points(in: $0) >= synergyNeed } ?? true)
+        return TierHeader(tier: tier, unlocked: unlocked, threshold: primaryNeed, second: synergyNeed)
+            .frame(width: Metrics.node * CGFloat(nodes) + Metrics.gap * CGFloat(nodes - 1))
+    }
+
     private func learnedAny(_ pathSkills: [SkillDefinition], _ tier: SkillTier) -> Bool {
         pathSkills.contains { $0.tier == tier && draft.rank(of: $0.id) > 0 }
     }
@@ -148,6 +216,8 @@ private struct TierHeader: View {
     let tier: SkillTier
     let unlocked: Bool
     let threshold: Int
+    /// An order's second requirement, shown as "3 + 4".
+    var second: Int?
 
     var body: some View {
         HStack(spacing: 4) {
@@ -158,8 +228,8 @@ private struct TierHeader: View {
             Text(tier == .capstone ? "CAPSTONE" : tier.displayName.uppercased())
                 .font(.system(size: 10, weight: .heavy))
                 .tracking(1.2)
-            if threshold > 0 {
-                Text("\(threshold)")
+            if threshold > 0 || (second ?? 0) > 0 {
+                Text(second.map { "\(threshold) + \($0)" } ?? "\(threshold)")
                     .font(FLTheme.Typeface.number(10))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
             }

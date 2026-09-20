@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The skill tree: spend points across eleven archetypes, each with a shared
-/// core and three subclass paths, and choose which abilities to carry.
+/// core and three subclass paths, plus the eight orders that only open once
+/// two archetypes have been invested in. Choose which abilities to carry.
 ///
 /// Laid out for a phone held in landscape: one bar of controls across the
 /// top, the tree filling the rest, and a detail panel that slides in only
@@ -14,9 +15,9 @@ struct SkillTreeView: View {
     @Environment(AppServices.self) private var services
     @State private var draft: SkillAllocation
     @State private var slots: [AbilityID?]
-    @State private var archetype: ArchetypeID
+    @State private var board: TreeBoard
     @State private var selectedSkillID: SkillID?
-    @State private var showsArchetype = true
+    @State private var showsOverview = true
 
     private let committed: SkillAllocation
     private let earnedPoints: Int
@@ -32,12 +33,13 @@ struct SkillTreeView: View {
         let favourite = ArchetypeID.allCases.max {
             progression.allocation.points(in: $0) < progression.allocation.points(in: $1)
         } ?? .warrior
-        _archetype = State(initialValue: progression.allocation.points(in: favourite) > 0 ? favourite : .warrior)
+        let start = progression.allocation.points(in: favourite) > 0 ? favourite : ArchetypeID.warrior
+        _board = State(initialValue: .archetype(start))
     }
 
     private var available: Int { max(0, earnedPoints - draft.spent) }
     private var selectedSkill: SkillDefinition? { selectedSkillID.flatMap { SkillCatalog.skill($0) } }
-    private var showsPanel: Bool { selectedSkillID != nil || showsArchetype }
+    private var showsPanel: Bool { selectedSkillID != nil || showsOverview }
     private var hasChanges: Bool { draft != committed }
 
     var body: some View {
@@ -49,18 +51,18 @@ struct SkillTreeView: View {
             VStack(spacing: 8) {
                 toolbar
                 HStack(spacing: 8) {
-                    ArchetypeRail(selection: $archetype, allocation: draft) { tapped in
-                        select(archetype: tapped)
+                    BoardRail(selection: $board, allocation: draft) { tapped in
+                        select(board: tapped)
                     }
                     .frame(width: 56)
 
-                    SkillTreeCanvas(archetype: archetype, draft: draft, committed: committed, available: available,
+                    SkillTreeCanvas(board: board, draft: draft, committed: committed, available: available,
                                     selectedSkillID: $selectedSkillID) { skill in
                         select(skill: skill)
                     }
 
                     if showsPanel {
-                        SkillDetailPanel(archetype: archetype, skill: selectedSkill, draft: draft,
+                        SkillDetailPanel(board: board, skill: selectedSkill, draft: draft,
                                          committed: committed, available: available, slots: $slots,
                                          onLearn: learn, onUndo: undo, onClose: closePanel)
                             .frame(width: 272)
@@ -73,6 +75,7 @@ struct SkillTreeView: View {
         }
         .animation(.easeOut(duration: 0.18), value: showsPanel)
         .animation(.easeOut(duration: 0.18), value: selectedSkillID)
+        .animation(.easeOut(duration: 0.18), value: board)
     }
 
     // MARK: Toolbar
@@ -96,7 +99,7 @@ struct SkillTreeView: View {
 
             LoadoutStrip(slots: slots) { id in
                 if let skillID = SkillCatalog.skillID(forAbility: id), let skill = SkillCatalog.skill(skillID) {
-                    archetype = skill.archetype
+                    board = skill.order.map(TreeBoard.order) ?? .archetype(skill.archetype)
                     select(skill: skill)
                 }
             }
@@ -130,28 +133,28 @@ struct SkillTreeView: View {
 
     // MARK: Selection
 
-    private func select(archetype tapped: ArchetypeID) {
-        let sameAgain = tapped == archetype && showsArchetype && selectedSkillID == nil
-        archetype = tapped
+    private func select(board tapped: TreeBoard) {
+        let sameAgain = tapped == board && showsOverview && selectedSkillID == nil
+        board = tapped
         selectedSkillID = nil
-        showsArchetype = !sameAgain
+        showsOverview = !sameAgain
         services.haptics.play(.uiTap)
     }
 
     private func select(skill: SkillDefinition) {
         if selectedSkillID == skill.id {
             selectedSkillID = nil
-            showsArchetype = false
+            showsOverview = false
         } else {
             selectedSkillID = skill.id
-            showsArchetype = false
+            showsOverview = false
         }
         services.haptics.play(.uiTap)
     }
 
     private func closePanel() {
         selectedSkillID = nil
-        showsArchetype = false
+        showsOverview = false
         services.audio.play(.uiBack)
     }
 
@@ -250,26 +253,101 @@ private struct LoadoutStrip: View {
     }
 }
 
-// MARK: - Archetype rail
+// MARK: - Board rail
 
-/// The eleven archetypes, each showing points invested.
-private struct ArchetypeRail: View {
-    @Binding var selection: ArchetypeID
+/// The eleven archetypes, then the eight orders beneath a rule. Orders sit
+/// last because that is the order a build discovers them in: nobody reaches
+/// one without having spent a while further up the rail.
+private struct BoardRail: View {
+    @Binding var selection: TreeBoard
     let allocation: SkillAllocation
-    let onSelect: (ArchetypeID) -> Void
+    let onSelect: (TreeBoard) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
             VStack(spacing: 6) {
                 ForEach(SkillCatalog.archetypes) { archetype in
                     ArchetypeSigil(archetype: archetype, points: allocation.points(in: archetype.id),
-                                   isSelected: archetype.id == selection)
-                        .onTapGesture { onSelect(archetype.id) }
+                                   isSelected: selection == .archetype(archetype.id))
+                        .onTapGesture { onSelect(.archetype(archetype.id)) }
+                }
+
+                VStack(spacing: 3) {
+                    Rectangle()
+                        .fill(FLTheme.Palette.rim.opacity(0.6))
+                        .frame(height: 1)
+                    Text("ORDERS")
+                        .font(.system(size: 8, weight: .heavy))
+                        .tracking(1.4)
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                }
+                .padding(.horizontal, 6)
+                .padding(.top, 4)
+
+                ForEach(HybridOrders.all) { order in
+                    OrderSigil(order: order, points: BuildTitle.points(in: order.id, of: allocation),
+                               isOpen: isOpen(order), isSelected: selection == .order(order.id))
+                        .onTapGesture { onSelect(.order(order.id)) }
                 }
             }
             .padding(.vertical, 2)
         }
         .scrollBounceBehavior(.basedOnSize)
+    }
+
+    /// Whether the order's first nodes could be taken right now.
+    private func isOpen(_ order: HybridOrderDefinition) -> Bool {
+        let rules = SkillTreeRules.standard
+        return allocation.points(in: order.primary, below: .two) >= rules.threshold(for: .two)
+            && allocation.points(in: order.synergy) >= rules.synergyThreshold(for: .two)
+    }
+}
+
+/// One order in the rail. Dim until both its trees have been fed.
+private struct OrderSigil: View {
+    let order: HybridOrderDefinition
+    let points: Int
+    let isOpen: Bool
+    let isSelected: Bool
+
+    var body: some View {
+        HStack(spacing: 0) {
+            RoundedRectangle(cornerRadius: 1.5, style: .continuous)
+                .fill(isSelected ? FLTheme.Palette.emberBright : Color.clear)
+                .frame(width: 3, height: 34)
+            VStack(spacing: 1) {
+                ZStack(alignment: .topTrailing) {
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(order.color.color.opacity(isSelected ? 0.9 : (isOpen ? 0.34 : 0.16)))
+                        .frame(width: 38, height: 38)
+                        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.rim,
+                                          lineWidth: isSelected ? 2 : 1))
+                        .overlay(Image(systemName: order.symbol)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(isOpen ? FLTheme.Palette.parchment : FLTheme.Palette.locked))
+                    if points > 0 {
+                        Text("\(points)")
+                            .font(FLTheme.Typeface.number(10))
+                            .foregroundStyle(FLTheme.Palette.abyss)
+                            .padding(.horizontal, 4)
+                            .padding(.vertical, 0.5)
+                            .background(Capsule().fill(FLTheme.Palette.emberBright))
+                            .offset(x: 5, y: -2)
+                    }
+                }
+                Text(order.name)
+                    .font(.system(size: 9, weight: .semibold))
+                    .foregroundStyle(isSelected ? FLTheme.Palette.parchment : FLTheme.Palette.parchmentDim)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            .frame(maxWidth: .infinity)
+        }
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(order.name) order, \(points) points, \(isOpen ? "open" : "locked")")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

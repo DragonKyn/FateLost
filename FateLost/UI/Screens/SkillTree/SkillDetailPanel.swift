@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// The panel that slides in from the right: the selected skill in full, or
-/// the archetype's overview when no skill is selected, with the controls for
+/// the board's overview when no skill is selected, with the controls for
 /// learning it and choosing its slot.
 struct SkillDetailPanel: View {
-    let archetype: ArchetypeID
+    let board: TreeBoard
     let skill: SkillDefinition?
     let draft: SkillAllocation
     let committed: SkillAllocation
@@ -22,7 +22,9 @@ struct SkillDetailPanel: View {
                 VStack(alignment: .leading, spacing: 10) {
                     if let skill {
                         SkillDetails(skill: skill, rank: draft.rank(of: skill.id))
-                    } else if let definition = SkillCatalog.archetype(archetype) {
+                    } else if let id = board.orderID, let order = HybridOrders.order(id) {
+                        OrderOverview(order: order, allocation: draft)
+                    } else if let definition = SkillCatalog.archetype(board.primary) {
                         ArchetypeOverview(definition: definition, allocation: draft)
                     }
                 }
@@ -129,6 +131,9 @@ private struct SkillDetails: View {
     let rank: Int
 
     private var pathName: String {
+        if let order = skill.order, let definition = HybridOrders.order(order) {
+            return definition.name
+        }
         if let path = skill.path, let definition = SkillCatalog.path(path) {
             return definition.name
         }
@@ -283,5 +288,67 @@ private struct ArchetypeOverview: View {
                 .foregroundStyle(FLTheme.Palette.parchmentDim)
                 .fixedSize(horizontal: false, vertical: true)
         }
+    }
+}
+
+// MARK: - Order overview
+
+/// What an order is and what it is asking for, shown when its board is open
+/// and nothing on it is selected.
+private struct OrderOverview: View {
+    let order: HybridOrderDefinition
+    let allocation: SkillAllocation
+
+    private var rules: SkillTreeRules { .standard }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Image(systemName: order.symbol)
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(order.color.color)
+                Text(order.name)
+                    .font(FLTheme.Typeface.title(22))
+                    .foregroundStyle(FLTheme.Palette.parchment)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+            }
+            Text(order.tagline)
+                .font(FLTheme.Typeface.body(13))
+                .italic()
+                .foregroundStyle(FLTheme.Palette.parchmentDim)
+                .fixedSize(horizontal: false, vertical: true)
+
+            FLSectionLabel(text: "Asks For")
+            requirement(order.primary, held: allocation.points(in: order.primary),
+                        needed: rules.threshold(for: .two))
+            requirement(order.synergy, held: allocation.points(in: order.synergy),
+                        needed: rules.synergyThreshold(for: .two))
+
+            Text("An order is the only part of the tree that will not open on one archetype. "
+                 + "Its points count toward the first, and only one order capstone may ever be taken.")
+                .font(FLTheme.Typeface.body(12))
+                .foregroundStyle(FLTheme.Palette.parchmentDim)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private func requirement(_ archetype: ArchetypeID, held: Int, needed: Int) -> some View {
+        let name = SkillCatalog.archetype(archetype)?.name ?? ""
+        let met = held >= needed
+        return HStack(spacing: 8) {
+            Image(systemName: met ? "checkmark.circle.fill" : "circle")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(met ? order.color.color : FLTheme.Palette.locked)
+            Text(name)
+                .font(FLTheme.Typeface.body(13))
+                .foregroundStyle(FLTheme.Palette.parchment)
+            Spacer(minLength: 4)
+            Text("\(held) / \(needed)")
+                .font(FLTheme.Typeface.number(13))
+                .foregroundStyle(met ? FLTheme.Palette.parchment : FLTheme.Palette.parchmentDim)
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(name), \(held) of \(needed) points")
     }
 }
