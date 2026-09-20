@@ -108,6 +108,9 @@ struct PartyMember: Equatable {
     /// stop for them, so the hero is sheltered while they choose.
     var menuOpen = false
     var menuSeconds: Double = 0
+    /// The menu outlasted its shelter. It stays unsheltered until the player
+    /// closes it, so a menu the host is still told about cannot protect a hero forever.
+    var menuLocked = false
     /// Whether the hero was alive when this step began.
     var stepAlive = true
     /// Experience earned while fallen, paid out on revival.

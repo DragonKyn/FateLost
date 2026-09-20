@@ -161,6 +161,13 @@ final class GameSession {
 
     private func offerChanged(_ offer: RelicOffer?) {
         self.offer = offer
+        if offer == nil, pauseReason == .offer {
+            // The find is gone (answered, or taken back by the host). Left as
+            // it was, nothing would show and the hero would stay sheltered
+            // and frozen on the host with no way to close anything.
+            resume()
+            return
+        }
         guard offer != nil, summary == nil, pauseReason == nil else { return }
         pause(for: .offer)
     }

@@ -15,6 +15,14 @@ struct PartyRunOverlay: View {
             teammates
                 .allowsHitTesting(false)
 
+            // The breather is one small line at the top edge, out of the fight.
+            VStack {
+                restPill
+                Spacer()
+            }
+            .padding(.top, 10)
+            .frame(maxWidth: .infinity)
+
             VStack(spacing: 8) {
                 if let note = session.party?.statusNote {
                     banner(note, icon: "antenna.radiowaves.left.and.right")
@@ -25,10 +33,6 @@ struct PartyRunOverlay: View {
                 if hud.isFallen {
                     fallenBanner
                 }
-                if hud.isClearing {
-                    banner("The horde has stopped. Finish the last of them.", icon: "flag.fill")
-                }
-                restBanner
                 Spacer()
                 reviveControl
                     .padding(.bottom, 26)
@@ -39,7 +43,6 @@ struct PartyRunOverlay: View {
         .animation(.easeOut(duration: 0.2), value: hud.reviveTarget)
         .animation(.easeOut(duration: 0.2), value: hud.isFallen)
         .animation(.easeOut(duration: 0.25), value: hud.restSeconds == nil)
-        .animation(.easeOut(duration: 0.25), value: hud.isClearing)
     }
 
     // MARK: Pieces
@@ -97,33 +100,40 @@ struct PartyRunOverlay: View {
         .allowsHitTesting(false)
     }
 
-    /// The breather between waves: a countdown, and a way to go on early.
+    /// The breather between waves, as small as it can be: the time left and a
+    /// way to go on early. It appears only once the wave's last enemy is down.
     @ViewBuilder
-    private var restBanner: some View {
+    private var restPill: some View {
         if let seconds = hud.restSeconds {
-            VStack(spacing: 6) {
-                Text("THE HORDE PAUSES")
-                    .font(FLTheme.Typeface.title(16))
-                    .tracking(4)
+            HStack(spacing: 8) {
+                Image(systemName: "hourglass")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(FLTheme.Palette.emberBright)
+                Text(String(format: "%d:%02d", seconds / 60, seconds % 60))
+                    .font(FLTheme.Typeface.number(13))
                     .foregroundStyle(FLTheme.Palette.parchment)
-                Text("Raise the fallen and spend your points. Next wave in \(seconds)s.")
-                    .font(FLTheme.Typeface.body(12))
-                    .foregroundStyle(FLTheme.Palette.parchmentDim)
                 Button {
                     services.haptics.play(.uiTap)
                     session.scene.voteToProceed()
                 } label: {
-                    Text(hud.votedToProceed ? "Waiting for the party \(hud.restVotes)/\(hud.restVoters)"
-                                            : "Next Wave \(hud.restVotes)/\(hud.restVoters)")
+                    Text(hud.votedToProceed ? "Waiting \(hud.restVotes)/\(hud.restVoters)"
+                                            : "Next wave \(hud.restVotes)/\(hud.restVoters)")
+                        .font(FLTheme.Typeface.label(11))
+                        .foregroundStyle(hud.votedToProceed ? FLTheme.Palette.parchmentDim : FLTheme.Palette.abyss)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(Capsule().fill(hud.votedToProceed ? Color.white.opacity(0.1)
+                                                                       : FLTheme.Palette.emberBright))
                 }
-                .buttonStyle(.flPrimaryCompact)
-                .frame(width: 230)
+                .buttonStyle(.plain)
                 .disabled(hud.votedToProceed)
                 .accessibilityLabel(hud.votedToProceed ? "Waiting for the rest of the party" : "Ready for the next wave")
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 8)
-            .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.6)))
+            .padding(.leading, 10)
+            .padding(.trailing, 5)
+            .padding(.vertical, 4)
+            .background(Capsule().fill(Color.black.opacity(0.55)))
+            .overlay(Capsule().strokeBorder(FLTheme.Palette.rim.opacity(0.7), lineWidth: 1))
             .transition(.opacity)
         }
     }

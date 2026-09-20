@@ -139,6 +139,9 @@ final class PartyRunController: PartyRunDriver {
     @ObservationIgnored private var accumulatedPresses: UInt8 = 0
     @ObservationIgnored private var interactPending = false
     @ObservationIgnored private var menuOpen = false
+    /// When this player last answered a find, so stale reports do not undo it.
+    @ObservationIgnored private var offerAnsweredAt: TimeInterval?
+    static let offerAnswerHold: TimeInterval = 1.2
     /// The last input actually sent, and how long ago, so an unchanged stick
     /// is not sent twenty times a second.
     @ObservationIgnored private var lastSentInput: NetInput?
@@ -387,8 +390,13 @@ final class PartyRunController: PartyRunDriver {
     func clientFrame(_ simulation: inout GameSimulation, intent: PlayerIntent, dt: TimeInterval) -> [CombatEvent] {
         guard !finished else { return [] }
         clock += dt
-        if let state = pendingSelfState {
+        if var state = pendingSelfState {
             pendingSelfState = nil
+            // A report sent before the host heard our answer still carries the
+            // find we just took: showing it again would reopen the cards.
+            if let answered = offerAnsweredAt, clock - answered < Self.offerAnswerHold {
+                state.offer = nil
+            }
             simulation.applySelfState(state)
         }
         if let snapshot = latestSnapshot {
@@ -440,6 +448,10 @@ final class PartyRunController: PartyRunDriver {
 
     func send(_ command: NetCommand) {
         guard role == .client else { return }
+        switch command.kind {
+        case .chooseRelic, .chooseWeapon: offerAnsweredAt = clock
+        default: break
+        }
         hub?.client.sendFrame(.command, payload: command.encoded())
     }
 

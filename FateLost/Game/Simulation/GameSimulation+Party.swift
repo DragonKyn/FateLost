@@ -237,7 +237,10 @@ extension GameSimulation {
     /// A player has opened or closed a menu. The game goes on around them,
     /// so their hero is sheltered (for a while) instead.
     mutating func setMenuOpen(_ open: Bool, forHero hero: Int) {
-        guard members.indices.contains(hero), members[hero].menuOpen != open else { return }
+        guard members.indices.contains(hero) else { return }
+        if !open { members[hero].menuLocked = false }
+        if open && members[hero].menuLocked { return }
+        guard members[hero].menuOpen != open else { return }
         members[hero].menuOpen = open
         members[hero].menuSeconds = 0
     }
@@ -272,6 +275,7 @@ extension GameSimulation {
                 if members[hero].menuSeconds >= tuning.party.menuShelterSeconds {
                     members[hero].menuOpen = false
                     members[hero].menuSeconds = 0
+                    members[hero].menuLocked = true
                 }
             }
             if members[hero].isConnected {

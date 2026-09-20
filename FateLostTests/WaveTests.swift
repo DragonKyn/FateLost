@@ -220,6 +220,8 @@ final class WaveTests: XCTestCase {
         XCTAssertEqual(system.state.phase, .clearing)
         run(&system, &combat, seconds: system.clearLimit + 1)
         XCTAssertEqual(system.state.phase, .resting)
+        XCTAssertEqual(combat.enemies.count, 0, "the straggler was let go so the breather is a full one")
+        XCTAssertGreaterThan(system.state.restRemaining, 28)
     }
 
     func testAPlayerWhoLeavesNoLongerHoldsTheVote() {

@@ -43,8 +43,6 @@ struct GameplayHUDState: Equatable {
     var restVoters = 0
     /// This player has already asked to go on.
     var votedToProceed = false
-    /// The wave is over and its last enemies are being finished off.
-    var isClearing = false
 }
 
 /// One member of the party, as the corner of the screen lists them.
@@ -842,7 +840,6 @@ final class GameScene: SKScene {
     }
 
     private func applyRestHUD(to state: inout GameplayHUDState, wave: WaveState) {
-        state.isClearing = partyDriver != nil && wave.phase == .clearing
         guard partyDriver != nil, wave.phase == .resting else {
             proceedVoted = false
             return

@@ -812,6 +812,23 @@ final class PartyBreatherAndPoolTests: XCTestCase {
                                     "the host adopts what a guest says up to here, so a smaller gap is never the host's doing")
     }
 
+    func testAMenuThePlayerNeverClosesCannotShelterAHeroForever() {
+        var sim = Party.make(2)
+        sim.setMenuOpen(true, forHero: 1)
+        XCTAssertTrue(sim.isSheltered(1))
+        // The player's phone keeps saying the menu is open, as a stuck one would.
+        for _ in 0..<Int((sim.tuning.party.menuShelterSeconds + 5) * 10) {
+            sim.setMenuOpen(true, forHero: 1)
+            Party.run(&sim, seconds: 0.1)
+        }
+        XCTAssertFalse(sim.isSheltered(1), "the shelter ran out and stays out")
+
+        // Closing it, and opening another, shelters them again.
+        sim.setMenuOpen(false, forHero: 1)
+        sim.setMenuOpen(true, forHero: 1)
+        XCTAssertTrue(sim.isSheltered(1))
+    }
+
     func testTheFallenCanBeRevivedDuringTheBreather() {
         var sim = Party.make(2)
         Party.kill(&sim, hero: 1)

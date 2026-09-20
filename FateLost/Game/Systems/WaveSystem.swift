@@ -161,7 +161,12 @@ struct WaveSystem {
 
         case .clearing:
             clearingFor += dt
-            if combat.enemies.count == 0 || clearingFor >= clearLimit { beginRest(then: afterRest) }
+            if clearingFor >= clearLimit {
+                // Whatever is still out there (something stuck out of reach)
+                // is let go, so the breather is always a full one.
+                combat.enemies.removeAll()
+            }
+            if combat.enemies.count == 0 { beginRest(then: afterRest) }
             return nil
 
         case .resting:
