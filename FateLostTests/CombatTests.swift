@@ -365,7 +365,12 @@ final class GameSimulationTests: XCTestCase {
     }
 
     func testFallenPlayerStopsFighting() {
-        var simulation = run(seed: 5, steps: 1)
+        // A frail hero, so the fall does not depend on how often a boss
+        // happens to charge: what is under test is what follows it.
+        var simulation = GameSimulation(run: RunConfiguration(realmID: .ashenWilds,
+                                                              starterWeaponID: StarterWeapons.sword.id, seed: 5),
+                                        tuning: .standard, legacy: [StatModifier(.maxHealth, .more, -0.85)])
+        simulation.step(dt: Fixture.dt, intent: .idle)
         simulation.cheats.spawningEnabled = false
         // Level-up bursts clear space and heal, so keep the horde coming.
         for step in 0..<(60 * 240) where !simulation.isPlayerDefeated {
