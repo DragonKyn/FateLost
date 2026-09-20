@@ -155,6 +155,44 @@ final class PartyLoopbackTests: XCTestCase {
         XCTAssertLessThan(loop.host.enemies.count, 8, "somebody's weapon landed")
     }
 
+    func testAGuestKeepsWalkingAtFullSpeedWhileTheHostLiesFallen() {
+        var loop = Loopback(heroes: 2)
+        gather(&loop)
+        loop.host.combat.incidents.append(.strikeHero(hero: 0, amount: 100_000, direction: CGPoint(x: 1, y: 0)))
+        loop.run(frames: 30)
+        XCTAssertTrue(loop.host.playerState(of: 0).isDefeated)
+
+        let start = loop.guests[1]!.player.position
+        loop.moves[1] = CGPoint(x: 1, y: 0)
+        loop.run(frames: 240)
+        let guestScreen = loop.guests[1]!.player.position
+        let hostView = loop.host.playerState(of: 1).position
+        // Four seconds at 4.2 tiles a second, less the moment it takes to get going.
+        XCTAssertGreaterThan(loop.host.world.distance(start, guestScreen), 4.2 * 4 * 0.85, "the guest was held back")
+        XCTAssertGreaterThan(loop.host.world.distance(start, hostView), 4.2 * 4 * 0.8, "the host did not move the guest")
+    }
+
+    func testALaggingSnapshotDoesNotSlowAGuestDown() {
+        var loop = Loopback(heroes: 2)
+        gather(&loop)
+        let start = loop.guests[1]!.player.position
+        loop.moves[1] = CGPoint(x: 1, y: 0)
+        loop.run(frames: 60)
+        // A snapshot that is a third of a second old, as on a poor connection.
+        var laggy = loop.host.snapshot(forViewer: 1, radius: 26)
+        let behind = loop.host.playerState(of: 1).position - CGPoint(x: 4.2 * 0.33, y: 0)
+        for index in laggy.heroes.indices where laggy.heroes[index].slot == loop.slots[1] {
+            laggy.heroes[index].position = behind
+        }
+        let before = loop.guests[1]!.player.position
+        for _ in 0..<15 {
+            loop.guests[1]?.applyMirror(laggy)
+        }
+        XCTAssertEqual(loop.guests[1]!.player.position.x, before.x, accuracy: 0.001,
+                       "lag alone must not drag a walking guest back")
+        XCTAssertGreaterThan(before.x - start.x, 3)
+    }
+
     func testAnAreaHealHealsFriendsAndTheirScreensShowIt() {
         var loop = Loopback(heroes: 3)
         gather(&loop)
