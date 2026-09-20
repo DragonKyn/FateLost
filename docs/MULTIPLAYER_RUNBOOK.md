@@ -71,6 +71,15 @@ npx wrangler tail --env staging
 
 The service logs no room codes, names, passwords or credentials. Unexpected errors log only an error class.
 
+### Log volume
+
+Workers Logs records an *invocation log* for every request and for every WebSocket message a Durable Object handles. In a
+run that is dozens of events a second per player: two 15-minute two-player sessions plus test cycles produced about 36,500
+events. `invocation_logs = false` in `wrangler.toml` (production and staging) turns those off. The only things the code
+writes are `console.error("unexpected error" | "message handler failed")` lines for genuine faults (no per-tick, per-message,
+per-heartbeat, per-position or per-success logs exist, and a test keeps it that way). To look at traffic for a while, flip
+`invocation_logs` to `true` on staging only, deploy, look, and flip it back.
+
 ## Free plan budget
 
 A lobby that is idle costs nothing while it sleeps. In a run the host sends one batched message per tick (15/s whatever

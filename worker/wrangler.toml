@@ -14,8 +14,18 @@ workers_dev = true
 # Only the workers.dev address is served; no per-version preview URLs.
 preview_urls = false
 
+# Logging. Workers Logs writes an "invocation log" for every request AND for
+# every WebSocket message a Durable Object handles, which in a run is dozens a
+# second per player (about 36,000 events for two 15-minute sessions). Those are
+# switched off. What stays is what the code writes on purpose: a one-line
+# error class when something unexpected fails, which is rare. No metrics,
+# traces or per-message logs are kept.
 [observability]
 enabled = true
+
+[observability.logs]
+enabled = true
+invocation_logs = false
 
 [vars]
 ENVIRONMENT = "production"
@@ -42,6 +52,10 @@ preview_urls = false
 
 [env.staging.observability]
 enabled = true
+
+[env.staging.observability.logs]
+enabled = true
+invocation_logs = false
 
 [env.staging.vars]
 ENVIRONMENT = "staging"
