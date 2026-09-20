@@ -80,6 +80,10 @@ struct PartyResults: Equatable {
     var detail: String?
     var summary: RunSummary?
     var echoes = 0
+    /// Every hero's numbers and the shared pool, when the host sent them.
+    var report: PartyReport?
+    /// This phone's seat, to pick this player out of the report.
+    var mySlot = 0
 }
 
 // MARK: - The controller
@@ -135,11 +139,19 @@ final class PartyRunController: PartyRunDriver {
     @ObservationIgnored private var accumulatedPresses: UInt8 = 0
     @ObservationIgnored private var interactPending = false
     @ObservationIgnored private var menuOpen = false
+    /// The last input actually sent, and how long ago, so an unchanged stick
+    /// is not sent twenty times a second.
+    @ObservationIgnored private var lastSentInput: NetInput?
+    @ObservationIgnored private var sinceInputSent: TimeInterval = 0
 
     /// How often the host sends pictures (per second), and how often each player's own state.
     static let snapshotRate: Double = 15
     static let selfStateInterval: TimeInterval = 0.25
     static let inputRate: Double = 20
+    /// An unchanged input is repeated this often while moving (well inside the
+    /// host's timeout), and this often while standing still.
+    static let inputRepeatMoving: TimeInterval = 0.14
+    static let inputRepeatIdle: TimeInterval = 0.4
     /// How far from a player the world is sent to them, in tiles.
     static let interestRadius: CGFloat = 26
     /// A silent client's stick is let go after this long.
@@ -194,22 +206,27 @@ final class PartyRunController: PartyRunDriver {
         guard results == nil, let scene else { return }
         finished = true
         let outcome = RunSummary.Outcome(serviceOutcome: end.outcome)
-        var summary = Self.makeSummary(simulation: scene.simulation, outcome: outcome, run: info)
+        // The host counted every hero and split the echoes; believe their numbers.
+        let report = PartyReport(json: end.summary?["report"])
+        var summary = Self.makeSummary(simulation: scene.simulation, outcome: outcome, run: info,
+                                       stats: report?.hero(slot: mySlot)?.stats)
         if let seconds = end.summary?["secondsSurvived"]?.intValue { summary.secondsSurvived = seconds }
         if let wave = end.summary?["wave"]?.intValue { summary.wave = max(summary.wave, wave) }
-        let echoes = services?.record(summary) ?? 0
+        let pooled = report?.hero(slot: mySlot) != nil ? report?.share : nil
+        let echoes = services?.record(summary, echoes: pooled) ?? 0
         let headline = PartyRunSummary.headline(for: LobbyRoom.LastRun(runId: end.runId, outcome: end.outcome, summary: end.summary))
         let detail = PartyRunSummary.detail(for: LobbyRoom.LastRun(runId: end.runId, outcome: end.outcome, summary: end.summary))
         let finalResults = PartyResults(outcome: end.outcome, headline: headline, detail: detail, summary: summary,
-                                        echoes: echoes)
+                                        echoes: echoes, report: report, mySlot: mySlot)
         results = finalResults
         onResults?(finalResults)
     }
 
-    static func makeSummary(simulation: GameSimulation, outcome: RunSummary.Outcome, run: RunStartInfo) -> RunSummary {
+    static func makeSummary(simulation: GameSimulation, outcome: RunSummary.Outcome, run: RunStartInfo,
+                            stats: RunStats? = nil) -> RunSummary {
         let seconds = Int(simulation.elapsed - (simulation.timeSinceWipe ?? 0))
         var summary = RunSummary(realm: simulation.run.realmID, weapon: simulation.run.starterWeaponID,
-                                 secondsSurvived: max(0, seconds), stats: simulation.stats,
+                                 secondsSurvived: max(0, seconds), stats: stats ?? simulation.stats,
                                  level: simulation.progression.level, allocation: simulation.allocation)
         summary.outcome = outcome
         summary.wave = simulation.wave.index
@@ -310,25 +327,29 @@ final class PartyRunController: PartyRunDriver {
             members.indices.contains(hero) ? UInt8(clamping: members[hero].slot) : 0xFF
         }
 
+        // Everything for every player goes out as one message: the service counts
+        // messages it receives, not the players they reach.
+        var outgoing: [(target: UInt8, kind: FrameKind, payload: Data)] = []
         for index in 1..<max(1, simulation.heroCount) {
             let member = simulation.members[index]
             guard member.isConnected, !member.isGone else { continue }
             let slot = UInt8(clamping: member.slot)
 
             let picture = simulation.snapshot(forViewer: index, radius: Self.interestRadius)
-            hub?.client.sendFrame(.snapshot, payload: picture.encoded(), target: slot)
+            outgoing.append((slot, .snapshot, picture.encoded()))
 
             let mine = pendingEvents.filter { !$0.event.isPersonal || $0.hero == index }.map { $0.event }
             if !mine.isEmpty {
-                hub?.client.sendFrame(.events, payload: NetEventCodec.encode(mine, slotOf: slotOf), target: slot)
+                outgoing.append((slot, .events, NetEventCodec.encode(mine, slotOf: slotOf)))
             }
             if sendSelf {
                 let state = simulation.perform(as: index) { $0.captureSelfState() }
                 if let data = try? JSONEncoder().encode(state), data.count < PartyProtocol.maxHostFrame {
-                    hub?.client.sendFrame(.selfState, payload: data, target: slot)
+                    outgoing.append((slot, .selfState, data))
                 }
             }
         }
+        hub?.client.sendBatch(outgoing)
         pendingEvents.removeAll()
         resyncSlots.removeAll()
     }
@@ -345,21 +366,18 @@ final class PartyRunController: PartyRunDriver {
                 hub?.client.sendFrame(.selfState, payload: data, target: UInt8(clamping: member.slot))
             }
         }
-        var totalKills = 0
-        var heroes: [JSONValue] = []
-        for index in 0..<simulation.heroCount {
-            let hero = simulation.perform(as: index) { ($0.progression.level, $0.combat.stats.kills) }
-            totalKills += hero.1
-            heroes.append(.object(["name": .string(simulation.members[index].name), "level": .number(Double(hero.0)),
-                                   "kills": .number(Double(hero.1))]))
-        }
-        let seconds = Int(simulation.elapsed - (simulation.timeSinceWipe ?? 0))
-        let summary: JSONValue = .object([
+        let seconds = max(0, Int(simulation.elapsed - (simulation.timeSinceWipe ?? 0)))
+        let report = PartyReport.make(simulation: &simulation, outcome: outcome, seconds: seconds)
+        var fields: [String: JSONValue] = [
             "wave": .number(Double(simulation.wave.index)),
-            "secondsSurvived": .number(Double(max(0, seconds))),
-            "kills": .number(Double(totalKills)),
-            "heroes": .array(heroes),
-        ])
+            "secondsSurvived": .number(Double(seconds)),
+            "kills": .number(Double(report.totalKills)),
+            "heroes": .array(report.heroes.map {
+                .object(["name": .string($0.name), "level": .number(Double($0.level)), "kills": .number(Double($0.kills))])
+            }),
+        ]
+        if let json = report.json { fields["report"] = json }
+        let summary: JSONValue = .object(fields)
         // The host keeps answering its clients until the service confirms.
         hub?.client.endRun(runID: info.runId, outcome: outcome.serviceValue, summary: summary)
     }
@@ -384,24 +402,40 @@ final class PartyRunController: PartyRunDriver {
         accumulatedPresses |= intent.abilityPresses
         if intent.interact { interactPending = true }
         inputClock += dt
+        sinceInputSent += dt
         if inputClock >= 1 / Self.inputRate {
             inputClock = 0
             var input = NetInput()
-            inputSequence &+= 1
-            input.sequence = inputSequence
             input.move = intent.move
             input.abilityPresses = accumulatedPresses
             input.interact = interactPending
             input.menuOpen = menuOpen
             input.position = simulation.player.position
-            accumulatedPresses = 0
-            interactPending = false
-            hub?.client.sendFrame(.input, payload: input.encoded())
+            if Self.worthSending(input, since: lastSentInput, elapsed: sinceInputSent) {
+                inputSequence &+= 1
+                input.sequence = inputSequence
+                lastSentInput = input
+                sinceInputSent = 0
+                accumulatedPresses = 0
+                interactPending = false
+                hub?.client.sendFrame(.input, payload: input.encoded())
+            }
         }
 
         let events = pendingClientEvents
         pendingClientEvents.removeAll()
         return events
+    }
+
+    /// Whether an input differs enough from the last one sent, or the last one
+    /// has gone quiet for long enough, to be worth a message. A button, a
+    /// change of stick or of menu always is.
+    static func worthSending(_ input: NetInput, since last: NetInput?, elapsed: TimeInterval) -> Bool {
+        guard let last else { return true }
+        if input.abilityPresses != 0 || input.interact || input.menuOpen != last.menuOpen { return true }
+        if abs(input.move.x - last.move.x) > 0.04 || abs(input.move.y - last.move.y) > 0.04 { return true }
+        let repeatAfter = input.move == .zero ? inputRepeatIdle : inputRepeatMoving
+        return elapsed >= repeatAfter
     }
 
     func send(_ command: NetCommand) {

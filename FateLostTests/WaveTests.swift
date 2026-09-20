@@ -124,6 +124,113 @@ final class WaveTests: XCTestCase {
         XCTAssertEqual(system.state.index, wave + 1, "the clock should be running again")
     }
 
+    // MARK: A party's breather
+
+    private func partySystem(bossEvery: Int = 100, rest: Double = 30) -> WaveSystem {
+        var system = WaveSystem(plan: plan(bossEvery: bossEvery), conquestWave: nil)
+        system.restEvery = 2
+        system.restSeconds = rest
+        system.setElectorate([0, 1])
+        return system
+    }
+
+    func testAPartyRestsAfterEverySecondWaveAndNotAfterTheFirst() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 10)
+        XCTAssertEqual(system.state.index, 2, "no breather after wave one")
+        XCTAssertEqual(system.state.phase, .fighting)
+
+        run(&system, &combat, seconds: 10)
+        XCTAssertEqual(system.state.phase, .resting, "a breather after wave two")
+        XCTAssertEqual(system.state.index, 2, "the next wave has not begun")
+        XCTAssertEqual(system.spawnShare, 0, "nothing arrives while resting")
+
+        run(&system, &combat, seconds: 30)
+        XCTAssertEqual(system.state.phase, .fighting)
+        XCTAssertEqual(system.state.index, 3)
+        XCTAssertEqual(system.spawnShare, 1)
+    }
+
+    func testTheBreatherCountsDownAndLastsThirtySeconds() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 20)
+        XCTAssertEqual(system.state.restRemaining, 30, accuracy: 0.6)
+        run(&system, &combat, seconds: 15)
+        XCTAssertEqual(system.state.restRemaining, 15, accuracy: 0.6)
+        run(&system, &combat, seconds: 14)
+        XCTAssertEqual(system.state.phase, .resting)
+        run(&system, &combat, seconds: 2)
+        XCTAssertEqual(system.state.phase, .fighting)
+    }
+
+    func testTheBreatherEndsOnceEveryoneAsksToGoOn() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 20)
+        XCTAssertEqual(system.state.restVoters, 2)
+
+        system.voteToProceed(hero: 0)
+        XCTAssertEqual(system.state.restVotes, 1)
+        run(&system, &combat, seconds: 1)
+        XCTAssertEqual(system.state.phase, .resting, "one player cannot skip it alone")
+
+        system.voteToProceed(hero: 1)
+        run(&system, &combat, seconds: 0.5)
+        XCTAssertEqual(system.state.phase, .fighting)
+        XCTAssertEqual(system.state.index, 3)
+        XCTAssertEqual(system.state.restVotes, 0, "votes do not carry into the next breather")
+    }
+
+    func testAPlayerWhoLeavesNoLongerHoldsTheVote() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 20)
+        system.voteToProceed(hero: 0)
+        system.setElectorate([0])
+        run(&system, &combat, seconds: 0.5)
+        XCTAssertEqual(system.state.phase, .fighting, "the only remaining player had voted")
+    }
+
+    func testOnlyAPartyMemberInTheBreatherMayVote() {
+        var system = partySystem()
+        var combat = makeCombat()
+        system.voteToProceed(hero: 0)
+        XCTAssertEqual(system.state.restVotes, 0, "there is no breather yet")
+        run(&system, &combat, seconds: 20)
+        system.voteToProceed(hero: 7)
+        XCTAssertEqual(system.state.restVotes, 0, "a stranger's vote counts for nothing")
+    }
+
+    func testASoloRunNeverRests() {
+        var system = WaveSystem(plan: plan(bossEvery: 100), conquestWave: nil)
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 60)
+        XCTAssertNotEqual(system.state.phase, .resting)
+        XCTAssertEqual(system.state.index, 7)
+    }
+
+    func testAnEvenBossWaveRestsAfterTheChampionFalls() {
+        var system = partySystem(bossEvery: 2)
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 12)
+        let id = addBoss(&combat)
+        system.bossArrived(id: id, title: "Grask", health: 1_000, &combat)
+        combat.enemies.health[0] = 0
+        _ = system.step(&combat, dt: 0.5)
+        XCTAssertEqual(system.state.phase, .resting)
+        XCTAssertEqual(system.state.index, 2)
+
+        run(&system, &combat, seconds: 31)
+        XCTAssertEqual(system.state.phase, .fighting)
+        XCTAssertEqual(system.state.index, 2, "the wave carries on where it was")
+
+        run(&system, &combat, seconds: 10)
+        XCTAssertEqual(system.state.index, 3, "and does not rest a second time before moving on")
+        XCTAssertEqual(system.state.phase, .fighting)
+    }
+
     func testARealmWithNoChampionsNeverAsksForOne() {
         var system = WaveSystem(plan: WavePlan(waveSeconds: 5, bosses: []), conquestWave: nil)
         var combat = makeCombat()

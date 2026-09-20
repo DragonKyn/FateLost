@@ -119,7 +119,7 @@ and a `ReviveMarker` (a grave cross) is left where they lay. A living friend wit
 the reviver being struck (any blow that lands, including one a barrier absorbs; a
 dodge or an immune hero does not count), moving more than 2.6 tiles away,
 falling, leaving, or the target already being alive. Completing it returns the
-hero at 30% health with two seconds of immunity, keeping their build and level.
+hero at full health with two seconds of immunity, keeping their build and level.
 The host validates everything; a guest only ever sends "I pressed interact".
 Off-screen markers get a named, cross-shaped arrow in the same beacon layer as
 shrines and chests.
@@ -132,11 +132,11 @@ returns to the same lobby.
 
 Everything on the wire is in [the protocol](MULTIPLAYER_PROTOCOL.md). In short:
 
-* **Inputs** (guest → host, 20 Hz, 10 bytes): stick, ability presses, interact,
+* **Inputs** (guest → host, up to 20 Hz, 10 bytes; see below): stick, ability presses, interact,
   menu open, and where the guest thinks it is. The host adopts that position if it is
   within 1.6 tiles of its own (so movement feels instant without allowing
   teleports) and otherwise the guest is pulled back.
-* **Snapshots** (host → each guest, 15 Hz): the whole party, and everything within
+* **Snapshots** (host → each guest, 15 Hz, packed with that tick's events and self state into one batch): the whole party, and everything within
   26 tiles of that guest's hero, capped per kind so a frame always fits. Positions
   are 1/16 tile, angles one byte, health a fraction. About 5 KB in a large fight.
 * **Events** (host → guest): what happened (hits, kills, casts, revives), so a guest
@@ -148,6 +148,34 @@ Everything on the wire is in [the protocol](MULTIPLAYER_PROTOCOL.md). In short:
   now (`commit` re-validates the tree, cost and no-refunds rules).
 * The guest predicts its own movement, eases enemies and summons toward each new
   snapshot, flies shots on in straight lines, and counts cooldowns down between reports.
+
+### The breather
+
+After every second wave (and after a champion that ends an even-numbered wave) a party's horde stops arriving for
+30 seconds: `WaveState.Phase.resting`, spawn share 0. The heroes use it to raise the fallen and spend points. Each player
+has a **Next Wave** button; when every connected hero has pressed it, the breather ends early (a player who disconnects
+or leaves stops counting). Otherwise it counts down. Solo runs never rest. The countdown and votes travel in the snapshot;
+a vote is the `proceed` command.
+
+### Skills menu in a party
+
+The world does not stop for one player's menu, so levelling up never opens the tree by itself in a party: the button
+glows and shows the points. The tree reopens on the page where the player last spent a point (`GameSession.lastSkillBoard`).
+
+### Echoes
+
+Every hero's run is worth echoes as it always was (kills, elites, champions, waves, levels, times the realm's rate). A
+party adds those together into one pool and pays **each** player pool ÷ number of heroes, so a friend who fell early
+advances as far as one who carried. The host computes it once (`PartyReport`) and everyone credits the same figure.
+Realm rates now run from ×0.50 (first realm) to ×3.75 (endless), in solo and party alike.
+
+### Using the free plan sparingly
+
+The service bills by messages it *receives* (20 to a request). So the host packs every player's snapshot, events and self
+state into one batch a tick (15 messages a second whatever the party size), and a guest sends its stick only when it
+changes, otherwise every 0.14 s while moving and every 0.4 s while still (the host lets go of a silent stick after
+0.6 s). Outgoing messages are free, so what reaches each player is unchanged. Only a change of stick, a press, an
+interact or a menu is sent at once, so control feels the same.
 
 ## Reconnecting
 

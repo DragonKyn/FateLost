@@ -73,9 +73,11 @@ The service logs no room codes, names, passwords or credentials. Unexpected erro
 
 ## Free plan budget
 
-A lobby that is idle costs nothing while it sleeps. In a run, each client sends ~20 messages/s and the host ~15–60/s;
-incoming WebSocket messages count 1:20 toward the 100 000 daily request allowance, so a four-player run uses roughly
-300–400 request-equivalents per minute: about 4–5 hours of play per day for a family. Outgoing messages are free.
+A lobby that is idle costs nothing while it sleeps. In a run the host sends one batched message per tick (15/s whatever
+the party size) and each guest sends 2–7 messages/s standing or walking, up to 20/s while changing direction or pressing
+buttons. Incoming WebSocket messages count 1:20 toward the 100 000 daily request allowance, so a two-player run uses
+about 60–100 request-equivalents per minute and a four-player run about 90–225 (the top end is everyone
+steering constantly): roughly 7–25 hours of play per day for a family, in place of the 4–5 before batching. Outgoing messages are free.
 Password hashing is 20 000 PBKDF2 rounds (`PBKDF2_ITERATIONS`), which fits the free CPU limit; lower it if a `1102`
 "exceeded CPU" error ever shows in `tail`.
 

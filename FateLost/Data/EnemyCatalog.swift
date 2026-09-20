@@ -35,16 +35,16 @@ enum EnemyCatalog {
         spriteVariants: [.enemyGoblinSkulker, .enemyGoblinSkulkerPale]
     )
 
-    /// Shoots from the back of the crowd. Walking at it is the answer. Ten of
-    /// them arrive together on the first realm, so the pace is unhurried: a
-    /// shot every three seconds or so.
+    /// Shoots from the back of the crowd. Walking at it is the answer. They
+    /// were massing early and taking the fun out of the opening waves, so they
+    /// are rarer, arrive a wave later and loose a shot only every four seconds.
     static let goblinArcher = EnemyDefinition(
         id: "enemy.goblinArcher", name: "Goblin Archer", family: .goblinoid, rank: .soldier,
         maxHealth: 15, moveSpeed: 2.6, radius: 0.28,
-        attackDamage: 8, attackReach: 0.3, attackWindup: 0.55, attackCooldown: 2.5,
+        attackDamage: 8, attackReach: 0.3, attackWindup: 0.55, attackCooldown: 4,
         knockbackResistance: 0, damageType: .physical,
         behavior: .ranged(range: 7, projectileSpeed: 10, sprite: .projectileArrow),
-        experience: 2, spawnWeight: 0.4, earliestWave: 2,
+        experience: 2, spawnWeight: 0.2, earliestWave: 3,
         spriteVariants: [.enemyGoblinArcher]
     )
 

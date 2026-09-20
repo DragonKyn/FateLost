@@ -35,6 +35,14 @@ struct GameplayHUDState: Equatable {
     var reviveProgress: Double?
     /// 0...1 while a friend is reviving this hero.
     var beingRevivedProgress: Double?
+    /// Whole seconds left in the party's breather between waves, or nil when
+    /// the horde is coming.
+    var restSeconds: Int?
+    /// How many of the party have asked to go on, out of how many are asked.
+    var restVotes = 0
+    var restVoters = 0
+    /// This player has already asked to go on.
+    var votedToProceed = false
 }
 
 /// One member of the party, as the corner of the screen lists them.
@@ -138,6 +146,8 @@ final class GameScene: SKScene {
     /// The party as last drawn, for the HUD and the arrows.
     private var currentPresentation = PartyPresentation()
     private var localMenuOpen = false
+    /// This player has asked to end the current breather.
+    private var proceedVoted = false
 
     /// Freezes simulation while leaving rendering alive (pause menu, level-up).
     var isGameplayPaused = false {
@@ -570,6 +580,7 @@ final class GameScene: SKScene {
                                      curseSeconds: Int(simulation.curseRemaining.rounded(.up)))
         var state = base
         applyPartyHUD(to: &state)
+        applyRestHUD(to: &state, wave: wave)
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
@@ -813,6 +824,29 @@ final class GameScene: SKScene {
             simulation.world.distanceSquared(player.position, $0.position)
                 < simulation.world.distanceSquared(player.position, $1.position)
         }?.position
+    }
+
+    private func applyRestHUD(to state: inout GameplayHUDState, wave: WaveState) {
+        guard partyDriver != nil, wave.phase == .resting else {
+            proceedVoted = false
+            return
+        }
+        state.restSeconds = max(0, Int(wave.restRemaining.rounded(.up)))
+        state.restVotes = wave.restVotes
+        state.restVoters = wave.restVoters
+        state.votedToProceed = proceedVoted
+    }
+
+    /// The player is ready for the next wave. Once everyone is, the breather ends.
+    func voteToProceed() {
+        guard let driver = partyDriver, simulation.wave.phase == .resting, !proceedVoted else { return }
+        proceedVoted = true
+        if driver.role == .client {
+            driver.send(NetCommand(kind: .proceed))
+        } else {
+            simulation.voteToProceed(hero: 0)
+        }
+        publishHUDStateIfChanged()
     }
 
     private func applyPartyHUD(to state: inout GameplayHUDState) {

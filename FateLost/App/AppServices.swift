@@ -155,9 +155,9 @@ final class AppServices {
     /// Folds a finished run into the record and pays out its echoes.
     /// Returns what the run was worth, for the summary screen.
     @discardableResult
-    func record(_ summary: RunSummary) -> Int {
+    func record(_ summary: RunSummary, echoes: Int? = nil) -> Int {
         let before = profile.echoes
-        profile.record(summary, realm: RealmCatalog.realm(summary.realm))
+        profile.record(summary, realm: RealmCatalog.realm(summary.realm), echoes: echoes)
         saveProfile()
         return profile.echoes - before
     }

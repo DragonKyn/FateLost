@@ -102,6 +102,9 @@ struct RunStats: Equatable, Codable {
     var summonsLost = 0
     var eliteKills = 0
     var bossKills = 0
+    /// In a party: friends raised, and times this hero fell.
+    var revives = 0
+    var falls = 0
     /// Highest wave reached.
     var wave = 1
     /// Spoils: chests opened, shrines agreed to, relics taken and weapons

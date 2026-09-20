@@ -73,6 +73,8 @@ extension GameSimulation {
             addHero(config)
         }
         combat.isParty = true
+        waves.restEvery = tuning.party.restEveryWaves
+        waves.restSeconds = tuning.party.restSeconds
         spreadTheParty()
     }
 
@@ -291,6 +293,18 @@ extension GameSimulation {
         return playerState(of: 0)
     }
 
+    /// The heroes whose word counts when the party votes to end a breather:
+    /// everyone still in the party and still connected.
+    func restElectorate() -> Set<Int> {
+        Set((0..<heroCount).filter { !members[$0].isGone && members[$0].isConnected })
+    }
+
+    /// A hero asks to leave the breather early.
+    mutating func voteToProceed(hero: Int) {
+        guard members.indices.contains(hero) else { return }
+        waves.voteToProceed(hero: hero)
+    }
+
     /// More heroes standing means more arrivals.
     func partySpawnFactor() -> Double {
         let standing = max(1, members.filter { $0.stepAlive }.count)
@@ -371,6 +385,7 @@ extension GameSimulation {
                 // The body stays where it fell, and the marker with it.
                 player.knockback = .zero
                 player.velocity = .zero
+                combat.stats.falls += 1
                 combat.reviveMarkers.append(ReviveMarker(hero: hero, position: player.position))
                 combat.events.append(.heroFell(hero: hero, position: player.position))
             }
@@ -474,6 +489,9 @@ extension GameSimulation {
             if marker.reviver != nil {
                 marker.progress += dt / max(rules.reviveSeconds, 0.1)
                 if marker.progress >= 1 {
+                    if let reviver = marker.reviver {
+                        perform(as: reviver) { $0.combat.stats.revives += 1 }
+                    }
                     combat.reviveMarkers.remove(at: index)
                     revive(marker.hero, at: marker.position)
                     index -= 1

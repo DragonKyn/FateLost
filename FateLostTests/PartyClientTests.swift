@@ -663,6 +663,38 @@ final class PartyClientTests: XCTestCase {
         XCTAssertEqual(guest.sockets.latest.sentFrames, [Data([1, 1, 2, 3])], "a guest sends the kind, then the payload")
     }
 
+    func testAHostBatchPacksEveryEntryIntoOneMessage() async throws {
+        let host = try await PartyClientHarness.hosting()
+        host.client.sendBatch([
+            (target: 1, kind: .snapshot, payload: Data([11, 12, 13])),
+            (target: 2, kind: .snapshot, payload: Data([21])),
+            (target: 0xFF, kind: .events, payload: Data()),
+        ])
+        XCTAssertEqual(host.sockets.latest.sentFrames,
+                       [Data([6, 3, 1, 2, 0, 3, 11, 12, 13, 2, 2, 0, 1, 21, 0xFF, 4, 0, 0])])
+    }
+
+    func testAHostBatchOfOneIsAnOrdinaryFrameAndAGuestCannotBatch() async throws {
+        let host = try await PartyClientHarness.hosting()
+        host.client.sendBatch([(target: 2, kind: .selfState, payload: Data([9]))])
+        XCTAssertEqual(host.sockets.latest.sentFrames, [Data([5, 2, 9])])
+
+        let guest = try await PartyClientHarness.joined()
+        guest.client.sendBatch([(target: 1, kind: .input, payload: Data([1])),
+                                (target: 1, kind: .input, payload: Data([2]))])
+        XCTAssertTrue(guest.sockets.latest.sentFrames.isEmpty)
+    }
+
+    func testABatchTooBigForOneMessageIsSplit() async throws {
+        let host = try await PartyClientHarness.hosting()
+        let big = Data(repeating: 1, count: 20_000)
+        host.client.sendBatch((0..<5).map { (target: UInt8($0), kind: FrameKind.snapshot, payload: big) })
+        let frames = host.sockets.latest.sentFrames
+        XCTAssertGreaterThan(frames.count, 1)
+        XCTAssertTrue(frames.allSatisfy { $0.count <= PartyProtocol.maxHostBatch })
+        XCTAssertEqual(frames.reduce(0) { $0 + Int($1[1]) }, 5, "every entry is sent exactly once")
+    }
+
     func testAGuestFrameIsTooBigToSendWhenItExceedsTheLimit() async throws {
         let guest = try await PartyClientHarness.joined()
         guest.client.sendFrame(.input, payload: Data(repeating: 0, count: PartyProtocol.maxClientFrame))
@@ -943,5 +975,51 @@ final class PartyClientTests: XCTestCase {
         let room = Lobby.room(members: [Lobby.member("host1", "Jesse", slot: 0, host: true)])
         harness.sockets.latest.deliver(Lobby.welcome(you: "host1", room: room))
         XCTAssertTrue(harness.sockets.latest.sentTypes.contains("loadout"))
+    }
+}
+
+/// How often a guest's phone bothers the service with its stick.
+@MainActor
+final class GuestInputRateTests: XCTestCase {
+    private func input(_ x: Double = 0, _ y: Double = 0) -> NetInput {
+        var input = NetInput()
+        input.move = CGPoint(x: x, y: y)
+        return input
+    }
+
+    func testTheFirstInputIsAlwaysSent() {
+        XCTAssertTrue(PartyRunController.worthSending(input(), since: nil, elapsed: 0))
+    }
+
+    func testAnUnchangedIdleStickIsRarelyRepeated() {
+        let last = input()
+        XCTAssertFalse(PartyRunController.worthSending(input(), since: last, elapsed: 0.1))
+        XCTAssertFalse(PartyRunController.worthSending(input(), since: last, elapsed: 0.3))
+        XCTAssertTrue(PartyRunController.worthSending(input(), since: last, elapsed: PartyRunController.inputRepeatIdle))
+    }
+
+    func testAnUnchangedMovingStickIsRepeatedWellInsideTheHostsTimeout() {
+        let last = input(1, 0)
+        XCTAssertFalse(PartyRunController.worthSending(input(1, 0), since: last, elapsed: 0.05))
+        XCTAssertTrue(PartyRunController.worthSending(input(1, 0), since: last, elapsed: PartyRunController.inputRepeatMoving))
+        XCTAssertLessThan(PartyRunController.inputRepeatMoving, PartyRunController.inputTimeout / 2)
+        XCTAssertLessThan(PartyRunController.inputRepeatIdle, PartyRunController.inputTimeout)
+    }
+
+    func testAChangeOfDirectionIsSentAtOnce() {
+        XCTAssertTrue(PartyRunController.worthSending(input(0, 1), since: input(1, 0), elapsed: 0.01))
+        XCTAssertTrue(PartyRunController.worthSending(input(0, 0), since: input(1, 0), elapsed: 0.01), "letting go is a change")
+    }
+
+    func testAPressAnInteractAndAMenuAreSentAtOnce() {
+        var press = input()
+        press.abilityPresses = 1
+        XCTAssertTrue(PartyRunController.worthSending(press, since: input(), elapsed: 0.01))
+        var interact = input()
+        interact.interact = true
+        XCTAssertTrue(PartyRunController.worthSending(interact, since: input(), elapsed: 0.01))
+        var menu = input()
+        menu.menuOpen = true
+        XCTAssertTrue(PartyRunController.worthSending(menu, since: input(), elapsed: 0.01))
     }
 }

@@ -104,14 +104,20 @@ final class ChargeTelegraphTests: XCTestCase {
         }
     }
 
-    func testTheFirstRealmsArchersFireAboutAThirdLessOften() {
+    func testTheFirstRealmsArchersFireAboutAThirdLessOftenAgain() {
         let archer = EnemyCatalog.goblinArcher
-        // A shot used to come every 0.55 + 1.6 seconds.
-        let before = 0.55 + 1.6
+        // A shot used to come every 0.55 + 2.5 seconds.
+        let before = 0.55 + 2.5
         let now = archer.attackWindup + archer.attackCooldown
         let reduction = 1 - before / now
         XCTAssertGreaterThanOrEqual(reduction, 0.28, "the archers were not slowed enough")
-        XCTAssertLessThanOrEqual(reduction, 0.34, "the archers were slowed too much")
+        XCTAssertLessThanOrEqual(reduction, 0.38, "the archers were slowed too much")
+    }
+
+    func testArchersAreRareAndNotInTheFirstTwoWaves() {
+        let archer = EnemyCatalog.goblinArcher
+        XCTAssertLessThanOrEqual(archer.spawnWeight, 0.2)
+        XCTAssertGreaterThanOrEqual(archer.earliestWave, 3)
     }
 
     func testTheArchersDamageAndRangeAreUntouched() {

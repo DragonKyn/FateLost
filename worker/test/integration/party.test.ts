@@ -366,6 +366,53 @@ describe("a run", () => {
     [host, a, b].forEach((c) => c.close());
   });
 
+  it("unpacks a host batch and hands each entry to its own client", async () => {
+    const { host, guests } = await party(3);
+    await startRun(host, guests);
+    const [a, b] = guests as [Client, Client];
+    // [6, count] then per entry [target, kind, lenHi, lenLo, ...payload].
+    host.sendBinary([
+      6, 4,
+      1, 2, 0, 3, 11, 12, 13, // snapshot for seat 1
+      2, 2, 0, 2, 21, 22, // snapshot for seat 2
+      1, 4, 0, 1, 31, // events for seat 1
+      0xff, 5, 0, 0, // an empty self state for everyone
+    ]);
+    const aSnapshot = await a.waitForFrame((f) => f[0] === 2);
+    const bSnapshot = await b.waitForFrame((f) => f[0] === 2);
+    expect(Array.from(aSnapshot)).toEqual([2, 11, 12, 13]);
+    expect(Array.from(bSnapshot)).toEqual([2, 21, 22]);
+    expect(Array.from(await a.waitForFrame((f) => f[0] === 4))).toEqual([4, 31]);
+    expect(Array.from(await a.waitForFrame((f) => f[0] === 5))).toEqual([5]);
+    expect(Array.from(await b.waitForFrame((f) => f[0] === 5))).toEqual([5]);
+    // Seat 2 was never sent seat 1's events.
+    await sleep(150);
+    expect(b.frames.some((f) => f[0] === 4)).toBe(false);
+    [host, a, b].forEach((c) => c.close());
+  });
+
+  it("drops a malformed batch whole, and a batch from a client", async () => {
+    const { host, guests } = await party(2);
+    await startRun(host, guests);
+    const guest = guests[0]!;
+    // The second entry claims more bytes than the frame holds: nothing is sent.
+    host.sendBinary([6, 2, 1, 2, 0, 1, 9, 1, 2, 0, 9, 1]);
+    // A count of zero, an unknown kind, a nested batch, and trailing bytes.
+    host.sendBinary([6, 0]);
+    host.sendBinary([6, 1, 1, 99, 0, 0]);
+    host.sendBinary([6, 1, 1, 6, 0, 0]);
+    host.sendBinary([6, 1, 1, 2, 0, 1, 7, 8]);
+    // A guest may not send one at all.
+    guest.sendBinary([6, 1, 0, 2, 0, 1, 5]);
+    // Then a good frame, which proves the earlier ones were simply ignored.
+    host.sendBinary([2, 0xff, 42]);
+    expect(Array.from(await guest.waitForFrame((f) => f[0] === 2))).toEqual([2, 42]);
+    expect(guest.frames).toHaveLength(1);
+    expect(host.frames).toHaveLength(0);
+    host.close();
+    guest.close();
+  });
+
   it("drops oversized, unknown and out-of-run frames", async () => {
     const { host, guests } = await party(2);
     const guest = guests[0]!;

@@ -173,10 +173,11 @@ struct LegacyProfile: Codable, Equatable {
     // MARK: Runs
 
     /// Folds a finished run into the lifetime record and pays out its echoes.
-    mutating func record(_ summary: RunSummary, realm: RealmDefinition) {
-        let earned = LegacyEchoes.earned(from: summary.stats, wave: summary.wave, level: summary.level,
-                                         realmMultiplier: realm.legacyMultiplier,
-                                         conquered: summary.outcome == .conquered)
+    /// A party's run passes what the party's shared pool pays this hero.
+    mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) {
+        let earned = fixed ?? LegacyEchoes.earned(from: summary.stats, wave: summary.wave, level: summary.level,
+                                                  realmMultiplier: realm.legacyMultiplier,
+                                                  conquered: summary.outcome == .conquered)
         echoes += earned
         lifetime.add(summary, realm: realm, echoes: earned)
         if summary.outcome == .conquered {

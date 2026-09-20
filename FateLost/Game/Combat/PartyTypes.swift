@@ -169,14 +169,19 @@ struct PartyTuning {
     /// How close a friend must be to begin, and to keep going.
     var reviveStartRange: CGFloat = 1.8
     var reviveHoldRange: CGFloat = 2.6
-    /// Share of maximum health a revived hero returns with.
-    var reviveHealthFraction: Double = 0.3
+    /// Share of maximum health a revived hero returns with: all of it, so a
+    /// friend raised just before a wave is not cut down by its first blow.
+    var reviveHealthFraction: Double = 1.0
     /// Seconds of immunity after being revived.
     var reviveInvulnerability: Double = 2
     /// The longest a hero is sheltered while their player is in a menu.
     var menuShelterSeconds: Double = 25
     /// A player who drops out is protected this long while they reconnect.
     var disconnectGraceSeconds: Double = 60
+    /// The horde stops for a breather after every this-many waves (0: never).
+    var restEveryWaves = 2
+    /// How long the breather lasts if nobody asks to go on.
+    var restSeconds: Double = 30
     /// Distance from the arena's centre point that the party starts spread out.
     var startRingRadius: CGFloat = 1.4
 }

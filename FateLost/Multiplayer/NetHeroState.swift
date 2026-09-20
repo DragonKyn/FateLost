@@ -59,6 +59,8 @@ struct NetCommand: Codable, Equatable {
         case chooseWeapon
         case rerollOffer
         case toggleSummons
+        /// Ask to end the party's breather early.
+        case proceed
     }
 
     var kind: Kind

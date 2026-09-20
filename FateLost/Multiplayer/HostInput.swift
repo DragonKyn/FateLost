@@ -61,6 +61,8 @@ enum HostInput {
                 sim.rerollOffer()
             case .toggleSummons:
                 sim.toggleSummonsDismissed()
+            case .proceed:
+                sim.voteToProceed(hero: index)
             }
         }
     }

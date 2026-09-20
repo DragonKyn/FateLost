@@ -381,6 +381,7 @@ struct GameSimulation {
     /// pushes; when a champion is due, it arrives with an escort and the
     /// ordinary horde thins out so the fight is against the champion.
     mutating func advanceWaves(_ dt: TimeInterval) {
+        if waves.restEvery > 0 { waves.setElectorate(restElectorate()) }
         let due = waves.step(&combat, dt: dt)
         if waves.state.index != shrineWave {
             shrineWave = waves.state.index

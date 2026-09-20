@@ -63,6 +63,7 @@ extension GameSimulation {
         case NetWave.bossIncoming: phase = .bossIncoming
         case NetWave.bossFight: phase = .bossFight
         case NetWave.conquered: phase = .conquered
+        case NetWave.resting: phase = .resting
         default: phase = .fighting
         }
         var wave = WaveState()
@@ -72,6 +73,9 @@ extension GameSimulation {
         wave.bossTitle = snapshot.wave.bossTitle ?? ""
         wave.bossMaxHealth = 1
         wave.bossHealth = snapshot.wave.bossFraction
+        wave.restRemaining = Double(snapshot.wave.restSeconds)
+        wave.restVotes = snapshot.wave.restVotes
+        wave.restVoters = snapshot.wave.restVoters
         waves.mirror(wave)
         combat.curseRemaining = Double(snapshot.wave.curseSeconds)
 

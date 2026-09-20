@@ -71,10 +71,15 @@ hostGraceEndsAt}`. It never contains a credential or a verifier.
 
 ## Socket, binary frames (relayed unread)
 
-Kinds: `1` input, `2` snapshot, `3` command, `4` events, `5` self state.
+Kinds: `1` input, `2` snapshot, `3` command, `4` events, `5` self state, `6` batch (host only).
 
 * Guest → room: `[kind][payload…]` (≤ 4 096 bytes). The host receives `[kind][senderSlot][payload…]`.
 * Host → room: `[kind][target][payload…]` (≤ 24 000 bytes); `target` is a seat or `0xFF` for everyone. A guest receives `[kind][payload…]`.
+* Host → room, batched: `[6][count]` then per entry `[target][kind][lengthHigh][lengthLow][payload…]` (whole frame
+  ≤ 64 000 bytes, ≤ 24 entries, each entry ≤ 24 000 bytes, no nested batches). The room unpacks it and gives each
+  target an ordinary `[kind][payload…]` frame. The whole batch is checked before any of it is sent; a malformed one is
+  dropped. A guest may not send a batch. This is how the host sends everything for every player in one message a tick,
+  because the free plan counts messages the room *receives*.
 * Frames outside a run, of unknown kind, or over the limit are dropped.
 
 All numbers little-endian. Coordinates are `Int16` in 1/16 tile. Angles one byte over 2π. Strings `u8` length + UTF-8 (≤ 60).
@@ -83,7 +88,7 @@ All numbers little-endian. Coordinates are `Int16` in 1/16 tile. Angles one byte
 `u16 seq · i8 moveX · i8 moveY (×127) · u8 presses (bits 0–3) · u8 flags (1 interact, 2 menuOpen) · coord x · coord y`
 
 ### Snapshot
-`u8 contentVersion · u32 tickMs · wave{u16 index,u8 phase,u8 bossFraction,u8 curseSeconds,string bossTitle} ·
+`u8 contentVersion · u32 tickMs · wave{u16 index,u8 phase,u8 bossFraction,u8 curseSeconds,string bossTitle,u8 restSeconds,u8 restVotes,u8 restVoters} ·
 u8 heroes[slot,flags,x,y,i8 vx,i8 vy (×8),angle,u16 health,u16 max,u16 barrier,u8 level,u16 weaponSpriteHash,(string form)] ·
 u8 markers[slot,x,y,u8 progress,u8 reviver] · u16 enemies[u32 id,u16 kindHash,u8 strain,x,y,u8 health,angle,u16 statusMask,u8 windup,angle,bool charging] ·
 u16 projectiles[u32 id,x,y,i8 vx,i8 vy,u16 spriteHash,u8 visual,u8 radius×64,bool hostile] · u8 zones[…] · u8 allies[…] · u16 orbs[…] · u8 drops[…] · u8 shrines[…]`
@@ -92,6 +97,9 @@ Caps per snapshot: 450 enemies, 200 projectiles, 40 zones, 100 summons, 150 orbs
 FNV-1a folded to 16 bits of the sprite/enemy name; a test asserts they are collision-free. A reader never traps: short or
 inconsistent data returns nothing.
 
+Wave phases: `0` fighting, `1` boss incoming, `2` boss fight, `3` conquered, `4` resting (the party's breather). Content
+version is 2.
+
 ### Events
 `u8 count`, then per event a tag and its fields (see `NetEventCodec`); 41 kinds. At most 48 per packet; when over,
 ordinary hits are dropped first. Hero numbers in events are relay seats.
@@ -99,8 +107,14 @@ ordinary hits are dropped first. Hero numbers in events are relay seats.
 ### Self state, commands
 JSON. `HeroSelfState` (`level, experience, required, earnedPoints, unspentPoints, ranks, slots, buildVersion, relics,
 offer, weapon, wielded, cooldowns, moveSpeed, summonsDismissed, hasSummons, allyCount, stats, shelterSecondsLeft`) and
-`NetCommand {kind: commit|equip|chooseRelic|chooseWeapon|rerollOffer|toggleSummons, ranks?, slots?, index?}` (≤ 400
+`NetCommand {kind: commit|equip|chooseRelic|chooseWeapon|rerollOffer|toggleSummons|proceed, ranks?, slots?, index?}` (≤ 400
 skills, ranks 0–12, ≤ 4 slots).
+
+### Run summary (`runEnd`)
+The host's `summary` carries `wave`, `secondsSurvived`, `kills`, a light `heroes` list and a `report`: for every hero their
+level, kills, elites, champions, crits, dodges, revives, falls, damage dealt and taken, healing, best hit and the echoes
+they added to the pool, plus `pool` and `share` (pool ÷ heroes, at least 1). It stays well under the 6 000-byte limit.
+Every phone shows the same results screen from it and credits its own player `share`.
 
 ## Legacy on the wire
 

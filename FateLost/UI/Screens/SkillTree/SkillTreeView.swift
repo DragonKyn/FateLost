@@ -34,7 +34,8 @@ struct SkillTreeView: View {
             progression.allocation.points(in: $0) < progression.allocation.points(in: $1)
         } ?? .warrior
         let start = progression.allocation.points(in: favourite) > 0 ? favourite : ArchetypeID.warrior
-        _board = State(initialValue: .archetype(start))
+        // Back where the player last spent a point, if they have.
+        _board = State(initialValue: session.lastSkillBoard ?? .archetype(start))
     }
 
     private var available: Int { max(0, earnedPoints - draft.spent) }
@@ -118,6 +119,7 @@ struct SkillTreeView: View {
             }
             Button(confirmTitle) {
                 services.audio.play(.uiConfirm)
+                if hasChanges { session.lastSkillBoard = board }
                 session.closeSkillTree(committing: draft, slots: slots)
             }
             .buttonStyle(hasChanges ? .flPrimaryCompact : .flSecondaryCompact)

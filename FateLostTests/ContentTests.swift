@@ -95,7 +95,8 @@ final class RealmCatalogTests: XCTestCase {
         XCTAssertLessThanOrEqual(waves.last ?? 0, 30)
         let multipliers = RealmCatalog.all.map(\.legacyMultiplier)
         XCTAssertEqual(multipliers, multipliers.sorted())
-        XCTAssertEqual(RealmCatalog.realm(.ashenWilds).legacyMultiplier, 1.0)
+        XCTAssertEqual(RealmCatalog.realm(.ashenWilds).legacyMultiplier, 0.5, "the first realm pays half")
+        XCTAssertGreaterThan(multipliers.last ?? 0, 3, "the hardest realm pays the most")
     }
 
     func testRoadMeandersCloseOnThemselves() {

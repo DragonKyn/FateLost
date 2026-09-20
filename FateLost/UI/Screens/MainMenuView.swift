@@ -31,7 +31,7 @@ struct MainMenuView: View {
                                 Text("Choose Your Fate")
                                     .font(FLTheme.Typeface.heading(15))
                                     .foregroundStyle(FLTheme.Palette.parchment)
-                                Text("Body, cloak and colours")
+                                Text("Character Customization")
                                     .font(FLTheme.Typeface.body(11))
                                     .foregroundStyle(FLTheme.Palette.parchmentDim)
                             }

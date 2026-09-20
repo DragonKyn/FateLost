@@ -29,6 +29,9 @@ final class GameSession {
     private(set) var summary: RunSummary?
     /// Levels gained since the tree was last opened.
     private(set) var pendingLevelUps = 0
+    /// The page of the skill tree the player was on when they last spent a
+    /// point, so the tree opens where they left off.
+    var lastSkillBoard: TreeBoard?
     /// The find waiting for a choice, if any.
     private(set) var offer: RelicOffer?
     /// The party this run is played with, in a multiplayer run.
@@ -170,7 +173,7 @@ final class GameSession {
         if pauseReason == .offer {
             resume()
         }
-        if progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+        if !isParty, progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
             openSkillTree()
         }
     }
@@ -182,7 +185,7 @@ final class GameSession {
         if pauseReason == .offer {
             resume()
         }
-        if progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+        if !isParty, progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
             openSkillTree()
         }
     }
@@ -198,7 +201,9 @@ final class GameSession {
     /// else already has the screen).
     private func levelGained() {
         pendingLevelUps += 1
-        guard levelUpTask == nil else { return }
+        // In a party the world does not stop for one player's menu, so a level
+        // never throws the tree open mid-fight: the button glows instead.
+        guard !isParty, levelUpTask == nil else { return }
         levelUpTask = Task { [weak self] in
             try? await Task.sleep(for: Self.levelUpTreeDelay)
             guard let self, !Task.isCancelled else { return }

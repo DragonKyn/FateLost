@@ -114,11 +114,16 @@ struct NetWave: Equatable {
     var bossFraction: Double
     var bossTitle: String?
     var curseSeconds: Int
+    /// The breather: seconds left, and how many of the party have voted to go on.
+    var restSeconds: Int = 0
+    var restVotes: Int = 0
+    var restVoters: Int = 0
 
     static let fighting: UInt8 = 0
     static let bossIncoming: UInt8 = 1
     static let bossFight: UInt8 = 2
     static let conquered: UInt8 = 3
+    static let resting: UInt8 = 4
 }
 
 /// A picture of the world as one player should see it, sent to them about
@@ -163,6 +168,9 @@ struct NetSnapshot: Equatable {
         writer.fraction(wave.bossFraction)
         writer.u8(UInt8(clamping: wave.curseSeconds))
         writer.string(wave.bossTitle ?? "")
+        writer.u8(UInt8(clamping: wave.restSeconds))
+        writer.u8(UInt8(clamping: wave.restVotes))
+        writer.u8(UInt8(clamping: wave.restVoters))
 
         writer.u8(UInt8(heroes.count))
         for hero in heroes {
@@ -288,8 +296,12 @@ struct NetSnapshot: Equatable {
         let bossFraction = reader.fraction()
         let curse = Int(reader.u8())
         let title = reader.string()
+        let restSeconds = Int(reader.u8())
+        let restVotes = Int(reader.u8())
+        let restVoters = Int(reader.u8())
         snapshot.wave = NetWave(index: index, phase: phase, bossFraction: bossFraction,
-                                bossTitle: title.isEmpty ? nil : title, curseSeconds: curse)
+                                bossTitle: title.isEmpty ? nil : title, curseSeconds: curse,
+                                restSeconds: restSeconds, restVotes: restVotes, restVoters: restVoters)
 
         let heroCount = Int(reader.u8())
         guard heroCount <= PartyProtocol.maxPlayers else { return nil }
@@ -446,10 +458,13 @@ extension GameSimulation {
         case .bossIncoming: phase = NetWave.bossIncoming
         case .bossFight: phase = NetWave.bossFight
         case .conquered: phase = NetWave.conquered
+        case .resting: phase = NetWave.resting
         }
         snapshot.wave = NetWave(index: state.index, phase: phase, bossFraction: state.bossHealthFraction,
                                 bossTitle: state.isBossActive ? state.bossTitle : nil,
-                                curseSeconds: Int(curseRemaining.rounded(.up)))
+                                curseSeconds: Int(curseRemaining.rounded(.up)),
+                                restSeconds: Int(state.restRemaining.rounded(.up)),
+                                restVotes: state.restVotes, restVoters: state.restVoters)
 
         for hero in 0..<heroCount {
             let summary = heroSummary(hero)

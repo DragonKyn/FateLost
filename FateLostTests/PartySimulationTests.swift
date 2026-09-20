@@ -521,6 +521,10 @@ final class PartyDeathAndReviveTests: XCTestCase {
         XCTAssertFalse(back.isDefeated)
         XCTAssertTrue(sim.reviveMarkers.isEmpty)
         XCTAssertEqual(back.health, back.maxHealth * sim.tuning.party.reviveHealthFraction, accuracy: 2)
+        XCTAssertEqual(sim.tuning.party.reviveHealthFraction, 1, "a revived hero returns at full health")
+        XCTAssertEqual(back.health, back.maxHealth, accuracy: 0.001)
+        XCTAssertEqual(sim.perform(as: 0) { $0.combat.stats.revives }, 1, "the reviver is credited")
+        XCTAssertEqual(sim.perform(as: 1) { $0.combat.stats.falls }, 1, "the fall is counted")
         XCTAssertGreaterThan(back.invulnerability, 0, "a moment of grace so they are not struck straight down")
         XCTAssertTrue(Party.events(&sim).contains {
             if case .heroRevived(let hero, _) = $0 { return hero == 1 } else { return false }
@@ -742,5 +746,147 @@ final class PartyDeathAndReviveTests: XCTestCase {
         XCTAssertTrue(sim.reviveMarkers.isEmpty)
         XCTAssertTrue(sim.isPartyWiped)
         XCTAssertNotNil(sim.timeSinceWipe)
+    }
+}
+
+/// The breather every second wave, and what a party's run pays out.
+final class PartyBreatherAndPoolTests: XCTestCase {
+    private func restingParty(_ count: Int = 3) -> GameSimulation {
+        var sim = Party.make(count)
+        // Two full waves of the first realm, and a moment more.
+        Party.run(&sim, seconds: sim.realm.waves.waveSeconds * 2 + 1)
+        return sim
+    }
+
+    func testAPartyGetsABreatherAfterWaveTwoAndSoloDoesNot() {
+        let sim = restingParty()
+        XCTAssertEqual(sim.wave.phase, .resting)
+        XCTAssertEqual(sim.wave.index, 2)
+        XCTAssertEqual(sim.wave.restVoters, 3)
+        XCTAssertEqual(sim.spawner.rateMultiplier, 0, "nothing new arrives while resting")
+
+        var solo = GameSimulation(run: RunConfiguration(realmID: .ashenWilds, starterWeaponID: StarterWeapons.sword.id,
+                                                        seed: 7),
+                                  tuning: .standard)
+        solo.cheats = SimulationCheats(godMode: true, spawningEnabled: false)
+        Party.run(&solo, seconds: solo.realm.waves.waveSeconds * 2 + 1)
+        XCTAssertNotEqual(solo.wave.phase, .resting)
+        XCTAssertEqual(solo.wave.index, 3)
+    }
+
+    func testTheBreatherIsThirtySecondsAndThenTheHordeReturns() {
+        var sim = restingParty()
+        XCTAssertEqual(sim.wave.restRemaining, 30 - 1, accuracy: 1.5)
+        Party.run(&sim, seconds: 31)
+        XCTAssertEqual(sim.wave.phase, .fighting)
+        XCTAssertEqual(sim.wave.index, 3)
+    }
+
+    func testEveryonePressingNextWaveEndsTheBreatherEarly() {
+        var sim = restingParty()
+        sim.voteToProceed(hero: 0)
+        HostInput.apply(NetCommand(kind: .proceed), toHero: 1, in: &sim)
+        Party.run(&sim, seconds: 0.5)
+        XCTAssertEqual(sim.wave.phase, .resting, "one of three is still choosing")
+        HostInput.apply(NetCommand(kind: .proceed), toHero: 2, in: &sim)
+        Party.run(&sim, seconds: 0.5)
+        XCTAssertEqual(sim.wave.phase, .fighting)
+        XCTAssertEqual(sim.wave.index, 3)
+    }
+
+    func testAPlayerWhoIsAwayDoesNotHoldTheBreatherOpen() {
+        var sim = restingParty()
+        sim.setConnected(false, forHero: 2)
+        sim.voteToProceed(hero: 0)
+        sim.voteToProceed(hero: 1)
+        Party.run(&sim, seconds: 0.5)
+        XCTAssertEqual(sim.wave.phase, .fighting)
+    }
+
+    func testTheFallenCanBeRevivedDuringTheBreather() {
+        var sim = Party.make(2)
+        Party.kill(&sim, hero: 1)
+        Party.run(&sim, seconds: sim.realm.waves.waveSeconds * 2 + 1)
+        XCTAssertEqual(sim.wave.phase, .resting)
+        let marker = sim.reviveMarkers[0].position
+        Party.place(&sim, hero: 0, at: sim.world.wrap(marker + CGPoint(x: 1, y: 0)))
+        var intent = sim.members[0].intent
+        intent.interact = true
+        sim.setIntent(intent, forHero: 0)
+        Party.run(&sim, seconds: sim.tuning.party.reviveSeconds + 0.5)
+        XCTAssertFalse(sim.playerState(of: 1).isDefeated)
+        let back = sim.playerState(of: 1)
+        XCTAssertEqual(back.health, back.maxHealth, accuracy: 0.001)
+    }
+
+    // MARK: The shared pool
+
+    func testThePoolIsDividedEvenlyAndEveryoneGetsAtLeastOne() {
+        XCTAssertEqual(LegacyEchoes.pooled([100, 50, 0]).pool, 150)
+        XCTAssertEqual(LegacyEchoes.pooled([100, 50, 0]).share, 50)
+        XCTAssertEqual(LegacyEchoes.pooled([90, 10]).share, 50)
+        XCTAssertEqual(LegacyEchoes.pooled([7, 6, 6, 5]).share, 6)
+        XCTAssertEqual(LegacyEchoes.pooled([0, 0]).share, 1)
+        XCTAssertEqual(LegacyEchoes.pooled([]).share, 1)
+    }
+
+    func testARunsReportCountsEveryHeroAndSharesThePool() {
+        var sim = Party.make(3)
+        sim.perform(as: 0) { $0.combat.stats.kills = 500 }
+        sim.perform(as: 1) { $0.combat.stats.kills = 50 }
+        Party.run(&sim, seconds: 1)
+        let report = PartyReport.make(simulation: &sim, outcome: .defeated, seconds: 90)
+
+        XCTAssertEqual(report.heroes.map(\.name), ["Jesse", "Whitney", "Kevin"])
+        XCTAssertEqual(report.heroes[0].kills, 500)
+        XCTAssertEqual(report.heroes[1].kills, 50)
+        XCTAssertEqual(report.totalKills, 550)
+        XCTAssertGreaterThan(report.heroes[0].contribution, report.heroes[1].contribution)
+        XCTAssertEqual(report.pool, report.heroes.reduce(0) { $0 + $1.contribution })
+        XCTAssertEqual(report.share, LegacyEchoes.pooled(report.heroes.map(\.contribution)).share)
+        XCTAssertGreaterThan(report.share, report.heroes[2].contribution,
+                             "the one who did least is still lifted by the others")
+        XCTAssertEqual(report.ranked.first?.name, "Jesse")
+    }
+
+    func testAReportSurvivesTheTripThroughTheService() throws {
+        var sim = Party.make(2)
+        sim.perform(as: 1) {
+            $0.combat.stats.damageDealt = 1234.4
+            $0.combat.stats.revives = 2
+        }
+        let report = PartyReport.make(simulation: &sim, outcome: .conquered, seconds: 300)
+        let json = try XCTUnwrap(report.json)
+        let text = String(decoding: try JSONEncoder().encode(json), as: UTF8.self)
+        XCTAssertLessThan(text.utf8.count, 3_000, "well inside what the service accepts in a summary")
+        XCTAssertEqual(PartyReport(json: json), report)
+        XCTAssertEqual(report.hero(slot: 1)?.stats.revives, 2)
+        XCTAssertEqual(report.hero(slot: 1)?.stats.damageDealt, 1234)
+        XCTAssertNil(PartyReport(json: .object(["wave": .number(3)])), "a summary without a report is not one")
+        XCTAssertNil(PartyReport(json: nil))
+    }
+
+    func testAPartyRunPaysTheSharedAmountNotTheHeroesOwn() {
+        var profile = LegacyProfile()
+        let summary = RunSummary(realm: .ashenWilds, weapon: StarterWeapons.sword.id, secondsSurvived: 60,
+                                 stats: RunStats(), level: 1, allocation: SkillAllocation())
+        profile.record(summary, realm: RealmCatalog.realm(.ashenWilds), echoes: 37)
+        XCTAssertEqual(profile.echoes, 37)
+        XCTAssertEqual(profile.lifetime.echoesEarned, 37)
+    }
+
+    func testTheFirstRealmPaysHalfAndHarderRealmsPayMore() {
+        var stats = RunStats()
+        stats.kills = 200
+        let first = RealmCatalog.realm(.ashenWilds).legacyMultiplier
+        let last = RealmCatalog.all.last?.legacyMultiplier ?? 0
+        XCTAssertEqual(first, 0.5)
+        XCTAssertGreaterThan(last, 3)
+        let starter = LegacyEchoes.earned(from: stats, wave: 5, level: 5, realmMultiplier: first, conquered: false)
+        let full = LegacyEchoes.earned(from: stats, wave: 5, level: 5, realmMultiplier: 1, conquered: false)
+        XCTAssertEqual(Double(starter), Double(full) / 2, accuracy: 1)
+        let multipliers = RealmCatalog.all.map(\.legacyMultiplier)
+        XCTAssertEqual(multipliers, multipliers.sorted())
+        XCTAssertEqual(Set(multipliers).count, multipliers.count, "every realm pays its own rate")
     }
 }

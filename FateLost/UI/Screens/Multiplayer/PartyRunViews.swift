@@ -25,6 +25,7 @@ struct PartyRunOverlay: View {
                 if hud.isFallen {
                     fallenBanner
                 }
+                restBanner
                 Spacer()
                 reviveControl
                     .padding(.bottom, 26)
@@ -34,6 +35,7 @@ struct PartyRunOverlay: View {
         }
         .animation(.easeOut(duration: 0.2), value: hud.reviveTarget)
         .animation(.easeOut(duration: 0.2), value: hud.isFallen)
+        .animation(.easeOut(duration: 0.25), value: hud.restSeconds == nil)
     }
 
     // MARK: Pieces
@@ -89,6 +91,37 @@ struct PartyRunOverlay: View {
         .background(Capsule().fill(Color.black.opacity(0.65)))
         .overlay(Capsule().strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
         .allowsHitTesting(false)
+    }
+
+    /// The breather between waves: a countdown, and a way to go on early.
+    @ViewBuilder
+    private var restBanner: some View {
+        if let seconds = hud.restSeconds {
+            VStack(spacing: 6) {
+                Text("THE HORDE PAUSES")
+                    .font(FLTheme.Typeface.title(16))
+                    .tracking(4)
+                    .foregroundStyle(FLTheme.Palette.parchment)
+                Text("Raise the fallen and spend your points. Next wave in \(seconds)s.")
+                    .font(FLTheme.Typeface.body(12))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+                Button {
+                    services.haptics.play(.uiTap)
+                    session.scene.voteToProceed()
+                } label: {
+                    Text(hud.votedToProceed ? "Waiting for the party \(hud.restVotes)/\(hud.restVoters)"
+                                            : "Next Wave \(hud.restVotes)/\(hud.restVoters)")
+                }
+                .buttonStyle(.flPrimaryCompact)
+                .frame(width: 230)
+                .disabled(hud.votedToProceed)
+                .accessibilityLabel(hud.votedToProceed ? "Waiting for the rest of the party" : "Ready for the next wave")
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
+            .background(RoundedRectangle(cornerRadius: 12).fill(Color.black.opacity(0.6)))
+            .transition(.opacity)
+        }
     }
 
     private var fallenBanner: some View {
@@ -147,73 +180,6 @@ struct PartyRunOverlay: View {
                 .frame(width: 230)
                 .accessibilityLabel("Revive \(target)")
             }
-        }
-    }
-}
-
-/// The party's results: how the run ended, and the way back to the lobby.
-struct PartyResultsView: View {
-    let results: PartyResults
-
-    @Environment(AppServices.self) private var services
-
-    var body: some View {
-        ZStack {
-            Color.black.opacity(0.78).ignoresSafeArea()
-            VStack(spacing: 12) {
-                Text(results.headline.uppercased())
-                    .font(FLTheme.Typeface.title(30))
-                    .tracking(5)
-                    .foregroundStyle(FLTheme.Palette.parchment)
-                    .multilineTextAlignment(.center)
-                if let detail = results.detail {
-                    Text(detail)
-                        .font(FLTheme.Typeface.heading(16))
-                        .foregroundStyle(FLTheme.Palette.parchmentDim)
-                }
-
-                if let summary = results.summary {
-                    HStack(spacing: 22) {
-                        figure("Level", "\(summary.level)")
-                        figure("Slain", "\(summary.stats.kills)")
-                        figure("Damage", Self.shortNumber(summary.stats.damageDealt))
-                        figure("Healed", Self.shortNumber(summary.stats.healingReceived))
-                        figure("Echoes", "+\(results.echoes)")
-                    }
-                    .padding(.vertical, 8)
-                }
-
-                Text("The party stays together. Ready up in the lobby for another run.")
-                    .font(FLTheme.Typeface.body(13))
-                    .foregroundStyle(FLTheme.Palette.parchmentDim)
-
-                Button("Return to the Lobby") {
-                    services.audio.play(.uiConfirm)
-                    services.multiplayer.returnToLobby()
-                }
-                .buttonStyle(.flPrimary)
-                .frame(width: 300)
-            }
-            .padding(28)
-            .flPanel()
-        }
-    }
-
-    private func figure(_ label: String, _ value: String) -> some View {
-        VStack(spacing: 2) {
-            Text(value)
-                .font(FLTheme.Typeface.number(24))
-                .foregroundStyle(FLTheme.Palette.emberBright)
-            FLSectionLabel(text: label)
-        }
-    }
-
-    static func shortNumber(_ value: Double) -> String {
-        switch value {
-        case 1_000_000...: return String(format: "%.1fM", value / 1_000_000)
-        case 10_000...: return String(format: "%.0fk", value / 1_000)
-        case 1_000...: return String(format: "%.1fk", value / 1_000)
-        default: return String(Int(value))
         }
     }
 }

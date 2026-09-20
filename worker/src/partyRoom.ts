@@ -18,6 +18,8 @@ import {
   BinaryKind,
   MAX_BINARY_KIND,
   MAX_CLIENT_BINARY,
+  MAX_BATCH_ENTRIES,
+  MAX_HOST_BATCH,
   MAX_HOST_BINARY,
   MAX_PLAYERS,
   MAX_TEXT_FRAME,
@@ -604,17 +606,19 @@ export class PartyRoom extends DurableObject<Env> {
     if (kind < BinaryKind.input || kind > MAX_BINARY_KIND) return;
 
     if (sender.id === room.hostId) {
+      if (kind === BinaryKind.batch) {
+        this.relayBatch(room, bytes);
+        room.lastActivity = Date.now();
+        return;
+      }
       if (bytes.length > MAX_HOST_BINARY) return;
       const target = bytes[1] ?? TARGET_ALL;
       const out = new Uint8Array(bytes.length - 1);
       out[0] = kind;
       out.set(bytes.subarray(2), 1);
-      for (const member of room.members) {
-        if (member.id === room.hostId) continue;
-        if (target !== TARGET_ALL && member.slot !== target) continue;
-        for (const ws of this.liveSockets(member.id)) ws.send(out);
-      }
+      this.deliver(room, target, out);
     } else {
+      if (kind === BinaryKind.batch) return;
       if (bytes.length > MAX_CLIENT_BINARY) return;
       const out = new Uint8Array(bytes.length + 1);
       out[0] = kind;
@@ -624,6 +628,44 @@ export class PartyRoom extends DurableObject<Env> {
     }
     // Traffic in a run is activity, but it is not worth a write.
     room.lastActivity = Date.now();
+  }
+
+  /** Sends one frame to a seat, or to every client. */
+  private deliver(room: RoomState, target: number, frame: Uint8Array): void {
+    for (const member of room.members) {
+      if (member.id === room.hostId) continue;
+      if (target !== TARGET_ALL && member.slot !== target) continue;
+      for (const ws of this.liveSockets(member.id)) ws.send(frame);
+    }
+  }
+
+  /**
+   * Unpacks a host's batch and hands each entry to its target. The whole
+   * batch is checked before any of it is sent, so a malformed one is dropped
+   * rather than half delivered.
+   */
+  private relayBatch(room: RoomState, bytes: Uint8Array): void {
+    if (bytes.length > MAX_HOST_BATCH || bytes.length < 2) return;
+    const count = bytes[1] ?? 0;
+    if (count === 0 || count > MAX_BATCH_ENTRIES) return;
+    const frames: Array<{ target: number; frame: Uint8Array }> = [];
+    let offset = 2;
+    for (let index = 0; index < count; index++) {
+      if (offset + 4 > bytes.length) return;
+      const target = bytes[offset] ?? TARGET_ALL;
+      const kind = bytes[offset + 1] ?? 0;
+      const length = ((bytes[offset + 2] ?? 0) << 8) | (bytes[offset + 3] ?? 0);
+      offset += 4;
+      if (kind < BinaryKind.input || kind > MAX_BINARY_KIND || kind === BinaryKind.batch) return;
+      if (length > MAX_HOST_BINARY || offset + length > bytes.length) return;
+      const frame = new Uint8Array(length + 1);
+      frame[0] = kind;
+      frame.set(bytes.subarray(offset, offset + length), 1);
+      offset += length;
+      frames.push({ target, frame });
+    }
+    if (offset !== bytes.length) return;
+    for (const { target, frame } of frames) this.deliver(room, target, frame);
   }
 
   // MARK: - Alarm

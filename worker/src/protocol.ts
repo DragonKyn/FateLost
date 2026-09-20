@@ -30,6 +30,15 @@ export const MAX_TEXT_FRAME = 20_000;
 export const MAX_CLIENT_BINARY = 4096;
 /** Largest binary frame from the host (a snapshot). */
 export const MAX_HOST_BINARY = 24_000;
+/**
+ * Largest batch from the host: one frame carrying a snapshot, events and
+ * self state for every client. A message the host sends counts against the
+ * free plan's request allowance once, however many clients it reaches, so
+ * one batch a tick is far cheaper than one frame per client.
+ */
+export const MAX_HOST_BATCH = 64_000;
+/** The most entries one batch may carry. */
+export const MAX_BATCH_ENTRIES = 24;
 export const MAX_LOADOUT_BYTES = 16_000;
 export const MAX_SUMMARY_BYTES = 6_000;
 
@@ -45,6 +54,12 @@ export const BinaryKind = {
   events: 4,
   /** Host to client: the client's own progression/build state. */
   selfState: 5,
+  /**
+   * Host to room: several frames in one. [6, count] then, per entry,
+   * [target, kind, lengthHigh, lengthLow, ...payload]. Each entry reaches its
+   * target as an ordinary [kind, ...payload] frame.
+   */
+  batch: 6,
 } as const;
 export const MAX_BINARY_KIND = 15;
 /** Target byte meaning "every other member". */

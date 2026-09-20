@@ -196,7 +196,7 @@ struct MultiplayerMenuView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 FLScreenHeader(title: "Multiplayer",
-                               subtitle: "Two to four heroes, one horde. Your party outlasts any single run.") {
+                               subtitle: "Share your fate.") {
                     services.audio.play(.uiBack)
                     router.show(.mainMenu)
                 }
@@ -689,36 +689,54 @@ struct LobbyView: View {
         RealmID(rawValue: raw).map { RealmCatalog.realm($0).name } ?? raw
     }
 
+    /// The weapon this player brings, chosen from a menu like the realm's: one
+    /// clear card showing what is held, rather than a strip of small tiles.
     private var weaponPanel: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let chosen = StarterWeapons.definition(for: hub.partyWeaponID) ?? StarterWeapons.sword
+        return VStack(alignment: .leading, spacing: 6) {
             FLSectionLabel(text: "Your weapon")
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(hub.availableWeapons) { weapon in
-                        let selected = weapon.id == hub.partyWeaponID
-                        Button {
-                            services.haptics.play(.uiTap)
-                            hub.partyWeaponID = weapon.id
-                        } label: {
-                            VStack(spacing: 3) {
-                                Image(systemName: WeaponGlyph.symbol(for: weapon))
-                                    .font(.system(size: 20, weight: .semibold))
-                                Text(weapon.name)
-                                    .font(FLTheme.Typeface.body(10))
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.7)
-                            }
-                            .foregroundStyle(selected ? FLTheme.Palette.abyss : FLTheme.Palette.parchment)
-                            .frame(width: 62, height: 52)
-                            .background(RoundedRectangle(cornerRadius: 10)
-                                .fill(selected ? FLTheme.Palette.ember : FLTheme.Palette.abyss))
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityLabel(weapon.name)
-                        .accessibilityAddTraits(selected ? .isSelected : [])
+            Menu {
+                ForEach(hub.availableWeapons) { weapon in
+                    Button {
+                        services.haptics.play(.uiTap)
+                        hub.partyWeaponID = weapon.id
+                    } label: {
+                        Label(weapon.name, systemImage: WeaponGlyph.symbol(for: weapon))
                     }
                 }
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: WeaponGlyph.symbol(for: chosen))
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundStyle(FLTheme.Palette.abyss)
+                        .frame(width: 42, height: 42)
+                        .background(Circle().fill(FLTheme.Palette.ember))
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(chosen.name)
+                            .font(FLTheme.Typeface.heading(17))
+                            .foregroundStyle(FLTheme.Palette.parchment)
+                            .lineLimit(1)
+                        Text(chosen.damageType.displayName)
+                            .font(FLTheme.Typeface.label(11))
+                            .tracking(1.5)
+                            .foregroundStyle(FLTheme.Palette.emberBright)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.system(size: 12))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                }
+                .padding(.horizontal, 10)
+                .frame(minHeight: 56)
+                .background(RoundedRectangle(cornerRadius: 10).fill(FLTheme.Palette.abyss))
+                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(FLTheme.Palette.rim.opacity(0.6), lineWidth: 1))
             }
+            .accessibilityLabel("Your weapon: \(chosen.name). Tap to change.")
+            Text(chosen.summary)
+                .font(FLTheme.Typeface.body(12))
+                .foregroundStyle(FLTheme.Palette.parchmentDim)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)

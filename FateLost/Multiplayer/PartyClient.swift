@@ -315,6 +315,42 @@ final class PartyClient {
         socket?.send(data: frame)
     }
 
+    /// One frame for each of several seats, sent as a single message. The
+    /// room unpacks it and gives every seat an ordinary frame, so a client sees
+    /// no difference; the host sends one message a tick instead of a handful.
+    func sendBatch(_ entries: [(target: UInt8, kind: FrameKind, payload: Data)]) {
+        guard isHost, !entries.isEmpty else { return }
+        if entries.count == 1, let only = entries.first {
+            sendFrame(only.kind, payload: only.payload, target: only.target)
+            return
+        }
+        var index = 0
+        while index < entries.count {
+            var frame = Data([FrameKind.batch.rawValue, 0])
+            var count = 0
+            while index < entries.count, count < PartyProtocol.maxBatchEntries {
+                let entry = entries[index]
+                let size = 4 + entry.payload.count
+                if entry.payload.count > PartyProtocol.maxHostFrame || size > PartyProtocol.maxHostBatch - 2 {
+                    // Never sendable; skip it rather than block the rest.
+                    index += 1
+                    continue
+                }
+                if frame.count + size > PartyProtocol.maxHostBatch { break }
+                frame.append(entry.target)
+                frame.append(entry.kind.rawValue)
+                frame.append(UInt8(entry.payload.count >> 8))
+                frame.append(UInt8(entry.payload.count & 0xFF))
+                frame.append(entry.payload)
+                count += 1
+                index += 1
+            }
+            guard count > 0 else { continue }
+            frame[1] = UInt8(count)
+            socket?.send(data: frame)
+        }
+    }
+
     // MARK: - Socket
 
     private func send(_ message: ClientMessage) {

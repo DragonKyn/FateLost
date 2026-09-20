@@ -12,6 +12,9 @@ struct WaveState: Equatable {
         case bossFight
         /// The realm's conquest boss has fallen. The run is won.
         case conquered
+        /// A party's breather: the horde stops arriving so the fallen can be
+        /// raised and builds set, until the clock runs out or everyone is ready.
+        case resting
     }
 
     var index = 1
@@ -22,6 +25,11 @@ struct WaveState: Equatable {
     var bossTitle = ""
     var bossHealth: Double = 0
     var bossMaxHealth: Double = 0
+    /// Seconds of breather left (only while `resting`).
+    var restRemaining: Double = 0
+    /// How many heroes have asked to go on, and how many are asked.
+    var restVotes = 0
+    var restVoters = 0
 
     var isBossActive: Bool { phase == .bossFight && bossID != nil }
     var bossHealthFraction: Double {
@@ -43,6 +51,16 @@ struct WaveSystem {
     private var graceRemaining: Double = 0
     private var pendingBoss: EnemyKindID?
 
+    /// A party stops the horde for a breather after every this-many waves (0: never).
+    var restEvery = 0
+    var restSeconds: Double = 30
+    private enum AfterRest { case advance, resume }
+    private var afterRest = AfterRest.advance
+    /// The wave a breather was last taken after, so one wave never rests twice.
+    private var lastRestWave = 0
+    private var restVoted: Set<Int> = []
+    private var electorate: Set<Int> = []
+
     init(plan: WavePlan, conquestWave: Int?) {
         self.plan = plan
         self.conquestWave = conquestWave
@@ -59,7 +77,49 @@ struct WaveSystem {
         case .fighting: return 1
         case .bossIncoming: return 0.5
         case .bossFight: return plan.bossSpawnShare
-        case .conquered: return 0
+        case .conquered, .resting: return 0
+        }
+    }
+
+    /// Who may vote to end the breather early (the heroes still in the party).
+    mutating func setElectorate(_ heroes: Set<Int>) {
+        electorate = heroes
+        refreshVotes()
+    }
+
+    /// A hero asks to go on. Once every hero has, the breather ends.
+    mutating func voteToProceed(hero: Int) {
+        guard state.phase == .resting, electorate.contains(hero) else { return }
+        restVoted.insert(hero)
+        refreshVotes()
+    }
+
+    private mutating func refreshVotes() {
+        state.restVoters = electorate.count
+        state.restVotes = restVoted.intersection(electorate).count
+    }
+
+    private func restFollows(wave: Int) -> Bool {
+        restEvery > 0 && wave % restEvery == 0 && wave != lastRestWave
+    }
+
+    private mutating func beginRest(then next: AfterRest) {
+        afterRest = next
+        lastRestWave = state.index
+        state.phase = .resting
+        state.restRemaining = restSeconds
+        restVoted.removeAll()
+        refreshVotes()
+    }
+
+    private mutating func endRest(_ combat: inout CombatState) {
+        state.restRemaining = 0
+        restVoted.removeAll()
+        refreshVotes()
+        state.phase = .fighting
+        switch afterRest {
+        case .advance: advanceWave(&combat)
+        case .resume: state.timeInWave = 0
         }
     }
 
@@ -76,7 +136,17 @@ struct WaveSystem {
         case .fighting:
             state.timeInWave += dt
             guard state.timeInWave >= plan.waveSeconds else { return nil }
-            advanceWave(&combat)
+            if restFollows(wave: state.index) {
+                beginRest(then: .advance)
+            } else {
+                advanceWave(&combat)
+            }
+            return nil
+
+        case .resting:
+            state.restRemaining -= dt
+            let everyoneReady = state.restVoters > 0 && state.restVotes >= state.restVoters
+            if state.restRemaining <= 0 || everyoneReady { endRest(&combat) }
             return nil
 
         case .bossIncoming:
@@ -140,6 +210,7 @@ struct WaveSystem {
         }
         state.phase = .fighting
         state.timeInWave = 0
+        if restFollows(wave: state.index) { beginRest(then: .resume) }
     }
 
     /// Gives up on a champion that could not be placed, so a run is never
@@ -155,7 +226,8 @@ struct WaveSystem {
 
     /// Developer tooling: jump straight to the next wave.
     mutating func skipToNextWave(_ combat: inout CombatState) {
-        guard state.phase == .fighting else { return }
+        guard state.phase == .fighting || state.phase == .resting else { return }
+        state.phase = .fighting
         advanceWave(&combat)
     }
 }

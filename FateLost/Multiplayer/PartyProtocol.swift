@@ -17,6 +17,9 @@ enum PartyProtocol {
     static let passwordMaxLength = 64
     static let maxClientFrame = 4096
     static let maxHostFrame = 24_000
+    /// One host frame carrying several (see `PartyClient.sendBatch`).
+    static let maxHostBatch = 64_000
+    static let maxBatchEntries = 24
     /// Target byte meaning "every other member".
     static let targetAll: UInt8 = 0xFF
 }
@@ -33,6 +36,10 @@ enum FrameKind: UInt8 {
     case events = 4
     /// Host to client: the client's own build and progress.
     case selfState = 5
+    /// Host to the room: several frames in one, each for its own seat. The
+    /// room counts one message however many players it reaches, which is what
+    /// keeps a busy party inside the free plan.
+    case batch = 6
 }
 
 /// The service's address. Production unless a developer build points it at
