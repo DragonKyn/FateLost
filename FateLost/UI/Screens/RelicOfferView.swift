@@ -10,9 +10,13 @@ struct RelicOfferView: View {
     let offer: RelicOffer
     let inventory: RelicInventory
     let onChoose: (Int) -> Void
+    let onChooseWeapon: () -> Void
     let onReroll: () -> Void
 
+    /// An index into the relics, or one past the end for the weapon card.
     @State private var selected: Int?
+
+    private var weaponIndex: Int { offer.choices.count }
 
     var body: some View {
         ZStack {
@@ -30,8 +34,16 @@ struct RelicOfferView: View {
                                 }
                         }
                     }
+                    if let find = offer.weapon {
+                        WeaponFindCard(find: find, replacing: offer.wielding.flatMap {
+                            StarterWeapons.definition(for: $0)?.name
+                        }, isSelected: selected == weaponIndex)
+                            .onTapGesture {
+                                selected = weaponIndex
+                            }
+                    }
                 }
-                .frame(maxHeight: 250)
+                .frame(maxHeight: 262)
                 footer
             }
             .padding(.horizontal, 24)
@@ -67,9 +79,14 @@ struct RelicOfferView: View {
             .disabled(offer.rerollsLeft == 0)
 
             Button {
-                if let selected { onChoose(selected) }
+                guard let selected else { return }
+                if selected == weaponIndex, offer.weapon != nil {
+                    onChooseWeapon()
+                } else {
+                    onChoose(selected)
+                }
             } label: {
-                Text(selected == nil ? "Choose a relic" : "Take it")
+                Text(selected == nil ? "Choose one" : "Take it")
             }
             .buttonStyle(.flPrimaryCompact)
             .frame(width: 200)
@@ -181,6 +198,83 @@ private struct RelicCard: View {
         case 2: return "II"
         default: return "III"
         }
+    }
+}
+
+// MARK: - A weapon on offer
+
+/// A weapon found in the chest, with what it was rolled to be.
+private struct WeaponFindCard: View {
+    let find: WeaponFind
+    /// The weapon it would replace, for the card to say so plainly.
+    let replacing: String?
+    let isSelected: Bool
+
+    private var tint: Color { find.rarity.color.color }
+    private var base: WeaponDefinition? { StarterWeapons.definition(for: find.weapon) }
+
+    var body: some View {
+        VStack(spacing: 7) {
+            Text("WEAPON · \(find.rarity.displayName.uppercased())")
+                .font(.system(size: 10, weight: .heavy))
+                .tracking(1.4)
+                .foregroundStyle(tint)
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(tint.opacity(0.22))
+                    .frame(width: 58, height: 58)
+                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(tint, lineWidth: 1.5))
+                Image(systemName: base.map(WeaponGlyph.symbol(for:)) ?? "questionmark")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundStyle(tint)
+            }
+
+            Text(find.title)
+                .font(FLTheme.Typeface.heading(15))
+                .foregroundStyle(FLTheme.Palette.parchment)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .minimumScaleFactor(0.7)
+
+            if let definition = find.definition {
+                Text(String(format: "%.0f damage · %.2f/s", definition.baseDamage, definition.attackSpeed))
+                    .font(FLTheme.Typeface.number(12))
+                    .foregroundStyle(FLTheme.Palette.parchment)
+            }
+
+            VStack(spacing: 2) {
+                ForEach(find.affixes) { affix in
+                    Text(affix.text)
+                        .font(FLTheme.Typeface.body(11))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            Text(replacing.map { "Replaces your \($0)" } ?? "Replaces your weapon")
+                .font(FLTheme.Typeface.label(10))
+                .foregroundStyle(Color(red: 1, green: 0.62, blue: 0.4))
+                .multilineTextAlignment(.center)
+        }
+        .padding(11)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .flPanel(highlighted: isSelected)
+        .overlay(
+            RoundedRectangle(cornerRadius: FLTheme.Metrics.cornerRadius, style: .continuous)
+                .strokeBorder(isSelected ? FLTheme.Palette.emberBright : tint.opacity(0.45),
+                              lineWidth: isSelected ? 2.5 : 1)
+        )
+        .scaleEffect(isSelected ? 1.03 : 1)
+        .animation(.easeOut(duration: 0.14), value: isSelected)
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Weapon: \(find.title). \(find.affixes.map(\.text).joined(separator: ". "))")
+        .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }
 

@@ -152,11 +152,17 @@ struct RelicChoice: Equatable, Identifiable {
     var id: String { "\(relic)#\(rank)" }
 }
 
-/// Three relics to pick one from.
+/// Three relics to pick one from, and now and then a weapon as a fourth card.
 struct RelicOffer: Equatable {
     let tier: LootTier
     /// The wave it was opened on, which decides how likely a strong roll is.
     let wave: Int
     var choices: [RelicChoice]
     var rerollsLeft: Int
+    /// A weapon on offer alongside the relics. Taking it swaps it for the
+    /// one in the hand, so it competes with the relics for the choice.
+    var weapon: WeaponFind?
+    /// The weapon in the hand when the find opened, which a found weapon is
+    /// never a copy of.
+    var wielding: WeaponID?
 }

@@ -124,6 +124,18 @@ final class GameSession {
         }
     }
 
+    /// Takes the weapon on offer, in place of the one in the hand.
+    func chooseWeapon() {
+        guard scene.chooseWeapon() else { return }
+        offer = scene.currentOffer
+        if pauseReason == .offer {
+            resume()
+        }
+        if progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+            openSkillTree()
+        }
+    }
+
     func rerollOffer() {
         guard scene.rerollOffer() else { return }
         offer = scene.currentOffer

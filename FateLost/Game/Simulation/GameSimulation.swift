@@ -58,7 +58,9 @@ struct GameSimulation {
     let run: RunConfiguration
     let realm: RealmDefinition
     let arena: ArenaLayout
-    let weapon: WeaponDefinition
+    /// The weapon in the hand. Starts as the one the run began with and
+    /// changes if the player takes a weapon from a find.
+    private(set) var weapon: WeaponDefinition
     let tuning: GameTuning
     /// Permanent bonuses the Legacy board grants this run. Applied as part
     /// of the stat sheet, so every other system sees them as ordinary stats.
@@ -80,6 +82,9 @@ struct GameSimulation {
     private(set) var buildVersion = 0
     /// Relics found this run.
     private(set) var relics = RelicInventory()
+    /// The rolled weapon in the hand, or nil while it is still the starter.
+    private(set) var wielded: WeaponFind?
+    private var weaponVersion = 0
     /// A find waiting for the player to choose from. While it is set the
     /// scene holds the game still and shows the cards.
     private(set) var offer: RelicOffer?
@@ -378,6 +383,7 @@ struct GameSimulation {
         var level: Int
         var form: FormID?
         var build: Int
+        var weapon: Int
     }
 
     /// Recomputes the player's stats when anything feeding them has changed.
@@ -390,7 +396,7 @@ struct GameSimulation {
         }
         let formID = player.form ?? combat.build.permanentForm
         let signature = StatSignature(conditions: mask, buffs: player.buffsVersion, level: progression.level,
-                                      form: formID, build: buildVersion)
+                                      form: formID, build: buildVersion, weapon: weaponVersion)
         guard force || signature != statSignature else { return }
         statSignature = signature
 
@@ -400,6 +406,9 @@ struct GameSimulation {
         let levelHealth = tuning.progression.healthPerLevel * Double(progression.level - 1)
         sheet.add(StatModifier(.maxHealth, .flat, baseHealth + levelHealth))
         sheet.add(legacy)
+        if let wielded {
+            sheet.add(wielded.modifiers)
+        }
         sheet.add(combat.build.modifiers)
         for (index, conditional) in combat.build.conditionals.enumerated()
         where index < 64 && mask & (1 << UInt64(index)) != 0 {
@@ -663,7 +672,7 @@ struct GameSimulation {
     @discardableResult
     mutating func openOffer(tier: LootTier) -> Bool {
         guard offer == nil, !player.isDefeated else { return false }
-        let dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics,
+        let dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics, wielding: weapon.id,
                                       random: &combat.lootRandom)
         guard !dealt.choices.isEmpty else { return false }
         offer = dealt
@@ -704,6 +713,22 @@ struct GameSimulation {
         guard let current = offer, current.choices.indices.contains(index) else { return false }
         offer = nil
         grantRelic(current.choices[index])
+        return true
+    }
+
+    /// Takes the weapon on offer, in place of the one in the hand, and
+    /// closes the find.
+    @discardableResult
+    mutating func chooseWeapon() -> Bool {
+        guard let current = offer, let find = current.weapon, let definition = find.definition else { return false }
+        offer = nil
+        weapon = definition
+        wielded = find
+        weaponVersion += 1
+        weaponSystem = WeaponSystem(weapon: definition, tuning: tuning.combat,
+                                    growthPerLevel: tuning.progression.damageGrowthPerLevel)
+        refreshStats(force: true)
+        combat.events.append(.weaponWielded(title: find.title, rarity: find.rarity))
         return true
     }
 

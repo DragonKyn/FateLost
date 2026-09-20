@@ -45,13 +45,15 @@ final class PlayerView: SKNode {
     /// Seconds since the last level-up; large when idle.
     private var levelUpAge: CGFloat = 10
     /// Weapon rest angle; bows are carried upright.
-    private let restAngle: CGFloat
+    private var restAngle: CGFloat
+    private var weaponSprite: SpriteID
 
     init(catalog: SpriteCatalog, weaponSprite: SpriteID) {
         self.catalog = catalog
         shadowSprite = catalog.makeSprite(.shadow)
         figure = catalog.makeSprite(.playerAdventurer)
         weapon = catalog.makeSprite(weaponSprite)
+        self.weaponSprite = weaponSprite
         barrierGlow = catalog.makeSprite(.fxGlow)
         restAngle = weaponSprite == .weaponBow ? -0.1 : Style.weaponRestAngle
         super.init()
@@ -74,6 +76,18 @@ final class PlayerView: SKNode {
         barrierGlow.zPosition = 0.3
         barrierGlow.alpha = 0
         addChild(barrierGlow)
+    }
+
+    /// Puts a different weapon in the hand, as when one is found mid-run.
+    func setWeapon(_ id: SpriteID) {
+        guard id != weaponSprite else { return }
+        weaponSprite = id
+        if let texture = catalog.texture(id) {
+            weapon.texture = texture
+        }
+        weapon.size = catalog.size(id)
+        weapon.anchorPoint = catalog.anchor(id)
+        restAngle = id == .weaponBow ? -0.1 : Style.weaponRestAngle
     }
 
     /// Swaps the figure for a form's (or back to the adventurer).

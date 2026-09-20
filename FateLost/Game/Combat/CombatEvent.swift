@@ -56,6 +56,8 @@ enum CombatEvent: Equatable {
     case shrineUsed(kind: ShrineKind, position: CGPoint)
     /// A drop was picked up.
     case dropCollected(kind: DropKind, position: CGPoint)
+    /// A weapon found in a run was taken up.
+    case weaponWielded(title: String, rarity: ItemRarity)
     /// A relic was taken, at the rank it now stands at.
     case relicGained(id: RelicID, rank: Int)
     case levelUp(level: Int, position: CGPoint)

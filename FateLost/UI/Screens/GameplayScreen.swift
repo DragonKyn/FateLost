@@ -55,6 +55,11 @@ struct GameplayScreen: View {
                                    services.haptics.play(.uiTap)
                                    session.chooseRelic(at: index)
                                },
+                               onChooseWeapon: {
+                                   services.audio.play(.skillLearn)
+                                   services.haptics.play(.uiTap)
+                                   session.chooseWeapon()
+                               },
                                onReroll: {
                                    services.audio.play(.uiConfirm)
                                    session.rerollOffer()

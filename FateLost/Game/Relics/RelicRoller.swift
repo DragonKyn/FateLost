@@ -11,11 +11,19 @@ enum RelicRoller {
     static let rerolls = 1
 
     /// Deals a fresh offer.
-    static func offer(tier: LootTier, wave: Int, inventory: RelicInventory,
+    static func offer(tier: LootTier, wave: Int, inventory: RelicInventory, wielding: WeaponID? = nil,
                       random: inout SeededRandom) -> RelicOffer {
-        RelicOffer(tier: tier, wave: wave,
-                   choices: deal(tier: tier, wave: wave, inventory: inventory, random: &random),
-                   rerollsLeft: rerolls)
+        var offer = RelicOffer(tier: tier, wave: wave,
+                               choices: deal(tier: tier, wave: wave, inventory: inventory, random: &random),
+                               rerollsLeft: rerolls, weapon: nil, wielding: wielding)
+        offer.weapon = weaponCard(tier: tier, wielding: wielding, random: &random)
+        return offer
+    }
+
+    /// Now and then a find holds a weapon among its cards.
+    private static func weaponCard(tier: LootTier, wielding: WeaponID?, random: inout SeededRandom) -> WeaponFind? {
+        guard random.chance(WeaponRoller.chance(of: tier)) else { return nil }
+        return WeaponRoller.roll(tier: tier, wielding: wielding, random: &random)
     }
 
     /// Throws the cards back and deals again. Spends one reroll.
@@ -26,6 +34,7 @@ enum RelicRoller {
         guard offer.rerollsLeft > 0 else { return false }
         offer.rerollsLeft -= 1
         offer.choices = deal(tier: offer.tier, wave: offer.wave, inventory: inventory, random: &random)
+        offer.weapon = weaponCard(tier: offer.tier, wielding: offer.wielding, random: &random)
         return true
     }
 

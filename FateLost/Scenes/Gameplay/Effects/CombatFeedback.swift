@@ -307,6 +307,15 @@ final class CombatFeedback {
                     audio.play(.skillTreeOpen)
                 }
 
+            case let .weaponWielded(title, rarity):
+                let color = rarity.color.uiColor
+                effects.ring(at: playerPosition, radius: 1.6, color: color, lifetime: 0.7)
+                effects.floatingText(title, at: playerPosition, color: color, size: 17, lifetime: 1.8)
+                audio.play(.skillLearn)
+                if rarity >= .epic {
+                    haptics.play(.legendaryItem)
+                }
+
             case let .relicGained(id, rank):
                 guard let relic = RelicCatalog.relic(id) else { break }
                 let color = relic.rarity.color.uiColor

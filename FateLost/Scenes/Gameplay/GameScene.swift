@@ -407,6 +407,7 @@ final class GameScene: SKScene {
         shrineRenderer.update(shrines: simulation.combat.shrines, playerPosition: simulation.player.position,
                               frame: renderFrame, time: animationTime)
         updateBeacons()
+        playerView.setWeapon(simulation.weapon.spriteID)
         enemyRenderer.update(enemies: simulation.enemies, frame: renderFrame, time: animationTime, dt: frameDelta,
                              showHitboxes: dependencies.developer.showHitboxes)
         allyRenderer.update(allies: simulation.combat.allies, frame: renderFrame, time: animationTime, dt: frameDelta)
@@ -522,7 +523,7 @@ final class GameScene: SKScene {
     private func deliverSummary(outcome: RunSummary.Outcome, seconds: Int) {
         summaryDelivered = true
         resetInput()
-        onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.weapon.id,
+        onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.run.starterWeaponID,
                                secondsSurvived: seconds, stats: simulation.stats,
                                level: simulation.progression.level, allocation: simulation.allocation,
                                outcome: outcome, wave: simulation.wave.index, relics: simulation.relics))
@@ -575,6 +576,15 @@ final class GameScene: SKScene {
     func chooseRelic(at index: Int) -> Bool {
         let accepted = simulation.chooseRelic(at: index)
         publishProgressionIfChanged(force: true)
+        publishHUDStateIfChanged()
+        publishOfferIfChanged()
+        return accepted
+    }
+
+    /// Takes the weapon on offer.
+    @discardableResult
+    func chooseWeapon() -> Bool {
+        let accepted = simulation.chooseWeapon()
         publishHUDStateIfChanged()
         publishOfferIfChanged()
         return accepted
