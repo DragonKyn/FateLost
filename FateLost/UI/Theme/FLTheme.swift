@@ -157,6 +157,10 @@ struct FLSectionLabel: View {
             .font(FLTheme.Typeface.label(13))
             .tracking(2)
             .foregroundStyle(FLTheme.Palette.parchmentDim)
+            // A label is one word on one line: shrink it before it wraps
+            // ("DAMAG / E") or is cut short ("DAMA...").
+            .lineLimit(1)
+            .minimumScaleFactor(0.6)
     }
 }
 

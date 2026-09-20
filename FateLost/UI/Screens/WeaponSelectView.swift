@@ -37,6 +37,7 @@ struct WeaponSelectView: View {
                     }
                     .padding(.horizontal, 2)
                 }
+                .scrollClipDisabled()
                 .frame(maxHeight: .infinity)
 
                 HStack {
@@ -119,7 +120,7 @@ private struct WeaponCard: View {
     private func statRow(_ label: String, value: String, fraction: Double) -> some View {
         HStack(spacing: 8) {
             FLSectionLabel(text: label)
-                .frame(width: 58, alignment: .leading)
+                .frame(width: 68, alignment: .leading)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(FLTheme.Palette.abyss)

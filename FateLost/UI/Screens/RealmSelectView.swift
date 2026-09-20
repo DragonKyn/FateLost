@@ -34,6 +34,9 @@ struct RealmSelectView: View {
                     }
                     .padding(.vertical, 6)
                 }
+                // Cards slide out under the screen padding instead of being cut
+                // off at it.
+                .scrollClipDisabled()
             }
             .padding(FLTheme.Metrics.screenPadding)
         }
@@ -67,8 +70,12 @@ private struct RealmCard: View {
                 }
             }
 
-            RealmMap(realm: realm, isUnlocked: isUnlocked)
+            // The map is laid over an empty frame rather than sized by its own
+            // image: a filled image reports its natural width, which is wider
+            // than the card, and that pushed the whole card's text off its edge.
+            Color.clear
                 .frame(height: 96)
+                .overlay { RealmMap(realm: realm, isUnlocked: isUnlocked) }
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(FLTheme.Palette.rim, lineWidth: 1))
@@ -142,7 +149,8 @@ private struct RealmMap: View {
 
     @State private var image: UIImage?
 
-    private static let size = CGSize(width: 244, height: 96)
+    /// The card's inner width (244 less 16 of padding each side) by the frame's height.
+    private static let size = CGSize(width: 212, height: 96)
 
     var body: some View {
         ZStack {
