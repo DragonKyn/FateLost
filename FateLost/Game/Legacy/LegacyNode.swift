@@ -51,18 +51,31 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         }
     }
 
+    /// The system symbol for the strands whose meaning a system symbol
+    /// already carries (a heart, a shield, a flame, a snowflake). The rest have
+    /// a drawn glyph instead (`glyph`), and this is only their fallback.
     var symbol: String {
         switch self {
         case .body: return "heart.fill"
-        case .blade: return "scissors"
-        case .focus: return "brain.head.profile"
-        case .fortune: return "sparkles"
         case .ward: return "shield.fill"
         case .flame: return "flame.fill"
         case .frost: return "snowflake"
-        case .shadow: return "moon.fill"
-        case .bond: return "person.2.fill"
-        case .fate: return "circle.hexagongrid.fill"
+        case .blade, .focus, .fortune, .shadow, .bond, .fate: return "circle.fill"
+        }
+    }
+
+    /// The board's own icon for this strand, where it has one: a sword for
+    /// Blade (not the scissors a system symbol offered), an eye for Focus, a
+    /// clover for Fortune, a hood for Shadow, a paw for Bond, an hourglass for Fate.
+    var glyph: String? {
+        switch self {
+        case .blade: return "blade"
+        case .focus: return "focus"
+        case .fortune: return "fortune"
+        case .shadow: return "shadow"
+        case .bond: return "bond"
+        case .fate: return "fate"
+        case .body, .ward, .flame, .frost: return nil
         }
     }
 
@@ -98,6 +111,9 @@ struct LegacyNode: Identifiable, Equatable {
 
     /// How the bonus reads on the card.
     var effectText: String { modifier.displayText }
+
+    /// The same, for a small tile.
+    var tileText: String { effectText.replacingOccurrences(of: " per second", with: "/s") }
 }
 
 /// What Legacy is bought with.

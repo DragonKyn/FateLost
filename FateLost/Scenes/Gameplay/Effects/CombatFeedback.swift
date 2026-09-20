@@ -95,6 +95,9 @@ final class CombatFeedback {
         return pendingHitStop
     }
 
+    /// Swings at least this long are heavy enough to shake the camera a little.
+    static let heavySwingRange: CGFloat = 2.3
+
     /// Whether something that happened at `point` was this phone's own hero
     /// (an attack starts at the hero's feet).
     private func isOwn(_ point: CGPoint) -> Bool {
@@ -115,6 +118,8 @@ final class CombatFeedback {
                 effects.slash(at: origin, direction: direction, range: range)
                 if isOwn(origin) {
                     player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
+                    // A long, heavy blade (the claymore) is felt in the camera.
+                    if range >= CombatFeedback.heavySwingRange { camera.addTrauma(0.1) }
                 }
                 audio.play(.swordSwing)
 

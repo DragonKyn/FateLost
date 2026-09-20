@@ -105,6 +105,7 @@ enum PlaceholderArt {
         case .weaponBoStaff: return boStaff()
         case .weaponFlail: return flail()
         case .weaponWarHammer: return warHammer()
+        case .weaponClaymore: return claymore()
         case .weaponBoomerang: return boomerang()
         case .weaponEmberWand: return emberWand()
         case .weaponRimeWand: return rimeWand()

@@ -97,6 +97,34 @@ def sai():
     return s
 
 
+def claymore():
+    s = held("claymore", 22, 66, "A claymore: a two-handed greatsword with a blade as long as a child is tall.", grip=0.16)
+    # Blade: broad and straight, tapering only near the point.
+    blade = [(7.6, 43), (7.7, 12), (8.4, 7.4), (11, 1.6), (13.6, 7.4), (14.3, 12), (14.4, 43)]
+    s.poly(blade, STEEL, outline=INK, width=0.8)
+    s.poly([(11, 43), (11, 8), (11, 2.6), (14.3, 12), (14.4, 43)], _shade(STEEL, 0.14))
+    # A long fuller down the middle, and the two edge bevels catching light.
+    s.line((11, 41), (11, 10), _shade(STEEL, 0.34), 1.4)
+    s.line((9.9, 41), (9.9, 10), STEEL_LIGHT, 0.5)
+    s.line((12.1, 41), (12.1, 10), STEEL_DARK, 0.5)
+    s.line((8.5, 42), (8.5, 12), STEEL_LIGHT, 0.5)
+    # Old runes worn into the ricasso.
+    for y in (36.6, 33.8, 31):
+        s.line((10, y), (12, y), _mix(GOLD, IRON_DARK, 0.45), 0.5)
+    # Crossguard: wide, dark, with the quillons turned toward the point.
+    s.taper([(2.2, 45.4), (11, 44.2), (19.8, 45.4)], IRON, 3.0, 3.0, outline=INK, width=0.7)
+    s.poly([(1.2, 43.4), (3.4, 42.2), (3.8, 46.6), (1.6, 47.2)], IRON_DARK, outline=INK, width=0.6)
+    s.poly([(20.8, 43.4), (18.6, 42.2), (18.2, 46.6), (20.4, 47.2)], IRON_DARK, outline=INK, width=0.6)
+    s.line((3.6, 44.4), (18.4, 44.4), _light(IRON, 0.25), 0.5)
+    s.ellipse(9.5, 43.6, 3, 3, BRASS, outline=INK, width=0.6)
+    # A grip long enough for two hands, and a heavy pommel with a red stone.
+    _wrapped_grip(s, 11, 47, 59, width=3.4)
+    s.ellipse(7.8, 58.4, 6.4, 5.6, BRASS, outline=INK, width=0.7)
+    s.ellipse(9.4, 60, 3.2, 2.6, 0xA2261E, outline=INK, width=0.4)
+    s.dot(10.5, 60.5, 0.55, 0xF2A29A)
+    return s
+
+
 def katana():
     s = held("katana", 14, 48, "A katana, single-edged and barely curved.")
     # Blade: a long taper with the curve carried by the spine.
@@ -267,7 +295,7 @@ def stormBolt():
 
 def all_sprites():
     return [
-        sai(), katana(), dualDaggers(),
+        sai(), katana(), claymore(), dualDaggers(),
         warHammer(), boStaff(), flail(), boomerang(),
         emberWand(), rimeWand(), stormWand(),
         projectileBoomerang(), emberBolt(), frostBolt(), stormBolt(),

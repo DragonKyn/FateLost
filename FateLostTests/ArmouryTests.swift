@@ -1,7 +1,7 @@
 import XCTest
 @testable import FateLost
 
-/// The rack has to stay a choice rather than a ladder: thirteen weapons that
+/// The rack has to stay a choice rather than a ladder: fourteen weapons that
 /// feel different and land within reach of each other, mastery that is worth
 /// having and never worth more than playing well, and a save file that
 /// survives the Armoury being added to a game that did not have one.

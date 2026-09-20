@@ -47,6 +47,7 @@ enum WeaponMastery {
         case StarterWeapons.boStaff.id: return StatModifier(.knockback, .increased, 0.06)
         case StarterWeapons.flail.id: return StatModifier(.areaSize, .increased, 0.04)
         case StarterWeapons.warHammer.id: return StatModifier(.knockback, .increased, 0.08)
+        case StarterWeapons.claymore.id: return StatModifier(.meleeDamage, .increased, 0.03)
         case StarterWeapons.boomerang.id: return StatModifier(.projectileDamage, .increased, 0.04)
         case StarterWeapons.emberWand.id: return StatModifier(.fireDamage, .increased, 0.04)
         case StarterWeapons.rimeWand.id: return StatModifier(.coldDamage, .increased, 0.04)

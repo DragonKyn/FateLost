@@ -155,8 +155,7 @@ private struct EchoBadge: View {
 
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: "circle.hexagongrid.fill")
-                .font(.system(size: 12, weight: .semibold))
+            EchoGlyph(size: 17)
             Text("\(echoes)")
                 .font(FLTheme.Typeface.number(17))
         }
@@ -205,9 +204,7 @@ private struct StrandRail: View {
                         .overlay(Circle().strokeBorder(isSelected ? FLTheme.Palette.emberBright
                                                                  : FLTheme.Palette.rim,
                                                        lineWidth: isSelected ? 2 : 1))
-                        .overlay(Image(systemName: branch.symbol)
-                            .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(FLTheme.Palette.parchment))
+                        .overlay(LegacyBranchIcon(branch: branch, size: 22))
                     if taken > 0 {
                         Text("\(taken)")
                             .font(FLTheme.Typeface.number(10))
@@ -303,6 +300,19 @@ private struct NodePip: View {
         return FLTheme.Palette.stoneRaised.opacity(isAffordable ? 0.95 : 0.6)
     }
 
+    /// A taken node shows its tick and a locked one its padlock; the rest carry
+    /// their strand's own icon.
+    @ViewBuilder
+    private var tileIcon: some View {
+        if isTaken || !isOpen {
+            Image(systemName: isTaken ? "checkmark" : "lock.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(isTaken ? FLTheme.Palette.abyss : FLTheme.Palette.locked)
+        } else {
+            LegacyBranchIcon(branch: node.branch, size: 20)
+        }
+    }
+
     var body: some View {
         VStack(spacing: 2) {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -311,13 +321,8 @@ private struct NodePip: View {
                 .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
                     .strokeBorder(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.rim,
                                   lineWidth: isSelected ? 2 : 1))
-                .overlay(
-                    Image(systemName: isTaken ? "checkmark" : (isOpen ? node.branch.symbol : "lock.fill"))
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(isTaken ? FLTheme.Palette.abyss
-                                                 : (isOpen ? FLTheme.Palette.parchment : FLTheme.Palette.locked))
-                )
-            Text(node.effectText)
+                .overlay(tileIcon)
+            Text(node.tileText)
                 .font(.system(size: 8.5, weight: .medium))
                 .foregroundStyle(isTaken ? FLTheme.Palette.parchment : FLTheme.Palette.parchmentDim)
                 .lineLimit(1)

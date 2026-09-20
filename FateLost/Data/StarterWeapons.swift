@@ -162,6 +162,24 @@ enum StarterWeapons {
         spriteID: .weaponWarHammer
     )
 
+    /// The heaviest blade on the rack. It gives up speed for reach, arc and a
+    /// blow that lands hard: about the damage per second of the hammer, arriving
+    /// in fewer, wider, longer swings.
+    static let claymore = WeaponDefinition(
+        id: "starter.claymore",
+        name: "Claymore",
+        summary: "Two hands, a long reach and a wide, slow sweep that ends arguments.",
+        baseDamage: 21,
+        attackSpeed: 0.6,
+        range: 2.4,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 150),
+        targeting: .nearest,
+        rarity: .epic,
+        spriteID: .weaponClaymore
+    )
+
     static let boomerang = WeaponDefinition(
         id: "starter.boomerang",
         name: "Boomerang",
@@ -252,7 +270,7 @@ enum StarterWeapons {
         sword, bow, staff,
         sai, dualDaggers, katana,
         boStaff, flail, warHammer,
-        boomerang, emberWand, rimeWand, stormWand,
+        claymore, boomerang, emberWand, rimeWand, stormWand,
     ]
 
     /// Starters available with no Legacy unlocks.

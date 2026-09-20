@@ -62,6 +62,46 @@ extension PlaceholderArt {
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.2))
     }
 
+    // MARK: - claymore
+
+    /// A claymore: a two-handed greatsword with a blade as long as a child is tall.
+    static func claymore() -> Sprite {
+        let image = render(CGSize(width: 22, height: 66)) { ctx in
+            fillPolygon(ctx, [P(7.6, 43), P(7.7, 12), P(8.4, 7.4), P(11, 1.6), P(13.6, 7.4), P(14.3, 12), P(14.4, 43)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(7.6, 43), P(7.7, 12), P(8.4, 7.4), P(11, 1.6), P(13.6, 7.4), P(14.3, 12), P(14.4, 43)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(11, 43), P(11, 8), P(11, 2.6), P(14.3, 12), P(14.4, 43)], UIColor(rgb: 0xA8ADB4))
+            stroke(ctx, from: P(11, 41), to: P(11, 10), UIColor(rgb: 0x81858A), width: 1.4)
+            stroke(ctx, from: P(9.9, 41), to: P(9.9, 10), UIColor(rgb: 0xE6EAEE), width: 0.5)
+            stroke(ctx, from: P(12.1, 41), to: P(12.1, 10), UIColor(rgb: 0x767C86), width: 0.5)
+            stroke(ctx, from: P(8.5, 42), to: P(8.5, 12), UIColor(rgb: 0xE6EAEE), width: 0.5)
+            stroke(ctx, from: P(10, 36.6), to: P(12, 36.6), UIColor(rgb: 0x88723F), width: 0.5)
+            stroke(ctx, from: P(10, 33.8), to: P(12, 33.8), UIColor(rgb: 0x88723F), width: 0.5)
+            stroke(ctx, from: P(10, 31), to: P(12, 31), UIColor(rgb: 0x88723F), width: 0.5)
+            fillPolygon(ctx, [P(2.37, 46.89), P(5.27, 46.56), P(8.13, 46.37), P(11, 46.3), P(13.87, 46.37), P(16.73, 46.56), P(19.63, 46.89), P(19.97, 43.91), P(17, 43.57), P(14, 43.37), P(11, 43.3), P(8, 43.37), P(5, 43.57), P(2.03, 43.91)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(2.37, 46.89), P(5.27, 46.56), P(8.13, 46.37), P(11, 46.3), P(13.87, 46.37), P(16.73, 46.56), P(19.63, 46.89), P(19.97, 43.91), P(17, 43.57), P(14, 43.37), P(11, 43.3), P(8, 43.37), P(5, 43.57), P(2.03, 43.91)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(1.2, 43.4), P(3.4, 42.2), P(3.8, 46.6), P(1.6, 47.2)], UIColor(rgb: 0x3A3833))
+            strokePolygon(ctx, [P(1.2, 43.4), P(3.4, 42.2), P(3.8, 46.6), P(1.6, 47.2)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(20.8, 43.4), P(18.6, 42.2), P(18.2, 46.6), P(20.4, 47.2)], UIColor(rgb: 0x3A3833))
+            strokePolygon(ctx, [P(20.8, 43.4), P(18.6, 42.2), P(18.2, 46.6), P(20.4, 47.2)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(3.6, 44.4), to: P(18.4, 44.4), UIColor(rgb: 0x86837E), width: 0.5)
+            fillOval(ctx, CGRect(x: 9.5, y: 43.6, width: 3, height: 3), UIColor(rgb: 0x9A7A3A))
+            strokeOval(ctx, CGRect(x: 9.5, y: 43.6, width: 3, height: 3), UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(9.3, 47), P(9.3, 59), P(12.7, 59), P(12.7, 47)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(9.3, 47), P(9.3, 59), P(12.7, 59), P(12.7, 47)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(9.5, 48.4), to: P(12.5, 49.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.5, 50.6), to: P(12.5, 51.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.5, 52.8), to: P(12.5, 53.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.5, 55), to: P(12.5, 55.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.5, 57.2), to: P(12.5, 58.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            fillOval(ctx, CGRect(x: 7.8, y: 58.4, width: 6.4, height: 5.6), UIColor(rgb: 0x9A7A3A))
+            strokeOval(ctx, CGRect(x: 7.8, y: 58.4, width: 6.4, height: 5.6), UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillOval(ctx, CGRect(x: 9.4, y: 60, width: 3.2, height: 2.6), UIColor(rgb: 0xA2261E))
+            strokeOval(ctx, CGRect(x: 9.4, y: 60, width: 3.2, height: 2.6), UIColor(rgb: 0x0E0C08), width: 0.4)
+            fillOval(ctx, CGRect(x: 9.95, y: 59.95, width: 1.1, height: 1.1), UIColor(rgb: 0xF2A29A))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.16))
+    }
+
     // MARK: - dualDaggers
 
     /// Two daggers, crossed: nothing here is meant to be parried.

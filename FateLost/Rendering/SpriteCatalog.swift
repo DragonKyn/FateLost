@@ -99,7 +99,7 @@ enum GameplaySprites {
         .allyPitFiend, .formWarBear, .formDireWolf,
         .weaponSword, .weaponBow, .weaponStaff,
         .weaponSai, .weaponKatana, .weaponDualDaggers, .weaponBoStaff, .weaponFlail,
-        .weaponWarHammer, .weaponBoomerang,
+        .weaponWarHammer, .weaponClaymore, .weaponBoomerang,
         .weaponEmberWand, .weaponRimeWand, .weaponStormWand,
         .projectileBoomerang, .projectileEmberBolt, .projectileFrostBolt, .projectileStormBolt,
         .projectileArrow, .projectileArcaneBolt, .projectileKnife, .projectileShard, .projectileBolt,

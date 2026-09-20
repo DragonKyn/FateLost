@@ -278,3 +278,56 @@ final class LegacyValueTests: XCTestCase {
         }
     }
 }
+
+/// The Legacy board's icons: each strand reads as what it is, at the size it is drawn.
+final class LegacyIconTests: XCTestCase {
+    private func bounds(of glyph: String) -> CGRect {
+        LegacyGlyph.pieces(named: glyph).reduce(CGRect.null) { $0.union($1.path.boundingRect) }
+    }
+
+    func testTheParserReadsPathsTheWayTheToolWritesThem() {
+        let square = LegacyGlyph.path(from: "M0 0 L10 0 L10 10 L0 10 Z").boundingRect
+        XCTAssertEqual(square, CGRect(x: 0, y: 0, width: 10, height: 10))
+        let ellipse = LegacyGlyph.path(from: "E 5 5 2 3").boundingRect
+        XCTAssertEqual(ellipse.width, 4, accuracy: 0.01)
+        XCTAssertEqual(ellipse.height, 6, accuracy: 0.01)
+        let curve = LegacyGlyph.path(from: "M0 0 Q5 10 10 0 M2 2 C3 3 4 3 5 2").boundingRect
+        XCTAssertGreaterThan(curve.width, 9.9)
+        XCTAssertEqual(LegacyGlyph.style(from: "stroke:1.7:0.65"), .stroke(width: 1.7, opacity: 0.65))
+        XCTAssertEqual(LegacyGlyph.style(from: "stroke:2"), .stroke(width: 2, opacity: 1))
+        XCTAssertEqual(LegacyGlyph.style(from: "shade"), .shade)
+        XCTAssertEqual(LegacyGlyph.style(from: "fill"), .fill)
+    }
+
+    func testEveryStrandHasAnIconAndTheOnesWithoutADrawingKeepASensibleSymbol() {
+        var glyphs = Set<String>()
+        var symbols = Set<String>()
+        for branch in LegacyBranch.allCases {
+            if let glyph = branch.glyph {
+                XCTAssertTrue(LegacyGlyph.names.contains(glyph), "\(branch.name) points at a glyph that does not exist")
+                XCTAssertTrue(glyphs.insert(glyph).inserted, "\(branch.name) shares its icon")
+            } else {
+                XCTAssertTrue(symbols.insert(branch.symbol).inserted, "\(branch.name) shares its symbol")
+            }
+        }
+        XCTAssertEqual(LegacyBranch.blade.glyph, "blade")
+        XCTAssertNotEqual(LegacyBranch.blade.symbol, "scissors", "Blade is not a pair of scissors")
+        XCTAssertNil(LegacyBranch.body.glyph)
+        XCTAssertNotNil(LegacyGlyph.names.firstIndex(of: "echo"), "echoes have their own mark")
+    }
+
+    func testEveryGlyphFillsItsGridAndDrawsSomething() {
+        for name in LegacyGlyph.names {
+            let box = bounds(of: name)
+            XCTAssertFalse(LegacyGlyph.pieces(named: name).isEmpty, name)
+            XCTAssertGreaterThanOrEqual(box.minX, -0.5, name)
+            XCTAssertGreaterThanOrEqual(box.minY, -0.5, name)
+            XCTAssertLessThanOrEqual(box.maxX, 24.5, "\(name) runs off the grid")
+            XCTAssertLessThanOrEqual(box.maxY, 24.5, "\(name) runs off the grid")
+            // Readable at 20 points: it must use most of its 24-unit square.
+            XCTAssertGreaterThanOrEqual(max(box.width, box.height), 18, "\(name) is too small to read")
+            XCTAssertGreaterThanOrEqual(min(box.width, box.height), 10, "\(name) is too thin to read")
+            XCTAssertTrue(LegacyGlyph.pieces(named: name).contains { $0.style == .fill }, "\(name) has no body")
+        }
+    }
+}

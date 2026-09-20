@@ -106,6 +106,7 @@ extension SpriteID {
     static let weaponBoStaff: SpriteID = "weapon.boStaff"
     static let weaponFlail: SpriteID = "weapon.flail"
     static let weaponWarHammer: SpriteID = "weapon.warHammer"
+    static let weaponClaymore: SpriteID = "weapon.claymore"
     static let weaponBoomerang: SpriteID = "weapon.boomerang"
     static let weaponEmberWand: SpriteID = "weapon.emberWand"
     static let weaponRimeWand: SpriteID = "weapon.rimeWand"
