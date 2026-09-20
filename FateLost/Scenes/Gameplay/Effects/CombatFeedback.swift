@@ -95,6 +95,14 @@ final class CombatFeedback {
         return pendingHitStop
     }
 
+    /// Whether something that happened at `point` was this phone's own hero
+    /// (an attack starts at the hero's feet).
+    private func isOwn(_ point: CGPoint) -> Bool {
+        let dx = point.x - playerPosition.x
+        let dy = point.y - playerPosition.y
+        return dx * dx + dy * dy < 1.5 * 1.5
+    }
+
     /// Presents one frame's worth of events.
     ///
     /// - Parameter lowHealth: Whether the player is in danger, which keeps a
@@ -105,19 +113,32 @@ final class CombatFeedback {
             switch event {
             case let .meleeSwing(origin, direction, range, _):
                 effects.slash(at: origin, direction: direction, range: range)
-                player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
+                if isOwn(origin) {
+                    player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
+                }
                 audio.play(.swordSwing)
 
-            case let .projectileFired(spriteID, _, direction):
+            case let .projectileFired(spriteID, origin, direction):
+                // In a party every hero's attacks reach every phone; only this
+                // phone's own hero raises an arm for them.
+                let own = isOwn(origin)
+                let screenDirection = projection.toScreen(direction)
                 switch spriteID {
                 case .projectileArrow:
-                    player.playAttack(screenDirection: projection.toScreen(direction), isMelee: false)
+                    if own { player.playAttack(screenDirection: screenDirection, isMelee: false) }
                     audio.play(.bowShot)
                 case .projectileArcaneBolt:
-                    player.playAttack(screenDirection: projection.toScreen(direction), isMelee: false)
+                    if own { player.playAttack(screenDirection: screenDirection, isMelee: false) }
                     audio.play(.arcaneCast)
+                case .projectileBoomerang:
+                    // A visible throw: the arm goes out and the boomerang leaves
+                    // the hand until it is caught again.
+                    if own { player.playThrow(screenDirection: screenDirection) }
+                    audio.play(.swordSwing)
                 default:
-                    break
+                    // Wand bolts and the rest: the arm still goes out.
+                    if own { player.playAttack(screenDirection: screenDirection, isMelee: false) }
+                    audio.play(.arcaneCast)
                 }
 
             case let .enemyHit(enemyID, position, amount, isCritical, _, type, isDot):

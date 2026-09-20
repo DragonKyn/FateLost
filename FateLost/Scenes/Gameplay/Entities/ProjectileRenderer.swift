@@ -43,7 +43,13 @@ final class ProjectileRenderer {
             sprite.position = screen + CGPoint(x: 0, y: flightHeight)
             sprite.zPosition = DepthSorting.z(forScreenY: screen.y)
             let heading = projection.toScreen(projectile.velocity)
-            sprite.zRotation = atan2(heading.y, heading.x)
+            if projectile.spriteID == .projectileBoomerang {
+                // A thrown boomerang spins as it flies, whichever way it is going.
+                let turns = CACurrentMediaTime() * 16 + Double(projectile.id % 7)
+                sprite.zRotation = CGFloat(turns.truncatingRemainder(dividingBy: 2 * .pi))
+            } else {
+                sprite.zRotation = atan2(heading.y, heading.x)
+            }
         }
 
         departed.removeAll(keepingCapacity: true)
@@ -66,7 +72,8 @@ final class ProjectileRenderer {
         } else {
             sprite.colorBlendFactor = 0
         }
-        sprite.setScale(max(0.8, projectile.radius / referenceRadius))
+        let scale = max(0.8, projectile.radius / referenceRadius)
+        sprite.setScale(projectile.spriteID == .projectileBoomerang ? scale * 1.5 : scale)
     }
 
     private func pool(for id: SpriteID) -> NodePool<SKSpriteNode> {

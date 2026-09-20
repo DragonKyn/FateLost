@@ -151,8 +151,14 @@ struct WeaponSystem {
         let spread = 12 * Double.pi / 180
         let baseAngle = atan2(Double(direction.y), Double(direction.x)) - spread * Double(count - 1) / 2
         let speed = CGFloat(profile.speed) * CGFloat(combat.sheet[.projectileSpeed])
-        // Lives long enough to cross the weapon's range with a little spare.
-        let life = Double(range) / max(profile.speed, 0.01) * 1.25
+        // Lives long enough to cross the weapon's range with a little spare. A
+        // boomerang goes out as far as its target (and a little past it), turns,
+        // and lives long enough to come all the way back.
+        let distanceToTarget = combat.world.distance(player.position, combat.enemies.positions[target])
+        let thrown = min(range, max(2.5, distanceToTarget + 1.2))
+        let flightSpeed = max(Double(speed), 0.01)
+        let life = profile.returns ? Double(thrown) / flightSpeed * 2.4 + 0.6
+                                   : Double(range) / max(profile.speed, 0.01) * 1.25
         let template = baseHit(weapon, combat: combat)
         let pierce = profile.pierce + Int(combat.sheet[.pierce])
         let visual: VisualStyle = VisualStyle.matching(weapon.damageType)
@@ -173,7 +179,9 @@ struct WeaponSystem {
                 splashRadius: splash,
                 spriteID: profile.spriteID,
                 visual: visual,
-                turnsAfter: profile.returns ? life * 0.45 : 0
+                turnsAfter: profile.returns ? Double(thrown) / flightSpeed : 0,
+                returnsToThrower: profile.returns,
+                legPierce: pierce
             ))
         }
         combat.events.append(.projectileFired(spriteID: profile.spriteID, origin: player.position,

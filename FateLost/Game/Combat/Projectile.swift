@@ -28,6 +28,13 @@ struct Projectile {
     /// may strike everything a second time. Zero once it has turned, or for
     /// anything that was never coming back.
     var turnsAfter: Double = 0
+    /// A boomerang: after `turnsAfter` seconds (or once it has passed through
+    /// all it can) it flies back to whoever threw it and is caught there.
+    var returnsToThrower = false
+    /// It is on its way back.
+    var isReturning = false
+    /// What it may pass through on each leg of the trip.
+    var legPierce = 0
 
     var direction: CGPoint { velocity.normalized }
 }

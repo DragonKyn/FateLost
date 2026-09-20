@@ -34,6 +34,9 @@ final class PlayerView: SKNode {
     private var attackIsMelee = true
     private var attackFacing: CGFloat = 1
     private var defeatAge: CGFloat?
+    /// Seconds the held weapon stays out of the hand: a thrown boomerang is
+    /// not also in the hero's grip.
+    private var weaponAway: CGFloat = 0
 
     private let catalog: SpriteCatalog
     /// Shimmer around the player while a barrier is up.
@@ -112,6 +115,13 @@ final class PlayerView: SKNode {
         fatalError("PlayerView is created in code")
     }
 
+    /// A throw: the arm goes out, and the weapon is gone from the hand for the
+    /// length of the flight (it is back in the hand a moment later on its own).
+    func playThrow(screenDirection: CGPoint) {
+        playAttack(screenDirection: screenDirection, isMelee: false)
+        weaponAway = 0.55
+    }
+
     /// Starts the attack animation toward a screen-space direction.
     func playAttack(screenDirection: CGPoint, isMelee: Bool) {
         attackAge = 0
@@ -128,6 +138,8 @@ final class PlayerView: SKNode {
     func apply(_ state: PlayerState, screenVelocity: CGPoint, dt: CGFloat) {
         attackAge += dt
         levelUpAge += dt
+        weaponAway = max(0, weaponAway - dt)
+        weapon.alpha = weaponAway > 0 ? 0 : 1
 
         if state.isDefeated {
             applyDefeat(dt: dt)

@@ -40,21 +40,33 @@ struct ProjectileSystem {
         while index >= 0 {
             var projectile = combat.projectiles[index]
             projectile.remainingLife -= dt
-            if projectile.turnsAfter > 0 {
-                projectile.turnsAfter -= dt
-                if projectile.turnsAfter <= 0 {
-                    // On the way back it is a fresh throw: everything it
-                    // clipped going out is fair game again.
-                    projectile.velocity = projectile.velocity * -1
-                    projectile.struckEnemyIDs.removeAll(keepingCapacity: true)
-                    projectile.turnsAfter = 0
+            if projectile.returnsToThrower {
+                if !projectile.isReturning {
+                    projectile.turnsAfter -= dt
+                    if projectile.turnsAfter <= 0 { Self.beginReturn(&projectile, combat: combat) }
+                }
+                if projectile.isReturning {
+                    // Home on the thrower, wherever they have run to.
+                    let toThrower = combat.world.delta(from: projectile.position, to: combat.playerPosition)
+                    let speed = max(projectile.velocity.length, 0.01)
+                    if toThrower.length > 0.0001 { projectile.velocity = toThrower.normalized * speed }
                 }
             }
             projectile.position = combat.world.wrap(projectile.position + projectile.velocity * step)
 
             var spent = projectile.remainingLife <= 0
-            if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
+            if projectile.isReturning,
+               combat.world.distance(projectile.position, combat.playerPosition) <= Self.catchRadius {
+                // Caught: it is spent, and the hand is free for the next throw.
+                spent = true
+            } else if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
                 spent = impact(&projectile, on: struck, combat: &combat)
+                if spent, projectile.returnsToThrower, !projectile.isReturning, projectile.remainingLife > 0 {
+                    // Through everything it could pass through going out:
+                    // turn for home now rather than vanishing in the crowd.
+                    Self.beginReturn(&projectile, combat: combat)
+                    spent = false
+                }
             }
 
             if spent {
@@ -63,6 +75,24 @@ struct ProjectileSystem {
                 combat.projectiles[index] = projectile
             }
             index -= 1
+        }
+    }
+
+    /// How close to the thrower a returning boomerang must come to be caught.
+    static let catchRadius: CGFloat = 0.5
+
+    /// Turns a boomerang for home. On the way back it is a fresh throw:
+    /// everything it clipped going out is fair game once more, and it may
+    /// pass through as many as it could before. That second pass is part of
+    /// its balance; within one leg no enemy is struck twice.
+    private static func beginReturn(_ projectile: inout Projectile, combat: CombatState) {
+        projectile.isReturning = true
+        projectile.turnsAfter = 0
+        projectile.struckEnemyIDs.removeAll(keepingCapacity: true)
+        projectile.pierceRemaining = projectile.legPierce
+        let toThrower = combat.world.delta(from: projectile.position, to: combat.playerPosition)
+        if toThrower.length > 0.0001 {
+            projectile.velocity = toThrower.normalized * max(projectile.velocity.length, 0.01)
         }
     }
 
