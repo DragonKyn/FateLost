@@ -17,6 +17,7 @@ is, the palette says where it is from, the details say how it fights.
 
 Everything faces +x. Coordinates are top-left origin, y downward.
 """
+import math
 import os
 import sys
 
@@ -449,120 +450,161 @@ def robed(name, robe, skin, eye, doc, hood=True, staff=None, trim=None, sigil=No
 
 def quadruped(name, coat, belly, eye, doc, mane=None, antlers=False, skeletal=False,
               width=64, height=46, tail="lash", tufts=True):
-    s = Sprite(name, width, height, foot=height - 3, doc=doc)
-    ground = height - 4
+    """A four-legged beast in profile, facing right.
+
+    Drawn once in a design space 66 wide (a wolf 44 tall, a stag 64) and scaled
+    to `width`, so the same anatomy serves the hound, the wolf, the stag and
+    the boss stag. Legs are digitigrade (the hind leg folds at the hock), the
+    ribcage is deeper than the flank, and the head is a wedge with a proper
+    muzzle. Ears and antlers stay inside the canvas.
+    """
+    deer = antlers
+    DW = 66.0
+    DH = 64.0 if deer else 44.0
+    k = width / DW
+    sprite_h = int(math.ceil(DH * k + 4))
+    s = Sprite(name, width, sprite_h, foot=sprite_h - 3, doc=doc)
+    s.push(dx=(width - DW * k) / 2, dy=sprite_h - DH * k - 1, scale=k)
+
+    G = DH - 4                      # the ground line
+    lift = 8.0 if deer else 0.0     # a stag stands taller on its legs
     shade = _shade(coat, 0.38)
     dark = _shade(coat, 0.58)
-    back = height - 28
-    haunch = 17
-    chest = width - 24
+    fur_light = _light(coat, 0.1)
+    limb = BONE if skeletal else coat
+    limb_dark = BONE_SHADE if skeletal else dark
+    limb_w = 0.72 if skeletal else 1.0
 
-    # Tail.
-    if tail == "lash":
-        s.curve([(haunch - 2, back + 3), (10, back), (5, back - 7), (8, back - 13)], coat, 3.4)
-        s.curve([(6.4, back - 6), (8.4, back - 12)], shade, 2.0)
-        if tufts:
-            for ty in (back - 11, back - 8):
-                s.taper([(7, ty), (3.5, ty - 2.5)], coat, 2.0, 0.2)
-    elif tail == "bone":
-        for index in range(5):
-            bx = haunch - 2 - index * 2.6
-            by = back + 2 - index * 2.2
-            s.taper([(bx, by), (bx - 2.2, by - 1.8)], BONE, 2.0, 1.4, outline=INK, width=0.4)
-            s.dot(bx - 2.2, by - 1.8, 1.0, BONE_SHADE)
+    haunch = 15.0                   # the hip
+    chest = 36.0                    # the shoulder
+    top = G - 24 - lift             # the line of the back at the hip
+    belly_y = G - 12 - lift         # the underline at the ribs
+
+    # --- tail --------------------------------------------------------------
+    if tail == "bone":
+        for index in range(6):
+            bx = haunch - 4 - index * 2.7
+            by = top + 1 + index * 1.6 - (index * index) * 0.08
+            s.taper([(bx, by), (bx - 2.4, by + 0.9)], BONE, 2.1, 1.5, outline=INK, width=0.4)
+            s.dot(bx - 2.4, by + 0.9, 1.0, BONE_SHADE)
     elif tail == "flame":
-        s.glow(9, back - 5, 11, eye, 0.55)
-        s.taper([(haunch - 2, back + 2), (10, back - 5), (6, back - 15)], eye, 4.4, 0.3)
-        s.taper([(haunch - 3, back + 1), (12, back - 3), (10, back - 10)], _light(eye, 0.5), 2.4, 0.2)
+        s.glow(9, top - 3, 12, eye, 0.55)
+        s.taper([(haunch - 3, top + 2), (10, top - 6), (5, top - 17)], eye, 5.0, 0.3)
+        s.taper([(haunch - 4, top + 2), (11, top - 3), (9, top - 11)], _light(eye, 0.5), 2.6, 0.2)
+    else:
+        # A brush: heavy at the root, carried low, ending in a point.
+        s.blob([(haunch - 1, top - 1), (haunch - 7, top + 1), (haunch - 11.5, top + 8), (haunch - 11, top + 17),
+                (haunch - 8.6, top + 10.5), (haunch - 4.5, top + 6), (haunch - 1, top + 6)], coat, outline=INK, width=0.9)
+        s.taper([(haunch - 3.5, top + 1.5), (haunch - 8, top + 5), (haunch - 9.6, top + 11)], fur_light, 2.4, 0.5)
 
-    # Far legs: shaded, with a bent hock.
-    for fx, forward in ((haunch + 3, -1), (chest - 2, 1)):
-        s.taper([(fx, back + 6), (fx + forward * 2.5, back + 13), (fx - forward * 1, ground - 4)], dark,
-                4.8, 3.2, outline=INK, width=0.6)
-        s.ellipse(fx - forward * 3, ground - 4.5, 6, 3.4, dark, outline=INK, width=0.5)
+    # --- far legs (behind the body, darker) --------------------------------
+    hind_far = [(haunch + 6, top + 5), (haunch + 10, G - 11 - lift * 0.4), (haunch + 5.5, G - 6), (haunch + 7.5, G - 1.6)]
+    s.taper(hind_far, limb_dark, 6.0 * limb_w, 2.6, outline=INK, width=0.6)
+    fore_far = [(chest - 8, top + 6), (chest - 9.5, G - 10 - lift * 0.5), (chest - 8, G - 5), (chest - 6.5, G - 1.6)]
+    s.taper(fore_far, limb_dark, 4.8 * limb_w, 2.4, outline=INK, width=0.6)
+    for px in (haunch + 7.5, chest - 6.5):
+        s.ellipse(px - 3.2, G - 2.6, 7.2, 3.2, shade, outline=INK, width=0.5)
 
-    # Body: a deep chest and a high haunch, joined by a dipped back.
-    body = [(haunch - 4, back + 4), (haunch - 2, back - 5), (haunch + 5, back - 8),
-            (width / 2, back - 5), (chest - 2, back - 9), (chest + 6, back - 6),
-            (chest + 8, back + 4), (chest, back + 12), (width / 2, back + 13),
-            (haunch + 2, back + 12)]
+    # --- body: deep ribs, a tucked flank, a strong hip ---------------------
+    if deer:
+        body = [(haunch - 6, top + 6), (haunch - 3, top - 1), (haunch + 5, top - 3), (28, top - 1.5),
+                (chest - 2, top - 4), (chest + 5, top - 1), (chest + 7, top + 8), (chest + 3, belly_y + 1),
+                (34, belly_y + 1.2), (haunch + 8, belly_y - 2), (haunch - 2, top + 11)]
+    else:
+        body = [(haunch - 7, top + 6), (haunch - 4, top - 1.5), (haunch + 4, top - 4), (29, top - 2.5),
+                (chest - 3, top - 6.5), (chest + 5, top - 3), (chest + 8, top + 6), (chest + 4, belly_y + 1.5),
+                (35, belly_y + 2.2), (haunch + 9, belly_y - 3.5), (haunch - 3, top + 11)]
     s.blob(body, coat, outline=INK, width=1.1)
-    s.blob([(haunch, back + 8), (width / 2, back + 11), (chest + 2, back + 9), (chest + 5, back + 5),
-            (chest, back + 13), (width / 2, back + 14), (haunch, back + 12)], belly)
-    # Shoulder and haunch masses.
-    s.blob([(chest - 4, back - 7), (chest + 5, back - 5), (chest + 6, back + 5), (chest - 5, back + 6)],
-           _light(coat, 0.1))
-    s.blob([(haunch - 3, back - 4), (haunch + 6, back - 6), (haunch + 7, back + 7), (haunch - 2, back + 8)],
-           _light(coat, 0.08))
-    s.curve([(haunch + 6, back - 6), (width / 2, back - 3.5), (chest - 1, back - 7.5)], shade, 1.0)
+    # The pale underside runs from the chest back along the belly.
+    s.blob([(haunch + 9, belly_y - 3), (28, belly_y - 0.5), (chest + 2, belly_y - 0.5), (chest + 5, belly_y + 1.2),
+            (35, belly_y + 2), (haunch + 9, belly_y - 2)], belly)
+    # Shoulder and haunch, lit.
+    s.blob([(chest - 8, top - 3), (chest + 3, top - 4), (chest + 5, top + 6), (chest - 6, top + 8)], fur_light)
+    s.blob([(haunch - 3, top - 1), (haunch + 7, top - 2), (haunch + 9, top + 9), (haunch - 1, top + 10)], fur_light)
+    s.curve([(haunch + 5, top - 3), (29, top - 1.5), (chest - 3, top - 5)], shade, 1.0)
 
     if skeletal:
-        for index in range(5):
-            rx = haunch + 5 + index * 3.6
-            s.curve([(rx, back - 4), (rx + 1.4, back + 3), (rx - 0.6, back + 10)], BONE_SHADE, 1.4)
-        s.blob([(haunch + 1, back - 4), (haunch + 6, back - 6), (haunch + 5, back + 9), (haunch, back + 8)],
-               BONE_SHADE)
-        s.taper([(haunch + 4, back - 6), (width / 2, back - 3), (chest, back - 7)], BONE, 1.8, 1.4)
+        # Bare ribs, the pelvis and the spine showing through.
+        for index in range(6):
+            rx = haunch + 12 + index * 3.6
+            s.curve([(rx, top - 1), (rx + 2.2, top + 5), (rx + 0.8, belly_y - 1)], BONE_SHADE, 1.5)
+        s.blob([(haunch - 3, top - 1), (haunch + 5, top - 2), (haunch + 6, top + 9), (haunch - 2, top + 8)], BONE_SHADE)
+        s.taper([(haunch + 4, top - 3), (29, top - 1.5), (chest - 2, top - 5)], BONE, 2.2, 1.6)
     elif tufts:
-        for index in range(4):
-            tx = haunch + 5 + index * 4.5
-            s.taper([(tx, back - 6), (tx - 1.6, back - 10), (tx + 0.6, back - 12)], shade, 2.6, 0.2)
+        for index in range(5):
+            tx = haunch + 7 + index * 4.2
+            s.taper([(tx, top - 3), (tx - 1.4, top - 7.5), (tx + 0.6, top - 9.5)], shade, 2.8, 0.2)
 
     if mane is not None:
-        s.glow(chest - 2, back - 10, 13, mane, 0.45)
-        for index in range(5):
-            mx = chest - 8 + index * 3.4
-            lift = 14 + (index % 2) * 4
-            s.taper([(mx, back - 5), (mx - 2.5, back - lift * 0.6), (mx + 1.5, back - lift)], mane, 3.6, 0.3)
-            s.taper([(mx + 0.5, back - 5), (mx - 1, back - lift * 0.5)], _light(mane, 0.5), 1.8, 0.2)
+        s.glow(chest - 2, top - 10, 14, mane, 0.45)
+        for index in range(6):
+            mx = chest - 12 + index * 3.6
+            rise = 13 + (index % 2) * 4
+            s.taper([(mx, top - 3), (mx - 2.5, top - rise * 0.6), (mx + 1.5, top - rise)], mane, 3.8, 0.3)
+            s.taper([(mx + 0.5, top - 3), (mx - 1, top - rise * 0.5)], _light(mane, 0.5), 1.8, 0.2)
 
-    # Near legs: lit, striding, with paws.
-    for nx, forward in ((haunch + 6, -1), (chest + 3, 1)):
-        s.taper([(nx, back + 5), (nx + forward * 3.5, back + 14), (nx - forward * 1.5, ground - 2)], coat,
-                5.6, 3.8, outline=INK, width=0.8)
-        s.ellipse(nx - forward * 1.5 - 3.4, back + 12, 5.6, 4.4, _light(coat, 0.06), outline=INK, width=0.5)
-        px = nx - forward * 1.5
-        s.ellipse(px - 3.6, ground - 3.4, 7.2, 3.8, shade, outline=INK, width=0.6)
-        for cx in (-2.0, -0.4, 1.2, 2.6):
-            s.taper([(px + cx, ground - 1), (px + cx + 0.6, ground + 1.4)], BONE, 0.9, 0.12)
+    # --- near hind leg: thigh, then the hock folds back, then the paw ------
+    thigh = [(haunch - 4, top + 3), (haunch + 3, top - 1), (haunch + 8, top + 8), (haunch + 3, top + 14)]
+    s.blob(thigh, fur_light if not skeletal else BONE_SHADE, outline=INK, width=0.9)
+    hind_near = [(haunch + 3, top + 10), (haunch + 7.5, G - 10 - lift * 0.4), (haunch - 0.5, G - 6), (haunch + 2, G - 1.6)]
+    s.taper(hind_near, limb, 5.6 * limb_w, 2.8, outline=INK, width=0.8)
+    s.ellipse(haunch + 2 - 3.6, G - 2.8, 7.6, 3.4, limb_dark if skeletal else shade, outline=INK, width=0.6)
+    for cx in (-2.2, -0.6, 1.0, 2.6):
+        s.taper([(haunch + 2 + cx, G - 0.6), (haunch + 2.6 + cx, G + 1.5)], BONE, 0.95, 0.12)
 
-    # Head: brow, cheek, muzzle, jaw.
-    hx = width - 17
-    hy = back - 10
-    s.taper([(chest, back - 6), (hx - 1, hy + 4)], coat, 8.0, 6.0, outline=INK, width=0.7)
-    s.blob([(hx - 3, hy + 3), (hx, hy - 4), (hx + 6, hy - 5), (hx + 10, hy - 1), (hx + 10, hy + 5),
-            (hx + 4, hy + 8), (hx - 2, hy + 7)], coat, outline=INK, width=1.0)
-    s.blob([(hx - 2, hy + 4), (hx + 1, hy - 2.5), (hx + 4, hy - 2), (hx + 3, hy + 7)], _light(coat, 0.1))
-    # Muzzle and jaw.
-    s.blob([(hx + 7, hy - 1), (hx + 14, hy - 0.5), (hx + 16, hy + 3), (hx + 13, hy + 6.5),
-            (hx + 7, hy + 6)], belly, outline=INK, width=0.8)
-    s.poly([(hx + 8, hy + 4.2), (hx + 15.2, hy + 3.6), (hx + 14, hy + 7.2), (hx + 8.4, hy + 7.6)], BLOOD,
-           outline=INK, width=0.5)
-    # Fangs hang from the upper jaw and rise from the lower, inside the mouth.
-    for fx in (1.6, 4.4):
-        s.taper([(hx + 8 + fx, hy + 4.3), (hx + 8.3 + fx, hy + 6.4)], BONE, 1.0, 0.12)
-    for fx in (2.8, 5.6):
-        s.taper([(hx + 8 + fx, hy + 7.3), (hx + 8.2 + fx, hy + 5.4)], BONE, 0.9, 0.12)
-    s.ellipse(hx + 14, hy + 0.4, 2.6, 2.0, INK)
-    s.curve([(hx + 7.5, hy + 1.6), (hx + 11, hy + 1.2)], _shade(belly, 0.3), 0.6)
-    # Brow ridge and eye.
-    s.taper([(hx + 3, hy + 0.6), (hx + 8.5, hy - 0.6)], _shade(coat, 0.5), 2.0, 1.2)
-    gaze(s, hx + 7.5, hy + 1.8, eye, glow=skeletal or mane is not None, size=0.9, spacing=4.0)
+    # --- near foreleg, straight and braced ---------------------------------
+    fore_near = [(chest - 3, top + 4), (chest - 4.5, G - 10 - lift * 0.5), (chest - 2, G - 5), (chest - 0.6, G - 1.6)]
+    s.taper(fore_near, limb, 5.4 * limb_w, 2.6, outline=INK, width=0.8)
+    s.ellipse(chest - 0.6 - 3.6, G - 2.8, 7.6, 3.4, limb_dark if skeletal else shade, outline=INK, width=0.6)
+    for cx in (-2.2, -0.6, 1.0, 2.6):
+        s.taper([(chest - 0.6 + cx, G - 0.6), (chest + cx, G + 1.5)], BONE, 0.95, 0.12)
 
-    if antlers:
-        for bx, sign in (((hx + 1), -1), ((hx + 6), 1)):
-            s.taper([(bx, hy - 4), (bx + sign * 3, hy - 13), (bx + sign * 7, hy - 19)], BONE_SHADE, 2.8, 0.3,
-                    outline=INK, width=0.5)
-            s.taper([(bx + sign * 2.2, hy - 10), (bx + sign * 7.5, hy - 12)], BONE_SHADE, 1.9, 0.2,
-                    outline=INK, width=0.35)
-            s.taper([(bx + sign * 4.2, hy - 15), (bx + sign * 9.5, hy - 16.5)], BONE_SHADE, 1.7, 0.2,
-                    outline=INK, width=0.35)
-            s.taper([(bx + sign * 5.6, hy - 17.5), (bx + sign * 9, hy - 22)], BONE_SHADE, 1.5, 0.2)
+    # --- neck and head -----------------------------------------------------
+    if deer:
+        hx, hy = chest + 9, top - 18
+        s.blob([(chest - 5, top - 4), (chest - 2, top - 12), (hx - 6, hy + 2), (hx - 1, hy - 1), (hx + 2, hy + 6),
+                (chest + 5, top - 4), (chest + 7, top + 4), (chest, top + 4)], coat, outline=INK, width=0.9)
+        s.blob([(chest - 1, top - 8), (hx - 4, hy + 4), (hx - 1, hy + 6), (chest + 4, top - 2)], fur_light)
     else:
-        s.poly([(hx + 1, hy - 3), (hx - 1.5, hy - 10), (hx + 5, hy - 4.5)], coat, outline=INK, width=0.6)
-        s.poly([(hx + 1.6, hy - 4), (hx - 0.2, hy - 8.6), (hx + 3.6, hy - 5)], _shade(coat, 0.45))
-        s.poly([(hx + 5.5, hy - 4.5), (hx + 6, hy - 11), (hx + 9.5, hy - 3.5)], coat, outline=INK, width=0.6)
-        s.poly([(hx + 6.2, hy - 5.2), (hx + 6.6, hy - 9.4), (hx + 8.6, hy - 4.6)], _shade(coat, 0.45))
+        hx, hy = chest + 9, top - 7
+        s.blob([(chest - 5, top - 6), (chest - 1, top - 10), (hx - 5, hy - 1), (hx + 1, hy + 1), (hx + 2, hy + 8),
+                (chest + 6, top + 1), (chest + 5, top + 6), (chest - 2, top + 3)], coat, outline=INK, width=0.9)
+        s.blob([(chest - 2, top - 7), (hx - 4, hy + 1), (hx - 1, hy + 5), (chest + 3, top)], fur_light)
+    # The skull, then the long wedge of the muzzle.
+    s.blob([(hx - 4, hy + 4), (hx - 2, hy - 3), (hx + 4, hy - 5), (hx + 9, hy - 2), (hx + 9, hy + 4),
+            (hx + 3, hy + 7)], coat, outline=INK, width=1.0)
+    s.blob([(hx - 2, hy + 3), (hx, hy - 2), (hx + 3, hy - 3), (hx + 3, hy + 5)], fur_light)
+    muzzle = [(hx + 6, hy - 2), (hx + 16, hy - 0.4), (hx + 19, hy + 2.4), (hx + 15.5, hy + 5), (hx + 7, hy + 5.4)]
+    s.blob(muzzle, belly, outline=INK, width=0.9)
+    # The jaw hangs open under it: red inside, teeth above and below.
+    s.poly([(hx + 7, hy + 4), (hx + 17, hy + 4.4), (hx + 13.6, hy + 9.6), (hx + 7.4, hy + 8.4)], BLOOD,
+           outline=INK, width=0.6)
+    for fx in (0.0, 3.2, 6.4):
+        s.taper([(hx + 9.4 + fx, hy + 4.6), (hx + 9.7 + fx, hy + 7)], BONE, 1.15, 0.12)
+    for fx in (1.6, 4.8):
+        s.taper([(hx + 9 + fx, hy + 8.6), (hx + 9.3 + fx, hy + 6)], BONE, 1.0, 0.12)
+    s.ellipse(hx + 16.6, hy + 0.2, 3.0, 2.2, INK)
+    s.curve([(hx + 8, hy + 1.6), (hx + 13, hy + 1.2)], _shade(belly, 0.3), 0.6)
+    # Brow, and an eye that glows.
+    s.taper([(hx + 2.4, hy - 0.6), (hx + 9.4, hy - 1.6)], _shade(coat, 0.5), 2.2, 1.2)
+    gaze(s, hx + 7, hy + 0.9, eye, glow=skeletal or mane is not None, size=1.0, spacing=4.0)
+
+    if deer:
+        # Antlers: a main beam up and back with tines, both inside the canvas.
+        for bx, sign in ((hx - 1.5, -1), (hx + 4.5, 1)):
+            base = (bx, hy - 4)
+            beam = [base, (bx + sign * 2.5, hy - 12), (bx + sign * 6.5, hy - 19), (bx + sign * 8.5, hy - 24)]
+            s.taper(beam, BONE_SHADE, 3.0, 0.4, outline=INK, width=0.5)
+            s.taper([(bx + sign * 2.2, hy - 10), (bx + sign * 8.5, hy - 12.5)], BONE_SHADE, 2.0, 0.2, outline=INK, width=0.35)
+            s.taper([(bx + sign * 4.4, hy - 15.5), (bx + sign * 10.5, hy - 17.5)], BONE_SHADE, 1.8, 0.2, outline=INK, width=0.35)
+            s.taper([(bx + sign * 5.4, hy - 19), (bx + sign * 9.5, hy - 26)], BONE_SHADE, 1.6, 0.2)
+    else:
+        # Pricked, pointed ears.
+        s.poly([(hx - 0.5, hy - 3), (hx - 2.5, hy - 11.5), (hx + 4.6, hy - 4.6)], coat, outline=INK, width=0.7)
+        s.poly([(hx + 0.2, hy - 4), (hx - 1.2, hy - 9), (hx + 3.2, hy - 5)], _shade(coat, 0.45))
+        s.poly([(hx + 5, hy - 4.6), (hx + 6.4, hy - 12), (hx + 10.4, hy - 3.6)], coat, outline=INK, width=0.7)
+        s.poly([(hx + 5.8, hy - 5.4), (hx + 6.8, hy - 9.8), (hx + 9, hy - 4.6)], _shade(coat, 0.45))
+    s.pop()
     return s
 
 
