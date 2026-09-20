@@ -14,8 +14,29 @@ struct LegacyProfile: Codable, Equatable {
     var unlocked: Set<String> = []
     var realms = RealmProgress()
     var lifetime = LifetimeStats()
+    /// Starters bought from the Armoury, on top of the three every player
+    /// begins with.
+    var weapons: Set<WeaponID> = []
+    /// Ranks of mastery bought per weapon.
+    var weaponRanks: [WeaponID: Int] = [:]
 
     var totalEarned: Int { echoes + spent }
+
+    init() {}
+
+    /// Decoded field by field so a profile written before a field existed
+    /// still loads. A save is a player's history; adding to the game must
+    /// never cost them any of it.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        echoes = try container.decodeIfPresent(Int.self, forKey: .echoes) ?? 0
+        spent = try container.decodeIfPresent(Int.self, forKey: .spent) ?? 0
+        unlocked = try container.decodeIfPresent(Set<String>.self, forKey: .unlocked) ?? []
+        realms = try container.decodeIfPresent(RealmProgress.self, forKey: .realms) ?? RealmProgress()
+        lifetime = try container.decodeIfPresent(LifetimeStats.self, forKey: .lifetime) ?? LifetimeStats()
+        weapons = try container.decodeIfPresent(Set<WeaponID>.self, forKey: .weapons) ?? []
+        weaponRanks = try container.decodeIfPresent([WeaponID: Int].self, forKey: .weaponRanks) ?? [:]
+    }
 
     // MARK: Buying
 
@@ -54,6 +75,58 @@ struct LegacyProfile: Codable, Equatable {
     /// Nodes bought in one strand.
     func count(in branch: LegacyBranch) -> Int {
         LegacyTree.nodes(in: branch).filter { unlocked.contains($0.id) }.count
+    }
+
+    // MARK: The Armoury
+
+    func isUnlocked(_ weapon: WeaponDefinition) -> Bool {
+        StarterWeapons.defaultUnlocked.contains(weapon.id) || weapons.contains(weapon.id)
+    }
+
+    func rank(of weapon: WeaponDefinition) -> Int {
+        min(weaponRanks[weapon.id] ?? 0, WeaponMastery.maxRank)
+    }
+
+    /// Why a weapon cannot be bought right now, or nil if it can.
+    func weaponDenial(for weapon: WeaponDefinition) -> String? {
+        if isUnlocked(weapon) { return "Already on the rack" }
+        let cost = WeaponMastery.unlockCost(weapon)
+        return echoes >= cost ? nil : "Costs \(cost) echoes"
+    }
+
+    /// Why the next rank cannot be bought, or nil if it can.
+    func masteryDenial(for weapon: WeaponDefinition) -> String? {
+        guard isUnlocked(weapon) else { return "Unlock it first" }
+        let next = rank(of: weapon) + 1
+        if next > WeaponMastery.maxRank { return "Mastered" }
+        let cost = WeaponMastery.rankCost(next)
+        return echoes >= cost ? nil : "Costs \(cost) echoes"
+    }
+
+    @discardableResult
+    mutating func buy(weapon: WeaponDefinition) -> Bool {
+        guard weaponDenial(for: weapon) == nil else { return false }
+        let cost = WeaponMastery.unlockCost(weapon)
+        echoes -= cost
+        spent += cost
+        weapons.insert(weapon.id)
+        return true
+    }
+
+    @discardableResult
+    mutating func master(weapon: WeaponDefinition) -> Bool {
+        guard masteryDenial(for: weapon) == nil else { return false }
+        let next = rank(of: weapon) + 1
+        let cost = WeaponMastery.rankCost(next)
+        echoes -= cost
+        spent += cost
+        weaponRanks[weapon.id] = next
+        return true
+    }
+
+    /// What mastery of this weapon is worth to a run started with it.
+    func modifiers(startingWith weapon: WeaponDefinition) -> [StatModifier] {
+        WeaponMastery.modifiers(for: weapon, rank: rank(of: weapon))
     }
 
     /// Every bonus the board currently grants, ready for a run's stat sheet.

@@ -36,10 +36,10 @@ play throughout.
 | 1 Playground | App shell, menus, isometric wrapping world, joystick, camera | **Done** |
 | 2 Combat | Enemies, spawning, health, auto-attacks, Sword; music and sound | **Done** |
 | 3 Roguelite loop | XP, levels, skill points, the full skill tree, abilities, summary | **Done** |
-| 4 Variety | More enemies, pickups, shrines, loot | Next |
-| 5 Waves | WaveManager, elites, milestones, the Grave Warden | |
-| 6 Legacy | Legacy XP and upgrades, save/load, realm unlocks | |
-| 7 Multiclass | Hybrid prerequisites, Spellblade | |
+| 4 Variety | Summons that can be lost, 33 creatures across 8 families, strains | **Done** |
+| 5 Waves | The wave clock, ten champions, realm conquest | **Done** |
+| 6 Legacy | 500 permanent upgrades, statistics, save/load, realm unlocks | **Done** |
+| 7 Multiclass | Eight orders, the Armoury and weapon mastery | **Done** |
 
 ## Building
 
@@ -104,7 +104,7 @@ FateLost/
   Resources/    asset catalogue
 FateLostTests/  XCTest unit tests
 tools/audio/    the music and sound-effect synthesiser
-tools/art/      the sketchbook that generates creature, bestiary and prop art
+tools/art/      the sketchbook that generates creature, bestiary, prop and weapon art
 docs/           architecture notes
 ```
 

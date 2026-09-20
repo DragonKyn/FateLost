@@ -41,7 +41,8 @@ final class GameSession {
     init(run: RunConfiguration, services: AppServices, tuning: GameTuning = .standard) {
         self.run = run
         realm = RealmCatalog.realm(run.realmID)
-        weapon = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
+        let starter = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
+        weapon = starter
         audio = services.audio
         scene = GameScene(run: run, dependencies: GameScene.Dependencies(
             tuning: tuning,
@@ -49,7 +50,7 @@ final class GameSession {
             developer: services.developer,
             audio: services.audio,
             haptics: services.haptics,
-            legacy: services.legacyModifiers
+            legacy: services.modifiers(startingWith: starter)
         ))
         scene.onHUDStateChange = { [weak self] state in
             self?.hud = state

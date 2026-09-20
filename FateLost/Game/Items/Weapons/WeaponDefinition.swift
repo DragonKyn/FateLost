@@ -18,6 +18,9 @@ struct ProjectileProfile: Codable, Equatable {
     /// World-unit radius of the impact splash; zero for none.
     var splashRadius: Double
     var spriteID: SpriteID
+    /// Comes back to the thrower halfway through its flight, striking
+    /// everything again on the return. Only the boomerang does this.
+    var returns: Bool = false
 }
 
 /// How the automatic attack chooses a target. Kept on the weapon so a staff

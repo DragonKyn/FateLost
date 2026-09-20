@@ -24,6 +24,16 @@ struct ProjectileSystem {
         while index >= 0 {
             var projectile = combat.projectiles[index]
             projectile.remainingLife -= dt
+            if projectile.turnsAfter > 0 {
+                projectile.turnsAfter -= dt
+                if projectile.turnsAfter <= 0 {
+                    // On the way back it is a fresh throw: everything it
+                    // clipped going out is fair game again.
+                    projectile.velocity = projectile.velocity * -1
+                    projectile.struckEnemyIDs.removeAll(keepingCapacity: true)
+                    projectile.turnsAfter = 0
+                }
+            }
             projectile.position = combat.world.wrap(projectile.position + projectile.velocity * step)
 
             var spent = projectile.remainingLife <= 0

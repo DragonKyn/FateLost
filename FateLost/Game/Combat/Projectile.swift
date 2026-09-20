@@ -24,6 +24,10 @@ struct Projectile {
     /// Loosed by an enemy: it looks for the player and their summons rather
     /// than for the horde.
     var isHostile = false
+    /// Seconds until it turns around and flies back the way it came, and
+    /// may strike everything a second time. Zero once it has turned, or for
+    /// anything that was never coming back.
+    var turnsAfter: Double = 0
 
     var direction: CGPoint { velocity.normalized }
 }

@@ -3,9 +3,16 @@ import Foundation
 /// Starter weapon catalogue. Balance lives here, not in combat code.
 ///
 /// A starter weapon only shapes the opening minutes of a run; it never
-/// determines class. Further starters (Greatsword, Crossbow, Daggers, Wand,
-/// Mace, Hand Wraps) will be added here and unlocked through Legacy.
+/// determines class. Three are yours from the first run; the rest are bought
+/// from the Armoury with echoes, and every one of them can be mastered.
+///
+/// They sit within a hand's breadth of each other on damage per second on
+/// purpose. What separates them is how that damage arrives — one heavy blow
+/// or six light ones, in an arc or down a line — so the choice is about how
+/// a run feels to play rather than which weapon is correct.
 enum StarterWeapons {
+    // MARK: - Yours from the start
+
     static let sword = WeaponDefinition(
         id: "starter.sword",
         name: "Worn Sword",
@@ -63,8 +70,190 @@ enum StarterWeapons {
         spriteID: .weaponStaff
     )
 
+    // MARK: - Bought from the Armoury
+
+    static let sai = WeaponDefinition(
+        id: "starter.sai",
+        name: "Paired Sai",
+        summary: "Short, blindingly fast, and never more than an arm away.",
+        baseDamage: 6,
+        attackSpeed: 2.0,
+        range: 1.5,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 100),
+        targeting: .nearest,
+        rarity: .uncommon,
+        spriteID: .weaponSai
+    )
+
+    static let katana = WeaponDefinition(
+        id: "starter.katana",
+        name: "Katana",
+        summary: "One clean cut at a time, and each one counts.",
+        baseDamage: 15,
+        attackSpeed: 0.85,
+        range: 1.9,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 90),
+        targeting: .nearest,
+        rarity: .rare,
+        spriteID: .weaponKatana
+    )
+
+    static let dualDaggers = WeaponDefinition(
+        id: "starter.dualDaggers",
+        name: "Dual Daggers",
+        summary: "A flurry at arm's length. Nothing here is meant to be parried.",
+        baseDamage: 5,
+        attackSpeed: 2.4,
+        range: 1.4,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 80),
+        targeting: .nearest,
+        rarity: .uncommon,
+        spriteID: .weaponDualDaggers
+    )
+
+    static let boStaff = WeaponDefinition(
+        id: "starter.boStaff",
+        name: "Bo Staff",
+        summary: "A sweep that clears the whole circle and puts them on their backs.",
+        baseDamage: 8,
+        attackSpeed: 1.3,
+        range: 2.1,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 260),
+        targeting: .nearest,
+        rarity: .uncommon,
+        spriteID: .weaponBoStaff
+    )
+
+    static let flail = WeaponDefinition(
+        id: "starter.flail",
+        name: "Flail",
+        summary: "Heavy, wide, and impossible to guard against.",
+        baseDamage: 14,
+        attackSpeed: 0.8,
+        range: 1.8,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 160),
+        targeting: .densestCluster,
+        rarity: .rare,
+        spriteID: .weaponFlail
+    )
+
+    static let warHammer = WeaponDefinition(
+        id: "starter.warHammer",
+        name: "War Hammer",
+        summary: "Slow as winter, and nothing it lands on gets up.",
+        baseDamage: 24,
+        attackSpeed: 0.5,
+        range: 2.0,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 130),
+        targeting: .nearest,
+        rarity: .rare,
+        spriteID: .weaponWarHammer
+    )
+
+    static let boomerang = WeaponDefinition(
+        id: "starter.boomerang",
+        name: "Boomerang",
+        summary: "Cuts a line through them going out, and again coming back.",
+        baseDamage: 9,
+        attackSpeed: 0.9,
+        range: 6.5,
+        damageType: .physical,
+        tags: [.projectile, .ranged, .weapon, .physical],
+        delivery: .projectile(ProjectileProfile(
+            speed: 11,
+            count: 1,
+            pierce: 3,
+            splashRadius: 0,
+            spriteID: .projectileBoomerang,
+            returns: true
+        )),
+        targeting: .densestCluster,
+        rarity: .rare,
+        spriteID: .weaponBoomerang
+    )
+
+    static let emberWand = WeaponDefinition(
+        id: "starter.emberWand",
+        name: "Ember Wand",
+        summary: "Gouts of fire that burst where they land.",
+        baseDamage: 11,
+        attackSpeed: 0.8,
+        range: 6.0,
+        damageType: .fire,
+        tags: [.projectile, .spell, .magic, .area],
+        delivery: .projectile(ProjectileProfile(
+            speed: 10,
+            count: 1,
+            pierce: 0,
+            splashRadius: 1.1,
+            spriteID: .projectileEmberBolt
+        )),
+        targeting: .densestCluster,
+        rarity: .uncommon,
+        spriteID: .weaponEmberWand
+    )
+
+    static let rimeWand = WeaponDefinition(
+        id: "starter.rimeWand",
+        name: "Rime Wand",
+        summary: "Shards of ice that pass through the first thing they find.",
+        baseDamage: 9,
+        attackSpeed: 0.9,
+        range: 6.2,
+        damageType: .cold,
+        tags: [.projectile, .spell, .magic],
+        delivery: .projectile(ProjectileProfile(
+            speed: 12,
+            count: 1,
+            pierce: 1,
+            splashRadius: 0,
+            spriteID: .projectileFrostBolt
+        )),
+        targeting: .nearestInRange,
+        rarity: .uncommon,
+        spriteID: .weaponRimeWand
+    )
+
+    static let stormWand = WeaponDefinition(
+        id: "starter.stormWand",
+        name: "Storm Wand",
+        summary: "Charges thrown fast enough to run a whole rank through.",
+        baseDamage: 8,
+        attackSpeed: 1.1,
+        range: 5.8,
+        damageType: .lightning,
+        tags: [.projectile, .spell, .magic],
+        delivery: .projectile(ProjectileProfile(
+            speed: 18,
+            count: 1,
+            pierce: 2,
+            splashRadius: 0,
+            spriteID: .projectileStormBolt
+        )),
+        targeting: .nearestInRange,
+        rarity: .rare,
+        spriteID: .weaponStormWand
+    )
+
     /// Every starter in display order.
-    static let all: [WeaponDefinition] = [sword, bow, staff]
+    static let all: [WeaponDefinition] = [
+        sword, bow, staff,
+        sai, dualDaggers, katana,
+        boStaff, flail, warHammer,
+        boomerang, emberWand, rimeWand, stormWand,
+    ]
 
     /// Starters available with no Legacy unlocks.
     static let defaultUnlocked: Set<WeaponID> = [sword.id, bow.id, staff.id]

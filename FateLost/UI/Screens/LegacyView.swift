@@ -1,15 +1,27 @@
 import SwiftUI
 
-/// The Legacy board: five hundred permanent upgrades, bought with echoes.
+/// Legacy: five hundred permanent upgrades, and a rack of weapons to start
+/// runs with. Both are bought with echoes, so the two tabs compete for the
+/// same currency — long-term power against a different opening.
 ///
 /// Laid out for a phone in landscape, like the skill tree: a strand rail on
 /// the left, the board filling the middle, and a detail card that slides in
 /// only while a node is selected. A strand is a column of ten tiers, five
 /// nodes across, and it scrolls under your thumb.
 struct LegacyView: View {
+    /// Which half of Legacy is on show.
+    private enum Tab: String, CaseIterable, Identifiable {
+        case board
+        case armoury
+
+        var id: String { rawValue }
+        var title: String { self == .board ? "Board" : "Armoury" }
+    }
+
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
 
+    @State private var tab: Tab = .board
     @State private var branch: LegacyBranch = .body
     @State private var selected: LegacyNode?
 
@@ -21,26 +33,10 @@ struct LegacyView: View {
 
             VStack(spacing: 8) {
                 toolbar
-                HStack(spacing: 8) {
-                    StrandRail(selection: $branch, profile: services.profile) { tapped in
-                        services.haptics.play(.uiTap)
-                        branch = tapped
-                        selected = nil
-                    }
-                    .frame(width: 62)
-
-                    BranchBoard(branch: branch, profile: services.profile, selected: selected) { node in
-                        services.haptics.play(.uiTap)
-                        selected = selected?.id == node.id ? nil : node
-                    }
-
-                    if let node = selected {
-                        NodeCard(node: node, profile: services.profile,
-                                 onBuy: { buy(node) },
-                                 onClose: { selected = nil })
-                            .frame(width: 262)
-                            .transition(.move(edge: .trailing).combined(with: .opacity))
-                    }
+                if tab == .armoury {
+                    ArmouryBoard(profile: services.profile, onBuy: buy(weapon:), onMaster: master(weapon:))
+                } else {
+                    board
                 }
             }
             .padding(.horizontal, 16)
@@ -48,6 +44,31 @@ struct LegacyView: View {
         }
         .animation(.easeOut(duration: 0.18), value: selected)
         .animation(.easeOut(duration: 0.18), value: branch)
+        .animation(.easeOut(duration: 0.18), value: tab)
+    }
+
+    private var board: some View {
+        HStack(spacing: 8) {
+            StrandRail(selection: $branch, profile: services.profile) { tapped in
+                services.haptics.play(.uiTap)
+                branch = tapped
+                selected = nil
+            }
+            .frame(width: 62)
+
+            BranchBoard(branch: branch, profile: services.profile, selected: selected) { node in
+                services.haptics.play(.uiTap)
+                selected = selected?.id == node.id ? nil : node
+            }
+
+            if let node = selected {
+                NodeCard(node: node, profile: services.profile,
+                         onBuy: { buy(node) },
+                         onClose: { selected = nil })
+                    .frame(width: 262)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            }
+        }
     }
 
     private var toolbar: some View {
@@ -57,11 +78,23 @@ struct LegacyView: View {
                     .font(FLTheme.Typeface.title(22))
                     .tracking(5)
                     .foregroundStyle(FLTheme.Palette.parchment)
-                Text("\(services.profile.unlocked.count) of \(LegacyTree.all.count) taken")
+                Text(subtitle)
                     .font(FLTheme.Typeface.body(11))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+
+            Picker("", selection: $tab) {
+                ForEach(Tab.allCases) { option in
+                    Text(option.title).tag(option)
+                }
+            }
+            .pickerStyle(.segmented)
+            .frame(width: 176)
+            .onChange(of: tab) { _, _ in
+                services.haptics.play(.uiTap)
+                selected = nil
+            }
 
             EchoBadge(echoes: services.profile.echoes)
 
@@ -73,6 +106,34 @@ struct LegacyView: View {
             .fixedSize(horizontal: true, vertical: false)
         }
         .frame(height: 46)
+    }
+
+    private var subtitle: String {
+        switch tab {
+        case .board:
+            return "\(services.profile.unlocked.count) of \(LegacyTree.all.count) taken"
+        case .armoury:
+            let held = StarterWeapons.all.filter { services.profile.isUnlocked($0) }.count
+            return "\(held) of \(StarterWeapons.all.count) weapons on the rack"
+        }
+    }
+
+    private func buy(weapon: WeaponDefinition) {
+        guard services.buyWeapon(weapon) else {
+            services.audio.play(.uiBack)
+            return
+        }
+        services.audio.play(.skillLearn)
+        services.haptics.play(.uiTap)
+    }
+
+    private func master(weapon: WeaponDefinition) {
+        guard services.masterWeapon(weapon) else {
+            services.audio.play(.uiBack)
+            return
+        }
+        services.audio.play(.skillLearn)
+        services.haptics.play(.uiTap)
     }
 
     private func buy(_ node: LegacyNode) {

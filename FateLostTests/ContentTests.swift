@@ -138,10 +138,13 @@ final class RealmUnlockTests: XCTestCase {
 }
 
 final class StarterWeaponTests: XCTestCase {
-    func testFirstSliceStartersExistAndAreUnlocked() {
+    func testStartersAreDistinctAndThreeAreFree() {
         let ids = StarterWeapons.all.map(\.id)
-        XCTAssertEqual(ids.count, 3)
-        XCTAssertEqual(Set(ids), StarterWeapons.defaultUnlocked)
+        XCTAssertEqual(Set(ids).count, ids.count, "two starters share an id")
+        XCTAssertEqual(StarterWeapons.defaultUnlocked.count, 3)
+        for id in StarterWeapons.defaultUnlocked {
+            XCTAssertNotNil(StarterWeapons.definition(for: id), "\(id) is free but not in the catalogue")
+        }
     }
 
     func testStartersHaveDistinctRoles() {

@@ -20,22 +20,27 @@ struct WeaponSelectView: View {
                     router.show(.realmSelect)
                 }
 
-                HStack(spacing: 16) {
-                    ForEach(StarterWeapons.all) { weapon in
-                        let unlocked = StarterWeapons.defaultUnlocked.contains(weapon.id)
-                        WeaponCard(weapon: weapon, isSelected: weapon.id == selectedID, isUnlocked: unlocked)
-                            .onTapGesture {
-                                guard unlocked else { return }
-                                services.haptics.play(.uiTap)
-                                services.audio.play(.uiConfirm)
-                                selectedID = weapon.id
-                            }
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 14) {
+                        ForEach(StarterWeapons.all) { weapon in
+                            let unlocked = services.isUnlocked(weapon)
+                            WeaponCard(weapon: weapon, isSelected: weapon.id == selectedID,
+                                       isUnlocked: unlocked, mastery: services.profile.rank(of: weapon))
+                                .frame(width: 236)
+                                .onTapGesture {
+                                    guard unlocked else { return }
+                                    services.haptics.play(.uiTap)
+                                    services.audio.play(.uiConfirm)
+                                    selectedID = weapon.id
+                                }
+                        }
                     }
+                    .padding(.horizontal, 2)
                 }
                 .frame(maxHeight: .infinity)
 
                 HStack {
-                    Text("More weapons are unlocked through Legacy.")
+                    Text("More weapons, and mastery of the ones you have, come from the Legacy armoury.")
                         .font(FLTheme.Typeface.body(13))
                         .foregroundStyle(FLTheme.Palette.parchmentDim)
                     Spacer()
@@ -57,11 +62,12 @@ private struct WeaponCard: View {
     let weapon: WeaponDefinition
     let isSelected: Bool
     let isUnlocked: Bool
+    var mastery = 0
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
-                Image(systemName: symbol)
+                Image(systemName: isUnlocked ? symbol : "lock.fill")
                     .font(.system(size: 26, weight: .semibold))
                     .foregroundStyle(isSelected ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
                 Spacer()
@@ -81,9 +87,21 @@ private struct WeaponCard: View {
 
             Spacer(minLength: 4)
 
+            if isUnlocked, mastery > 0 {
+                Text("Mastery \(mastery) of \(WeaponMastery.maxRank)")
+                    .font(FLTheme.Typeface.number(12))
+                    .foregroundStyle(FLTheme.Palette.emberBright)
+            } else if !isUnlocked {
+                Text("Locked · \(WeaponMastery.unlockCost(weapon)) echoes")
+                    .font(FLTheme.Typeface.number(12))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            }
+
             VStack(spacing: 6) {
-                statRow("Damage", value: String(format: "%.0f", weapon.baseDamage), fraction: weapon.baseDamage / 14)
-                statRow("Speed", value: String(format: "%.2f/s", weapon.attackSpeed), fraction: weapon.attackSpeed / 1.4)
+                statRow("Damage", value: String(format: "%.0f", weapon.baseDamage),
+                        fraction: weapon.baseDamage / 24)
+                statRow("Speed", value: String(format: "%.2f/s", weapon.attackSpeed),
+                        fraction: weapon.attackSpeed / 2.4)
                 statRow("Range", value: String(format: "%.1f", weapon.range), fraction: weapon.range / 8)
             }
         }
@@ -96,12 +114,7 @@ private struct WeaponCard: View {
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
-    private var symbol: String {
-        switch weapon.delivery {
-        case .meleeArc: return "shield.lefthalf.filled"
-        case .projectile(let profile): return profile.splashRadius > 0 ? "sparkles" : "scope"
-        }
-    }
+    private var symbol: String { WeaponGlyph.symbol(for: weapon) }
 
     private func statRow(_ label: String, value: String, fraction: Double) -> some View {
         HStack(spacing: 8) {

@@ -46,10 +46,37 @@ final class AppServices {
         developer.disableLegacyBonuses ? [] : profile.modifiers
     }
 
+    /// Everything a run starts with: the board, plus whatever mastery the
+    /// weapon it is being started with has earned.
+    func modifiers(startingWith weapon: WeaponDefinition) -> [StatModifier] {
+        guard !developer.disableLegacyBonuses else { return [] }
+        return profile.modifiers + profile.modifiers(startingWith: weapon)
+    }
+
+    func isUnlocked(_ weapon: WeaponDefinition) -> Bool {
+        profile.isUnlocked(weapon)
+    }
+
     /// Buys a Legacy node and keeps it.
     @discardableResult
     func buyLegacy(_ node: LegacyNode) -> Bool {
         guard profile.buy(node) else { return false }
+        saveProfile()
+        return true
+    }
+
+    /// Adds a weapon to the rack.
+    @discardableResult
+    func buyWeapon(_ weapon: WeaponDefinition) -> Bool {
+        guard profile.buy(weapon: weapon) else { return false }
+        saveProfile()
+        return true
+    }
+
+    /// Buys the next rank of mastery for a weapon.
+    @discardableResult
+    func masterWeapon(_ weapon: WeaponDefinition) -> Bool {
+        guard profile.master(weapon: weapon) else { return false }
         saveProfile()
         return true
     }

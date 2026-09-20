@@ -172,7 +172,8 @@ struct WeaponSystem {
                 radius: 0.18,
                 splashRadius: splash,
                 spriteID: profile.spriteID,
-                visual: visual
+                visual: visual,
+                turnsAfter: profile.returns ? life * 0.45 : 0
             ))
         }
         combat.events.append(.projectileFired(spriteID: profile.spriteID, origin: player.position,

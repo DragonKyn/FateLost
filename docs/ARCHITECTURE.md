@@ -285,6 +285,7 @@ polygons, smooth blobs, tapers, ovals, curves and glows):
 | `creatures.py` | summons and shapeshift forms | `PlaceholderArt+Allies.swift` |
 | `bestiary.py` | the horde and the ten champions | `PlaceholderArt+Bestiary.swift` |
 | `props.py` | realm set dressing | `PlaceholderArt+Props.swift` |
+| `weapons.py` | the starters and what they throw | `PlaceholderArt+Weapons.swift` |
 
 One run rasterises a preview sheet *and* emits the Swift, so the art that is
 judged in the preview is exactly what the game draws. Edit the Python and
@@ -353,3 +354,42 @@ are taken, in that strand alone.
 write and a test can build a profile in a line. `AppServices` owns it, hands
 its `modifiers` to each new run's stat sheet, and writes it whenever it
 changes.
+
+## 20. Orders: multiclassing
+
+The tree rewards depth: tiers open on points already spent in the same
+archetype, so the cheapest good build has always been to tunnel one. Orders
+are the counterweight. An order node's points count toward its `primary`
+archetype like any other skill, but it also carries a `synergy` archetype
+and will not open until enough points sit there too (`synergyThresholds`).
+There is no way to reach one on a single tree, and that is the entire design.
+
+Each of the eight is five nodes — two ways in at tier II, one that needs
+either, one that needs that, and a capstone — and a build may finish exactly
+one order capstone, so an order is something you become rather than
+something you collect. Order boards live outside `byArchetype` on purpose:
+they must never appear inside an archetype's tree, and `SkillCatalog` keeps
+`orderSkills` separate for exactly that reason.
+
+`BuildTitle` puts an order ahead of the archetype and the path name. Anyone
+holding four points in one has spent more to get there than any single tree
+could ask, and the screen should say so.
+
+## 21. The Armoury
+
+Thirteen starters, three of them free. The rest are bought once with echoes
+and then have five ranks of mastery, and mastery only applies to runs
+actually started with that weapon — `AppServices.modifiers(startingWith:)`
+folds it in beside the board, so the simulation never learns there is such a
+thing as a weapon bonus. Every weapon has an *affinity*, the third thing each
+rank grants, leaning into what it already does: knockback on the hammer,
+critical chance on the daggers, its own element on each wand.
+
+The rack is deliberately flat. Damage per second sits inside a narrow band
+across all thirteen and a test holds it there, so the difference between them
+is how the damage arrives — one heavy blow or six light ones, in an arc, down
+a line, or thrown and caught again — rather than which one is correct.
+
+`LegacyProfile` decodes field by field. A player who has been playing since
+before the Armoury existed opens the game to their echoes, their board and
+their conquests intact, with an empty rack.
