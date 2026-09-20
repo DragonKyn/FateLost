@@ -48,6 +48,11 @@ struct WaveSystem {
         self.conquestWave = conquestWave
     }
 
+    /// Adopts a wave state reported by the host (a guest only watches).
+    mutating func mirror(_ state: WaveState) {
+        self.state = state
+    }
+
     /// Share of the ordinary spawn rate the current phase allows.
     var spawnShare: Double {
         switch state.phase {

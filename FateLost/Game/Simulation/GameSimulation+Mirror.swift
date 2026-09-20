@@ -40,13 +40,6 @@ struct MirrorWorld {
     }
 }
 
-extension WaveSystem {
-    /// Adopts a wave state reported by the host.
-    mutating func mirror(_ state: WaveState) {
-        self.state = state
-    }
-}
-
 extension GameSimulation {
     /// Puts a simulation into watching mode for the player in `slot`.
     mutating func beginMirroring(slot: UInt8) {
