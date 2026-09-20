@@ -53,6 +53,11 @@ final class AppServices {
         return profile.modifiers + profile.modifiers(startingWith: weapon)
     }
 
+    /// Rerolls the codex adds to every find in a new run.
+    var bonusRerolls: Int {
+        developer.disableLegacyBonuses ? 0 : profile.bonusRerolls
+    }
+
     func isUnlocked(_ weapon: WeaponDefinition) -> Bool {
         profile.isUnlocked(weapon)
     }

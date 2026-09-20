@@ -73,6 +73,7 @@ enum PickupSystem {
                     combat.drops.swapRemove(at: index)
                 } else if distance <= DropTable.chestOpenDistance {
                     combat.pendingFinds.append(tier)
+                    combat.stats.chestsOpened += 1
                     combat.events.append(.dropCollected(kind: drop.kind, position: drop.position))
                     combat.drops.swapRemove(at: index)
                 } else {

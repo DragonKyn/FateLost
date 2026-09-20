@@ -65,6 +65,8 @@ struct GameSimulation {
     /// Permanent bonuses the Legacy board grants this run. Applied as part
     /// of the stat sheet, so every other system sees them as ordinary stats.
     let legacy: [StatModifier]
+    /// Extra rerolls on every find, from the relic codex.
+    let bonusRerolls: Int
 
     private(set) var player: PlayerState
     private(set) var combat: CombatState
@@ -129,10 +131,11 @@ struct GameSimulation {
         return nil
     }
 
-    init(run: RunConfiguration, tuning: GameTuning, legacy: [StatModifier] = []) {
+    init(run: RunConfiguration, tuning: GameTuning, legacy: [StatModifier] = [], bonusRerolls: Int = 0) {
         self.run = run
         self.tuning = tuning
         self.legacy = legacy
+        self.bonusRerolls = max(0, bonusRerolls)
         let realm = RealmCatalog.realm(run.realmID)
         self.realm = realm
         weapon = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
@@ -672,9 +675,10 @@ struct GameSimulation {
     @discardableResult
     mutating func openOffer(tier: LootTier) -> Bool {
         guard offer == nil, !player.isDefeated else { return false }
-        let dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics, wielding: weapon.id,
+        var dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics, wielding: weapon.id,
                                       random: &combat.lootRandom)
         guard !dealt.choices.isEmpty else { return false }
+        dealt.rerollsLeft += bonusRerolls
         offer = dealt
         return true
     }
@@ -725,6 +729,7 @@ struct GameSimulation {
         weapon = definition
         wielded = find
         weaponVersion += 1
+        combat.stats.weaponsWielded += 1
         weaponSystem = WeaponSystem(weapon: definition, tuning: tuning.combat,
                                     growthPerLevel: tuning.progression.damageGrowthPerLevel)
         refreshStats(force: true)
@@ -745,6 +750,7 @@ struct GameSimulation {
     mutating func grantRelic(_ choice: RelicChoice) {
         let rank = relics.add(choice.relic, rank: choice.rank)
         guard rank > 0 else { return }
+        combat.stats.relicsTaken += 1
         rebuild()
         combat.events.append(.relicGained(id: choice.relic, rank: rank))
     }

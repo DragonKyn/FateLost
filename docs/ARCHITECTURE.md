@@ -286,6 +286,7 @@ polygons, smooth blobs, tapers, ovals, curves and glows):
 | `bestiary.py` | the horde and the ten champions | `PlaceholderArt+Bestiary.swift` |
 | `props.py` | realm set dressing | `PlaceholderArt+Props.swift` |
 | `weapons.py` | the starters and what they throw | `PlaceholderArt+Weapons.swift` |
+| `loot.py` | vials, magnets, chests and the three shrines | `PlaceholderArt+Loot.swift` |
 
 One run rasterises a preview sheet *and* emits the Swift, so the art that is
 judged in the preview is exactly what the game draws. Edit the Python and
@@ -393,3 +394,58 @@ a line, or thrown and caught again — rather than which one is correct.
 `LegacyProfile` decodes field by field. A player who has been playing since
 before the Armoury existed opens the game to their echoes, their board and
 their conquests intact, with an empty rack.
+
+## 22. Spoils: relics, chests and shrines
+
+A relic is not a new kind of effect. It is a rank and a list of the same
+`SkillEffect`s the skill trees are written in, fed through the same
+`CompiledBuild.compile(_:relics:)`, so anything a skill can do a relic can
+do and combat never learned they exist. That is why the effect shorthand
+(`inc`, `flat`, `proc`, `nova`…) moved out of `SkillContent` into
+`EffectShorthand`: skills and relics both write in it. The one deliberate
+gap is that a relic never grants an ability or a form; those live in slots
+the level-up screen manages.
+
+Finding a relic you already carry raises its rank instead of filling a
+second place, and one can turn up already at a higher rank, the power roll,
+the way a strain bends a goblin. A test caps every modifier by rarity at max
+rank, the same guard the Legacy board has, so no relic can become the one
+correct pick.
+
+Loot has its own random stream (`CombatState.lootRandom`). Drops and offers
+must not shift combat, and combat must not shift them, and a run's finds are
+reproducible from its seed.
+
+**What falls.** The horde leaves the odd vial and, rarely, a magnet. Elites
+sometimes leave a cache. A champion always leaves a chest, and a hoard once
+the run is deep enough. Chests are not drawn in like embers: they stay where
+they fell, glow the colour of what they hold, and open when the player walks
+onto them, so reaching one is a decision made in the middle of a fight. A
+chevron at the screen edge points at any that are off screen. A second find
+waits for the first to be answered.
+
+**What it holds.** Three relics and one reroll, and now and then a weapon as
+a fourth card: any weapon on the rack, including ones the player has never
+bought, rolled with an affix per rarity step. Taking it replaces the weapon
+in the hand, which is the price of taking it over a relic. Mastery stays with
+the weapon the run started with, and the summary and statistics still record
+the starter.
+
+**Shrines.** Three bargains agreed to by walking onto them. Blood pays 30% of
+health for a chest and refuses a hero too weak to pay. Fortune costs nothing.
+Ruin curses the realm for a minute and gives a hoard. A shrine that cannot be
+taken is not wasted by walking past it, and no wave raises more than two.
+
+## 23. The record and the codex
+
+`LifetimeStats` now decodes field by field, like the profile that holds it.
+It was the one place a save could have been lost: synthesised `Decodable`
+demands every key, so adding a field would have made every existing profile
+fail to load and be moved aside. A test builds an old-shaped save and checks
+that every total survives.
+
+A relic is discovered the first time one is carried and stays discovered,
+which makes the codex the one part of the record that is neither a total nor
+a best. It pays in the one currency that never becomes the reason a run was
+won: `CodexRewards` adds a reroll to every find at 20 relics found and again
+at 44.

@@ -22,6 +22,9 @@ struct LegacyProfile: Codable, Equatable {
 
     var totalEarned: Int { echoes + spent }
 
+    /// Extra rerolls on every find, earned by filling in the codex.
+    var bonusRerolls: Int { CodexRewards.bonusRerolls(discovered: lifetime.relicsDiscovered) }
+
     init() {}
 
     /// Decoded field by field so a profile written before a field existed
@@ -181,6 +184,53 @@ struct LifetimeStats: Codable, Equatable {
     /// Points ever spent in each archetype, as a picture of how they play.
     var pointsByArchetype: [String: Int] = [:]
 
+    /// Spoils, over every run.
+    var chestsOpened = 0
+    var shrinesUsed = 0
+    var relicsTaken = 0
+    var weaponsFound = 0
+    var mostRelicsCarried = 0
+    /// The highest rank each relic has ever been carried at. Its keys are the
+    /// codex: a relic is discovered the first time one is carried.
+    var relicsSeen: [String: Int] = [:]
+
+    /// Relics discovered so far.
+    var relicsDiscovered: Int { relicsSeen.keys.filter { RelicCatalog.relic($0) != nil }.count }
+
+    init() {}
+
+    /// Decoded field by field, like the profile that holds it, so a record
+    /// written before spoils existed still loads with every total intact.
+    init(from decoder: any Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        runs = try c.decodeIfPresent(Int.self, forKey: .runs) ?? 0
+        conquests = try c.decodeIfPresent(Int.self, forKey: .conquests) ?? 0
+        kills = try c.decodeIfPresent(Int.self, forKey: .kills) ?? 0
+        eliteKills = try c.decodeIfPresent(Int.self, forKey: .eliteKills) ?? 0
+        bossKills = try c.decodeIfPresent(Int.self, forKey: .bossKills) ?? 0
+        deaths = try c.decodeIfPresent(Int.self, forKey: .deaths) ?? 0
+        secondsPlayed = try c.decodeIfPresent(Int.self, forKey: .secondsPlayed) ?? 0
+        damageDealt = try c.decodeIfPresent(Double.self, forKey: .damageDealt) ?? 0
+        damageTaken = try c.decodeIfPresent(Double.self, forKey: .damageTaken) ?? 0
+        healingReceived = try c.decodeIfPresent(Double.self, forKey: .healingReceived) ?? 0
+        summonsLost = try c.decodeIfPresent(Int.self, forKey: .summonsLost) ?? 0
+        echoesEarned = try c.decodeIfPresent(Int.self, forKey: .echoesEarned) ?? 0
+        highestWave = try c.decodeIfPresent(Int.self, forKey: .highestWave) ?? 0
+        highestLevel = try c.decodeIfPresent(Int.self, forKey: .highestLevel) ?? 0
+        highestHit = try c.decodeIfPresent(Double.self, forKey: .highestHit) ?? 0
+        longestRunSeconds = try c.decodeIfPresent(Int.self, forKey: .longestRunSeconds) ?? 0
+        largestHorde = try c.decodeIfPresent(Int.self, forKey: .largestHorde) ?? 0
+        bestWaveByRealm = try c.decodeIfPresent([String: Int].self, forKey: .bestWaveByRealm) ?? [:]
+        runsByWeapon = try c.decodeIfPresent([String: Int].self, forKey: .runsByWeapon) ?? [:]
+        pointsByArchetype = try c.decodeIfPresent([String: Int].self, forKey: .pointsByArchetype) ?? [:]
+        chestsOpened = try c.decodeIfPresent(Int.self, forKey: .chestsOpened) ?? 0
+        shrinesUsed = try c.decodeIfPresent(Int.self, forKey: .shrinesUsed) ?? 0
+        relicsTaken = try c.decodeIfPresent(Int.self, forKey: .relicsTaken) ?? 0
+        weaponsFound = try c.decodeIfPresent(Int.self, forKey: .weaponsFound) ?? 0
+        mostRelicsCarried = try c.decodeIfPresent(Int.self, forKey: .mostRelicsCarried) ?? 0
+        relicsSeen = try c.decodeIfPresent([String: Int].self, forKey: .relicsSeen) ?? [:]
+    }
+
     mutating func add(_ summary: RunSummary, realm: RealmDefinition, echoes: Int) {
         runs += 1
         if summary.outcome == .conquered {
@@ -207,6 +257,14 @@ struct LifetimeStats: Codable, Equatable {
         let realmKey = summary.realm.rawValue
         bestWaveByRealm[realmKey] = max(bestWaveByRealm[realmKey] ?? 0, summary.wave)
         runsByWeapon[summary.weapon, default: 0] += 1
+        chestsOpened += summary.stats.chestsOpened
+        shrinesUsed += summary.stats.shrinesUsed
+        relicsTaken += summary.stats.relicsTaken
+        weaponsFound += summary.stats.weaponsWielded
+        mostRelicsCarried = max(mostRelicsCarried, summary.relics.count)
+        for (relic, rank) in summary.relics.held {
+            relicsSeen[relic.id] = max(relicsSeen[relic.id] ?? 0, rank)
+        }
         for archetype in ArchetypeID.allCases {
             let points = summary.allocation.points(in: archetype)
             guard points > 0 else { continue }

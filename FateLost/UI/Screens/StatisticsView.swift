@@ -1,13 +1,23 @@
 import SwiftUI
 
-/// The lifetime record: everything this player has ever done.
+/// The lifetime record: everything this player has ever done, and the codex
+/// of every relic they have ever carried.
 ///
-/// Three columns of plain numbers rather than a dashboard. A statistics
-/// screen earns its place by being scannable — the point is to recognise
-/// your own history in it, not to study it.
+/// Plain columns of numbers rather than a dashboard. A statistics screen
+/// earns its place by being scannable — the point is to recognise your own
+/// history in it, not to study it.
 struct StatisticsView: View {
+    private enum Tab: String, CaseIterable, Identifiable {
+        case record
+        case codex
+
+        var id: String { rawValue }
+        var title: String { self == .record ? "Record" : "Codex" }
+    }
+
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
+    @State private var tab: Tab = .record
 
     private var stats: LifetimeStats { services.profile.lifetime }
 
@@ -16,18 +26,31 @@ struct StatisticsView: View {
             EmberBackground(emberCount: 16)
 
             VStack(alignment: .leading, spacing: 14) {
-                FLScreenHeader(title: "Statistics", subtitle: subtitle) {
-                    services.audio.play(.uiBack)
-                    router.show(.mainMenu)
+                HStack(spacing: 12) {
+                    FLScreenHeader(title: "Statistics", subtitle: subtitle) {
+                        services.audio.play(.uiBack)
+                        router.show(.mainMenu)
+                    }
+                    Picker("", selection: $tab) {
+                        ForEach(Tab.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                    .onChange(of: tab) { _, _ in services.haptics.play(.uiTap) }
                 }
 
-                if stats.runs == 0 {
+                if tab == .codex {
+                    RelicCodex(stats: stats)
+                } else if stats.runs == 0 {
                     emptyState
                 } else {
                     ScrollView(.vertical, showsIndicators: false) {
-                        HStack(alignment: .top, spacing: 16) {
+                        HStack(alignment: .top, spacing: 12) {
                             column("Runs", runRows)
                             column("Battle", battleRows)
+                            column("Spoils", spoilRows)
                             column("Bests", bestRows)
                         }
                         .padding(.bottom, 8)
@@ -43,7 +66,10 @@ struct StatisticsView: View {
     }
 
     private var subtitle: String {
-        stats.runs == 0
+        if tab == .codex {
+            return "\(stats.relicsDiscovered) of \(RelicCatalog.all.count) relics found."
+        }
+        return stats.runs == 0
             ? "Nothing written down yet."
             : "\(stats.runs) runs, and what they cost."
     }
@@ -81,6 +107,17 @@ struct StatisticsView: View {
             ("Damage dealt", compact(stats.damageDealt)),
             ("Damage taken", compact(stats.damageTaken)),
             ("Summons lost", "\(stats.summonsLost)"),
+        ]
+    }
+
+    private var spoilRows: [(String, String)] {
+        [
+            ("Chests opened", "\(stats.chestsOpened)"),
+            ("Shrines used", "\(stats.shrinesUsed)"),
+            ("Relics taken", "\(stats.relicsTaken)"),
+            ("Weapons found", "\(stats.weaponsFound)"),
+            ("Most relics carried", "\(stats.mostRelicsCarried)"),
+            ("Codex", "\(stats.relicsDiscovered) of \(RelicCatalog.all.count)"),
         ]
     }
 

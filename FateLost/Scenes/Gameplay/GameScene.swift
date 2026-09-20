@@ -75,6 +75,8 @@ final class GameScene: SKScene {
         let haptics: HapticsProviding
         /// Permanent bonuses from the Legacy board.
         var legacy: [StatModifier] = []
+        /// Rerolls the relic codex adds to every find.
+        var bonusRerolls = 0
     }
 
     private enum Timing {
@@ -170,7 +172,8 @@ final class GameScene: SKScene {
     init(run: RunConfiguration, dependencies: Dependencies) {
         self.dependencies = dependencies
         let tuning = dependencies.tuning
-        let simulation = GameSimulation(run: run, tuning: tuning, legacy: dependencies.legacy)
+        let simulation = GameSimulation(run: run, tuning: tuning, legacy: dependencies.legacy,
+                                        bonusRerolls: dependencies.bonusRerolls)
         self.simulation = simulation
 
         // Collaborators are built from locals: `self` cannot be read until

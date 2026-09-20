@@ -40,6 +40,7 @@ play throughout.
 | 5 Waves | The wave clock, ten champions, realm conquest | **Done** |
 | 6 Legacy | 500 permanent upgrades, statistics, save/load, realm unlocks | **Done** |
 | 7 Multiclass | Eight orders, the Armoury and weapon mastery | **Done** |
+| 8 Spoils | Relics, chests, shrines, weapon finds and the codex | **Done** |
 
 ## Building
 
@@ -104,7 +105,7 @@ FateLost/
   Resources/    asset catalogue
 FateLostTests/  XCTest unit tests
 tools/audio/    the music and sound-effect synthesiser
-tools/art/      the sketchbook that generates creature, bestiary, prop and weapon art
+tools/art/      the sketchbook that generates creature, bestiary, prop, weapon and loot art
 docs/           architecture notes
 ```
 

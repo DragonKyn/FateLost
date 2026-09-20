@@ -118,6 +118,7 @@ enum ShrineSystem {
                       combat.world.distance(shrine.position, player.position) <= ShrineTuning.touchDistance,
                       accepts(shrine.kind, player: player, combat: combat) {
                 combat.pendingShrines.append(shrine.kind)
+                combat.stats.shrinesUsed += 1
                 combat.events.append(.shrineUsed(kind: shrine.kind, position: shrine.position))
                 combat.shrines.remove(at: index)
             } else {

@@ -81,6 +81,12 @@ struct RunStats: Equatable {
     var bossKills = 0
     /// Highest wave reached.
     var wave = 1
+    /// Spoils: chests opened, shrines agreed to, relics taken and weapons
+    /// found and wielded.
+    var chestsOpened = 0
+    var shrinesUsed = 0
+    var relicsTaken = 0
+    var weaponsWielded = 0
     /// Times each ability was used.
     var abilityUses: [AbilityID: Int] = [:]
 
