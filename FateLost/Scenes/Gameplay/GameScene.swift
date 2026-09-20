@@ -77,6 +77,8 @@ final class GameScene: SKScene {
         var legacy: [StatModifier] = []
         /// Rerolls the relic codex adds to every find.
         var bonusRerolls = 0
+        /// How the player chose to look.
+        var hero = HeroAppearance.standard
     }
 
     private enum Timing {
@@ -147,6 +149,7 @@ final class GameScene: SKScene {
     private let dropRenderer: DropRenderer
     private let shrineRenderer: ShrineRenderer
     private let zoneRenderer: ZoneRenderer
+    private let chargeLanes: ChargeLaneRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
     private let cameraController: CameraController
@@ -188,7 +191,7 @@ final class GameScene: SKScene {
                                  deadZone: tuning.controls.joystickDeadZone,
                                  followsThumb: tuning.controls.joystickFollowsThumb)
 
-        let catalog = SpriteCatalog(preloading: SpriteCatalog.gameplaySprites)
+        let catalog = SpriteCatalog(preloading: SpriteCatalog.gameplaySprites, hero: dependencies.hero)
         self.catalog = catalog
         let standing = SKNode()
         let decals = SKNode()
@@ -202,7 +205,7 @@ final class GameScene: SKScene {
         decorations = DecorationRenderer(placements: simulation.arena.decorations, world: simulation.world,
                                          projection: projection, catalog: catalog,
                                          standingLayer: standing, decalLayer: decals)
-        let player = PlayerView(catalog: catalog, weaponSprite: simulation.weapon.spriteID)
+        let player = PlayerView(catalog: catalog, weaponSprite: simulation.weapon.spriteID, hand: dependencies.hero.build.hand)
         playerView = player
         // One world unit along a tile edge spans half a tile diagonal on screen.
         let pointsPerWorldUnit = tuning.projection.tileWidth / 2 * CGFloat(2).squareRoot()
@@ -220,6 +223,7 @@ final class GameScene: SKScene {
         shrineRenderer = ShrineRenderer(catalog: catalog, projection: projection, layer: standing)
         zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                     layer: decals)
+        chargeLanes = ChargeLaneRenderer(projection: projection, layer: decals)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                       standingLayer: standing, decalLayer: decals, overlayLayer: overlays)
         self.effects = effects
@@ -405,6 +409,8 @@ final class GameScene: SKScene {
         ground.update(focusUnwrapped: renderFrame.focusUnwrapped, force: rebased)
         decorations.update(frame: renderFrame, radius: visibleWorldRadius(), force: rebased)
         zoneRenderer.update(zones: simulation.combat.zones, frame: renderFrame, time: animationTime)
+        chargeLanes.update(enemies: simulation.combat.enemies, playerRadius: tuning.combat.playerRadius,
+                           frame: renderFrame, time: animationTime)
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
         dropRenderer.update(drops: simulation.combat.drops, frame: renderFrame, time: animationTime)
         shrineRenderer.update(shrines: simulation.combat.shrines, playerPosition: simulation.player.position,
@@ -720,7 +726,7 @@ final class GameScene: SKScene {
         snapshot.projectileCount = simulation.projectiles.count
         snapshot.pickupCount = simulation.combat.orbs.count
         snapshot.playerLevel = simulation.progression.level
-        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + allyRenderer.activeCount
+        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + allyRenderer.activeCount
         snapshot.spawnRate = simulation.currentSpawnRate
         if simulationFrames > 0 {
             snapshot.simulationMilliseconds = simulationTimeAccumulator / Double(simulationFrames) * 1000

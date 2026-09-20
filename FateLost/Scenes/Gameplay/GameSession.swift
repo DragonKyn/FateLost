@@ -56,7 +56,8 @@ final class GameSession {
             audio: services.audio,
             haptics: services.haptics,
             legacy: services.modifiers(startingWith: starter),
-            bonusRerolls: services.bonusRerolls
+            bonusRerolls: services.bonusRerolls,
+            hero: services.hero
         ))
         scene.onHUDStateChange = { [weak self] state in
             self?.hud = state

@@ -14,7 +14,6 @@ final class PlayerView: SKNode {
         /// Full bob cycles per second of stride time at base speed.
         static let strideFrequency: Double = 2.2
         static let sway: CGFloat = 0.05
-        static let weaponOffset = CGPoint(x: 11, y: 20)
         static let weaponRestAngle: CGFloat = -0.35
         /// Minimum horizontal screen motion before the figure turns around,
         /// so moving almost straight up/down does not flicker the facing.
@@ -48,7 +47,7 @@ final class PlayerView: SKNode {
     private var restAngle: CGFloat
     private var weaponSprite: SpriteID
 
-    init(catalog: SpriteCatalog, weaponSprite: SpriteID) {
+    init(catalog: SpriteCatalog, weaponSprite: SpriteID, hand: CGPoint = BodyBuild.standard.hand) {
         self.catalog = catalog
         shadowSprite = catalog.makeSprite(.shadow)
         figure = catalog.makeSprite(.playerAdventurer)
@@ -63,7 +62,7 @@ final class PlayerView: SKNode {
         addChild(body)
         body.addChild(figure)
 
-        weapon.position = Style.weaponOffset
+        weapon.position = hand
         weapon.zRotation = restAngle
         weapon.zPosition = 0.1
         body.addChild(weapon)

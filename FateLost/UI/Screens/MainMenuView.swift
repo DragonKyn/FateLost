@@ -15,10 +15,34 @@ struct MainMenuView: View {
                         .tracking(8)
                         .foregroundStyle(FLTheme.Palette.parchment)
                         .shadow(color: FLTheme.Palette.ember.opacity(0.4), radius: 16)
-                    Text("Fate forgot you. Make it remember.")
+                    Text("Forge Your Fate")
                         .font(FLTheme.Typeface.heading(17))
                         .italic()
                         .foregroundStyle(FLTheme.Palette.parchmentDim)
+
+                    Button {
+                        services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
+                        router.show(.character)
+                    } label: {
+                        HStack(spacing: 10) {
+                            HeroPortrait(look: services.hero, height: 46)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Choose Your Fate")
+                                    .font(FLTheme.Typeface.heading(15))
+                                    .foregroundStyle(FLTheme.Palette.parchment)
+                                Text("Body, cloak and colours")
+                                    .font(FLTheme.Typeface.body(11))
+                                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+                            }
+                        }
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .flPanel()
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, 14)
+                    .accessibilityLabel("Choose Your Fate: customise your hero")
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -50,7 +74,7 @@ struct MainMenuView: View {
                     }
                     .buttonStyle(.flSecondary)
 
-                    if DeveloperOptions.isAvailable {
+                    if services.isDeveloperModeOn {
                         Button {
                             router.isDeveloperPanelPresented = true
                         } label: {

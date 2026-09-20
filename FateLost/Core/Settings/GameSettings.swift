@@ -11,6 +11,9 @@ struct GameSettings: Codable, Equatable {
     var effectsVolume: Double = 0.9
     var hapticsEnabled: Bool = true
     var cameraShakeEnabled: Bool = true
+    /// Whether the developer code has been entered. Only ever set in a build
+    /// that has developer tools at all.
+    var developerUnlocked: Bool = false
 
     static let defaults = GameSettings()
 
@@ -25,6 +28,8 @@ struct GameSettings: Codable, Equatable {
         hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? fallback.hapticsEnabled
         cameraShakeEnabled = try container.decodeIfPresent(Bool.self, forKey: .cameraShakeEnabled)
             ?? fallback.cameraShakeEnabled
+        developerUnlocked = try container.decodeIfPresent(Bool.self, forKey: .developerUnlocked)
+            ?? fallback.developerUnlocked
     }
 
     /// Effective 0…1 gain for a channel after the master volume.
@@ -48,6 +53,12 @@ final class SettingsStore {
         )
         store = fileStore
         settings = fileStore.load().payload ?? .defaults
+    }
+
+    /// Back to how a fresh install starts, with no file left behind.
+    func reset() {
+        store.erase()
+        settings = .defaults
     }
 
     /// Applies a change and saves it if anything actually changed.

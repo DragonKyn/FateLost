@@ -139,6 +139,11 @@ struct EnemyAISystem {
                 } else if targetPosition != nil, combat.enemies.attackCooldown[index] <= 0,
                           distance <= strikeRange {
                     combat.enemies.windup[index] = definition.attackWindup
+                    if case .charger = definition.behavior, toTarget.lengthSquared > 0.0001 {
+                        // Commit to a line now. The telegraph shows it, and the
+                        // player has the whole windup to be somewhere else.
+                        combat.enemies.aim[index] = toTarget.normalized
+                    }
                     combat.events.append(.enemyWindup(enemyID: combat.enemies.ids[index]))
                 }
             }
@@ -298,7 +303,10 @@ struct EnemyAISystem {
                   speed: speed, sprite: sprite, combat: &combat)
             return
         case .charger(_, let speed, let travel):
-            beginCharge(index, direction: direction, speed: speed, distance: travel, combat: &combat)
+            let committed = combat.enemies.aim[index]
+            combat.enemies.aim[index] = .zero
+            beginCharge(index, direction: committed != .zero ? committed : direction, speed: speed,
+                        distance: travel, combat: &combat)
             return
         case .summoner(let spawns, let count, let interval, _):
             call(index, spawns: spawns, count: count, interval: interval, combat: &combat)

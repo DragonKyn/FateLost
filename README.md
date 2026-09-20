@@ -1,6 +1,6 @@
 # Fate Lost
 
-*Fate forgot you. Make it remember.*
+*Forge Your Fate.*
 
 Fate Lost is a dark-fantasy isometric survival roguelite for iPhone and iPad.
 Every run starts as a classless Level 1 Adventurer: your class comes only from
@@ -41,6 +41,7 @@ play throughout.
 | 6 Legacy | 500 permanent upgrades, statistics, save/load, realm unlocks | **Done** |
 | 7 Multiclass | Eight orders, the Armoury and weapon mastery | **Done** |
 | 8 Spoils | Relics, chests, shrines, weapon finds and the codex | **Done** |
+| 9 Fate | A customisable hero with earned looks, fairer bosses, a locked developer mode | **Done** |
 
 ## Building
 
@@ -61,8 +62,10 @@ The project is authored on Windows, so builds happen on a Mac or in CI.
 
 ## Developer tools
 
-Builds compiled with `FATELOST_DEVTOOLS` (Debug, plus the CI sideload IPA) show a
-wrench button on the main menu and in the gameplay HUD. The panel currently has:
+Builds compiled with `FATELOST_DEVTOOLS` (Debug, plus the CI sideload IPA) can
+show a wrench button on the main menu and in the gameplay HUD, but only after
+the developer code has been entered under Settings, Developer. Locking it again
+switches every cheat off. The panel currently has:
 
 - a performance overlay (FPS, simulation time per frame, node/enemy/projectile/effect counts, spawn rate),
 - hitbox display and a wrap-seam visualiser,
@@ -105,7 +108,7 @@ FateLost/
   Resources/    asset catalogue
 FateLostTests/  XCTest unit tests
 tools/audio/    the music and sound-effect synthesiser
-tools/art/      the sketchbook that generates creature, bestiary, prop, weapon and loot art
+tools/art/      the sketchbook that generates creature, bestiary, prop, weapon, loot and hero art
 docs/           architecture notes
 ```
 

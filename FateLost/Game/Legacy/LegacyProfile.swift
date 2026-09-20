@@ -19,6 +19,8 @@ struct LegacyProfile: Codable, Equatable {
     var weapons: Set<WeaponID> = []
     /// Ranks of mastery bought per weapon.
     var weaponRanks: [WeaponID: Int] = [:]
+    /// Looks bought from the character screen, by `HeroOption.id`.
+    var cosmetics: Set<String> = []
 
     var totalEarned: Int { echoes + spent }
 
@@ -39,6 +41,31 @@ struct LegacyProfile: Codable, Equatable {
         lifetime = try container.decodeIfPresent(LifetimeStats.self, forKey: .lifetime) ?? LifetimeStats()
         weapons = try container.decodeIfPresent(Set<WeaponID>.self, forKey: .weapons) ?? []
         weaponRanks = try container.decodeIfPresent([WeaponID: Int].self, forKey: .weaponRanks) ?? [:]
+        cosmetics = try container.decodeIfPresent(Set<String>.self, forKey: .cosmetics) ?? []
+    }
+
+    // MARK: The wardrobe
+
+    /// Whether the player may wear this: free, or already bought.
+    func owns(_ option: HeroOption) -> Bool {
+        HeroUnlocks.isFree(option) || cosmetics.contains(option.id)
+    }
+
+    /// Why an option cannot be bought right now, or nil if it can.
+    func denial(for option: HeroOption) -> String? {
+        if owns(option) { return "Already yours" }
+        let cost = HeroUnlocks.cost(of: option)
+        return echoes >= cost ? nil : "Costs \(cost) echoes"
+    }
+
+    @discardableResult
+    mutating func buy(_ option: HeroOption) -> Bool {
+        guard denial(for: option) == nil else { return false }
+        let cost = HeroUnlocks.cost(of: option)
+        echoes -= cost
+        spent += cost
+        cosmetics.insert(option.id)
+        return true
     }
 
     // MARK: Buying
@@ -296,6 +323,11 @@ final class LegacyStore {
 
     func load() -> LegacyProfile {
         store.load().payload ?? LegacyProfile()
+    }
+
+    /// Forgets everything. The next launch is a first launch.
+    func erase() {
+        store.erase()
     }
 
     /// Saves, reporting failure rather than throwing into the UI: a failed

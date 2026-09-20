@@ -21,7 +21,7 @@ enum PlaceholderArt {
 
     static func sprite(for id: SpriteID) -> Sprite? {
         switch id {
-        case .playerAdventurer: return adventurer()
+        case .playerAdventurer: return hero(.standard)
         case .shadow: return shadow()
         case .enemyGoblin: return goblin()
         case .enemyGoblinHooded: return goblin(palette: .moss, headgear: .hood(0x2E2A26))
@@ -171,52 +171,6 @@ enum PlaceholderArt {
     }
 
     // MARK: - Characters
-
-    private static func adventurer() -> Sprite {
-        let size = CGSize(width: 36, height: 58)
-        let footY: CGFloat = 55
-        let image = render(size) { ctx in
-            let outline = UIColor(rgb: 0x0B0908)
-            // Legs and boots
-            fill(ctx, CGRect(x: 12, y: 40, width: 4.5, height: 13), UIColor(rgb: 0x2A2320))
-            fill(ctx, CGRect(x: 19.5, y: 40, width: 4.5, height: 13), UIColor(rgb: 0x2A2320))
-            fill(ctx, CGRect(x: 10.5, y: 51, width: 7, height: 4), UIColor(rgb: 0x1A1512))
-            fill(ctx, CGRect(x: 18.5, y: 51, width: 7, height: 4), UIColor(rgb: 0x1A1512))
-
-            // Cloak, lit from the upper left
-            let cloak = [CGPoint(x: 18, y: 15), CGPoint(x: 8, y: 23), CGPoint(x: 5, y: 46),
-                         CGPoint(x: 31, y: 46), CGPoint(x: 28, y: 23)]
-            fillPolygon(ctx, cloak, UIColor(rgb: 0x5B2323))
-            fillPolygon(ctx, [CGPoint(x: 18, y: 15), CGPoint(x: 28, y: 23), CGPoint(x: 31, y: 46),
-                              CGPoint(x: 19, y: 46)], UIColor(rgb: 0x431919))
-            strokePolygon(ctx, cloak, outline, width: 1.2)
-
-            // Belt with a brass buckle
-            fill(ctx, CGRect(x: 9, y: 35, width: 18, height: 3), UIColor(rgb: 0x3A2A1C))
-            fill(ctx, CGRect(x: 16.5, y: 34.5, width: 3, height: 4), UIColor(rgb: 0xC9A55A))
-
-            // Hood with a shadowed face and faint eyes
-            let hood = CGRect(x: 9, y: 4, width: 18, height: 19)
-            ctx.setFillColor(UIColor(rgb: 0x3E2C28).cgColor)
-            ctx.fillEllipse(in: hood)
-            ctx.setStrokeColor(outline.cgColor)
-            ctx.setLineWidth(1.2)
-            ctx.strokeEllipse(in: hood)
-            ctx.setFillColor(UIColor(rgb: 0x120D0C).cgColor)
-            ctx.fillEllipse(in: CGRect(x: 13, y: 11, width: 10, height: 9))
-            ctx.setFillColor(UIColor(rgb: 0xE8C07A).cgColor)
-            ctx.fillEllipse(in: CGRect(x: 14.6, y: 14.2, width: 2, height: 1.6))
-            ctx.fillEllipse(in: CGRect(x: 19.4, y: 14.2, width: 2, height: 1.6))
-
-            // Rim light on the hood
-            ctx.setStrokeColor(UIColor(rgb: 0x8A5A48).cgColor)
-            ctx.setLineWidth(1)
-            ctx.addArc(center: CGPoint(x: 18, y: 13.5), radius: 8, startAngle: .pi * 1.05,
-                       endAngle: .pi * 1.45, clockwise: false)
-            ctx.strokePath()
-        }
-        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: (size.height - footY) / size.height))
-    }
 
     private static func shadow() -> Sprite {
         let size = CGSize(width: 44, height: 18)

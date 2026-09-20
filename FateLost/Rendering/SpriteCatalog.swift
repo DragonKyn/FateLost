@@ -22,12 +22,19 @@ final class SpriteCatalog {
     private var entries: [SpriteID: Entry] = [:]
     private let fallbackAnchor = CGPoint(x: 0.5, y: 0.1)
 
-    init(preloading ids: [SpriteID]) {
+    /// `hero` dresses the player's figure; everything else is the same for
+    /// every player.
+    init(preloading ids: [SpriteID], hero: HeroAppearance = .standard) {
         var images: [String: UIImage] = [:]
         var meta: [SpriteID: (size: CGSize, anchor: CGPoint)] = [:]
 
         for id in ids {
-            if let asset = UIImage(named: id.rawValue) {
+            if id == .playerAdventurer {
+                // The player's own look wins over any stock image.
+                let figure = PlaceholderArt.hero(hero)
+                images[id.rawValue] = figure.image
+                meta[id] = (figure.image.size, figure.anchor)
+            } else if let asset = UIImage(named: id.rawValue) {
                 images[id.rawValue] = asset
                 meta[id] = (asset.size, fallbackAnchor)
             } else if let placeholder = PlaceholderArt.sprite(for: id) {

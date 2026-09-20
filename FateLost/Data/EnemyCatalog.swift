@@ -35,11 +35,13 @@ enum EnemyCatalog {
         spriteVariants: [.enemyGoblinSkulker, .enemyGoblinSkulkerPale]
     )
 
-    /// Shoots from the back of the crowd. Walking at it is the answer.
+    /// Shoots from the back of the crowd. Walking at it is the answer. Ten of
+    /// them arrive together on the first realm, so the pace is unhurried: a
+    /// shot every three seconds or so.
     static let goblinArcher = EnemyDefinition(
         id: "enemy.goblinArcher", name: "Goblin Archer", family: .goblinoid, rank: .soldier,
         maxHealth: 15, moveSpeed: 2.6, radius: 0.28,
-        attackDamage: 8, attackReach: 0.3, attackWindup: 0.55, attackCooldown: 1.6,
+        attackDamage: 8, attackReach: 0.3, attackWindup: 0.55, attackCooldown: 2.5,
         knockbackResistance: 0, damageType: .physical,
         behavior: .ranged(range: 7, projectileSpeed: 10, sprite: .projectileArrow),
         experience: 2, spawnWeight: 0.4, earliestWave: 2,
@@ -375,7 +377,7 @@ enum EnemyCatalog {
 
     static let bossWarchief = champion(
         id: "boss.warchief", name: "Grask", epithet: "the Warchief", family: .goblinoid,
-        health: 1_600, speed: 2.3, radius: 0.8, damage: 34, reach: 0.7, windup: 0.6, cooldown: 1.5,
+        health: 1_600, speed: 2.3, radius: 0.8, damage: 34, reach: 0.7, windup: 1.1, cooldown: 3.2,
         type: .physical, behavior: .charger(range: 8, speed: 17, distance: 8),
         sprite: .enemyBossWarchief, scale: 1.5, experience: 40
     )
@@ -389,7 +391,7 @@ enum EnemyCatalog {
 
     static let bossHollowStag = champion(
         id: "boss.hollowStag", name: "The Hollow Stag", epithet: "Antlered Rot", family: .beast,
-        health: 3_100, speed: 3, radius: 0.85, damage: 44, reach: 0.8, windup: 0.5, cooldown: 1.5,
+        health: 3_100, speed: 3, radius: 0.85, damage: 44, reach: 0.8, windup: 0.9, cooldown: 2.6,
         type: .poison, behavior: .charger(range: 10, speed: 20, distance: 10),
         sprite: .enemyBossHollowStag, scale: 1.5, experience: 70
     )
@@ -424,7 +426,7 @@ enum EnemyCatalog {
 
     static let bossIronSaint = champion(
         id: "boss.ironSaint", name: "The Iron Saint", epithet: "Keeper of a Broken Vow", family: .construct,
-        health: 10_500, speed: 1.6, radius: 1, damage: 66, reach: 0.95, windup: 0.95, cooldown: 2.2,
+        health: 10_500, speed: 1.6, radius: 1, damage: 66, reach: 0.95, windup: 1.0, cooldown: 2.8,
         type: .holy, behavior: .charger(range: 9, speed: 18, distance: 9),
         sprite: .enemyBossIronSaint, scale: 1.6, experience: 165
     )

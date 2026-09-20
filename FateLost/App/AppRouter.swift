@@ -10,6 +10,7 @@ enum AppScreen: Equatable {
     case weaponSelect(RealmID)
     case legacy
     case statistics
+    case character
     case gameplay
 }
 

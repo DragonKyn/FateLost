@@ -2,7 +2,12 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppServices.self) private var services
+    @Environment(AppRouter.self) private var router
     @Environment(\.dismiss) private var dismiss
+
+    @State private var code = ""
+    @State private var codeRejected = false
+    @State private var confirmingSeal = false
 
     var body: some View {
         NavigationStack {
@@ -20,6 +25,21 @@ struct SettingsView: View {
                 } footer: {
                     Text("Camera shake adds weight to critical hits, explosions and boss attacks.")
                 }
+
+                if DeveloperOptions.isAvailable {
+                    developerSection
+                }
+
+                Section {
+                    Button("Seal Your Fate", role: .destructive) {
+                        confirmingSeal = true
+                    }
+                } header: {
+                    Text("Start Over")
+                } footer: {
+                    Text("Erases every echo, unlock, record and choice, and the game begins again as if it had "
+                         + "just been installed.")
+                }
             }
             .scrollContentBackground(.hidden)
             .background(FLTheme.Palette.stone)
@@ -30,9 +50,76 @@ struct SettingsView: View {
                     Button("Done") { dismiss() }
                 }
             }
+            .alert("Seal your fate?", isPresented: $confirmingSeal) {
+                Button("Seal Your Fate", role: .destructive) { sealFate() }
+                Button("Keep My Fate", role: .cancel) {}
+            } message: {
+                Text("Every echo, weapon, look and record you have earned will be erased for good. This cannot be "
+                     + "undone.")
+            }
         }
         .tint(FLTheme.Palette.ember)
         .onDisappear { services.audio.refreshVolumes() }
+    }
+
+    // MARK: Developer
+
+    @ViewBuilder
+    private var developerSection: some View {
+        if services.isDeveloperModeOn {
+            Section {
+                Label("Developer mode is on", systemImage: "wrench.and.screwdriver.fill")
+                    .foregroundStyle(FLTheme.Palette.emberBright)
+                Button("Lock Developer Mode") {
+                    services.lockDeveloperMode()
+                }
+            } header: {
+                Text("Developer")
+            } footer: {
+                Text("The developer tools button appears on the main menu and in a run. Locking switches every "
+                     + "cheat back off.")
+            }
+        } else {
+            Section {
+                TextField("Developer code", text: $code)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .submitLabel(.go)
+                    .onSubmit(tryCode)
+                    .onChange(of: code) { _, _ in codeRejected = false }
+                Button("Unlock", action: tryCode)
+                    .disabled(code.isEmpty)
+            } header: {
+                Text("Developer")
+            } footer: {
+                if codeRejected {
+                    Text("That is not the code.")
+                        .foregroundStyle(FLTheme.Palette.blood)
+                } else {
+                    Text("Enter the developer code to reveal the developer tools.")
+                }
+            }
+        }
+    }
+
+    private func tryCode() {
+        if services.unlockDeveloperMode(code: code) {
+            code = ""
+            codeRejected = false
+        } else {
+            codeRejected = true
+        }
+    }
+
+    // MARK: Sealing fate
+
+    private func sealFate() {
+        services.sealFate()
+        code = ""
+        dismiss()
+        // Leaves any run in progress without counting it, and lands on a
+        // main menu that looks like a first launch.
+        router.endRun()
     }
 
     /// Two-way binding that routes writes through the store, which persists them.

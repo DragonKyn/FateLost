@@ -143,7 +143,7 @@ private struct GameplayHUDOverlay: View {
                                   action: onSummons)
                 }
                 SkillPointsButton(points: session.hud.unspentPoints, action: onSkills)
-                if DeveloperOptions.isAvailable {
+                if services.isDeveloperModeOn {
                     hudButton(systemImage: "wrench.and.screwdriver", label: "Developer tools", action: onDeveloper)
                 }
                 hudButton(systemImage: "pause.fill", label: "Pause", action: onPause)

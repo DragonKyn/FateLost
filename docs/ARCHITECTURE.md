@@ -164,6 +164,12 @@ performance measured on device is representative. A store build omits the
 flag. `DeveloperOptions` exists in every build so gameplay code needs no
 `#if`; only the UI and overlays that change it are conditional.
 
+Even in a build that has them, the tools stay hidden until a code is entered
+in Settings (`AppServices.isDeveloperModeOn`, kept in `GameSettings`).
+Locking developer mode calls `DeveloperOptions.reset()`, so a cheat can never
+outlive the switch that exposed it. The code is a door against stray taps,
+not a secret; it lives in the source.
+
 ## 12. Concurrency
 
 The project uses the Swift 5 language mode. Everything that touches UIKit or
@@ -287,6 +293,7 @@ polygons, smooth blobs, tapers, ovals, curves and glows):
 | `props.py` | realm set dressing | `PlaceholderArt+Props.swift` |
 | `weapons.py` | the starters and what they throw | `PlaceholderArt+Weapons.swift` |
 | `loot.py` | vials, magnets, chests and the three shrines | `PlaceholderArt+Loot.swift` |
+| `hero.py` | the hero, as legs, cloak and head layers | `PlaceholderArt+HeroLayers.swift` |
 
 One run rasterises a preview sheet *and* emits the Swift, so the art that is
 judged in the preview is exactly what the game draws. Edit the Python and
@@ -449,3 +456,39 @@ which makes the codex the one part of the record that is neither a total nor
 a best. It pays in the one currency that never becomes the reason a run was
 won: `CodexRewards` adds a reroll to every find at 20 relics found and again
 at 44.
+
+## 24. The hero, and fairness in the first realm
+
+**A dressed figure.** The hero is not one sprite. `tools/art/hero.py` draws
+three layers (legs, cloak, head), once for each build and each style within
+it, and emits them as functions that take a context and a `HeroInk`. A layer
+never names a colour: it asks the ink for "the cloak" or "the trim, a little
+darker", and the preview resolves the same names, so what is checked in the
+sketchbook is what ships in any colour. `PlaceholderArt.hero(_:)` composes
+the layers for the game and `heroPortrait(_:scale:)` redraws them large for
+the character screen, so nothing is ever enlarged and blurred.
+
+`HeroAppearance` (build, cloak, head, five colours) is saved on its own, in
+`hero.json`, not in the Legacy profile, and decodes field by field with a
+fallback for an unknown value. `SpriteCatalog` is handed the look when a run
+starts and draws the player from it; the build also decides where the weapon
+is held. A build is a look and never a stat.
+
+**Earned looks.** `HeroOption` names one choice and `HeroUnlocks` prices it.
+Builds, skin and hair are always free, and so is enough of everything else to
+make a character without spending a thing. The distinctive cloaks, heads and
+colours cost echoes, bought from the character screen and kept in
+`LegacyProfile.cosmetics`. A saved look is always cut back to what is owned
+(`restricted(to:)`), whatever happened to the profile since it was saved.
+
+**Fair charges.** A charger commits to a line when its windup begins
+(`EnemyStore.aim`), draws that lane on the ground for elites and bosses
+(`ChargeLaneRenderer`, filling as the windup runs out), and then runs exactly
+that line. Stepping off it is a complete answer, and standing in it still
+hurts. Bosses that charge now wind up for about a second and rest for about
+three. The first realm's goblin archers fire about 30% less often.
+
+**Sealing fate.** Settings can erase every save (`AppServices.sealFate`): the
+Legacy profile, the hero and the settings, along with anything moved aside as
+corrupt. Each store erases only its own files, so the reset is testable
+without touching a real save, and it is always behind a confirmation.

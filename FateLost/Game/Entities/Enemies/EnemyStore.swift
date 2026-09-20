@@ -39,6 +39,9 @@ struct EnemyStore {
     var dash: [CGPoint] = []
     /// Seconds of charge left, or seconds until a summoner calls again.
     var special: [Double] = []
+    /// The line a charger has committed to while it winds up; zero otherwise.
+    /// It is fixed when the windup starts, so a step to the side is an answer.
+    var aim: [CGPoint] = []
 
     /// Bit per active `StatusKind`, for quick checks.
     var statusMask: [UInt16] = []
@@ -118,6 +121,7 @@ struct EnemyStore {
         separation.append(.zero)
         dash.append(.zero)
         special.append(0)
+        aim.append(.zero)
         statusMask.append(0)
         for kind in 0..<statusTime.count {
             statusTime[kind].append(0)
@@ -146,6 +150,7 @@ struct EnemyStore {
         separation.swapRemove(at: index)
         dash.swapRemove(at: index)
         special.swapRemove(at: index)
+        aim.swapRemove(at: index)
         statusMask.swapRemove(at: index)
         for kind in 0..<statusTime.count {
             statusTime[kind].swapRemove(at: index)
@@ -172,6 +177,7 @@ struct EnemyStore {
         separation.removeAll(keepingCapacity: true)
         dash.removeAll(keepingCapacity: true)
         special.removeAll(keepingCapacity: true)
+        aim.removeAll(keepingCapacity: true)
         statusMask.removeAll(keepingCapacity: true)
         for kind in 0..<statusTime.count {
             statusTime[kind].removeAll(keepingCapacity: true)
@@ -199,6 +205,7 @@ struct EnemyStore {
         separation.reserveCapacity(capacity)
         dash.reserveCapacity(capacity)
         special.reserveCapacity(capacity)
+        aim.reserveCapacity(capacity)
         statusMask.reserveCapacity(capacity)
         for kind in 0..<statusTime.count {
             statusTime[kind].reserveCapacity(capacity)

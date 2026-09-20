@@ -35,6 +35,29 @@ final class DeveloperOptions {
 
     private(set) var pendingCommands: [DeveloperCommand] = []
 
+    /// What unlocks developer mode in Settings. A door kept shut against
+    /// stray taps, not a secret: it lives in the source.
+    static let unlockCode = "GreenLantern"
+
+    /// Whether what was typed is the code. Exact, apart from stray spaces.
+    static func accepts(_ code: String) -> Bool {
+        code.trimmingCharacters(in: .whitespacesAndNewlines) == unlockCode
+    }
+
+    /// Every toggle back to its default, so locking developer mode cannot
+    /// leave a cheat quietly switched on.
+    func reset() {
+        showPerformanceOverlay = false
+        showWrapSeams = false
+        showHitboxes = false
+        gameSpeed = 1
+        unlockAllRealms = false
+        disableLegacyBonuses = false
+        godMode = false
+        spawningEnabled = true
+        pendingCommands.removeAll()
+    }
+
     static let gameSpeedPresets: [Double] = [0.25, 0.5, 1, 2, 4]
 
     static var isAvailable: Bool {

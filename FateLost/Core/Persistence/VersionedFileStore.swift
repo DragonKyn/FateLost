@@ -97,6 +97,22 @@ final class VersionedFileStore<Payload: Codable> {
         try data.write(to: fileURL, options: .atomic)
     }
 
+    /// Deletes the save, and any copies of it that were moved aside as
+    /// corrupt. What is left is what a fresh install has: nothing.
+    func erase() {
+        let directory = fileURL.deletingLastPathComponent()
+        let base = fileURL.deletingPathExtension().lastPathComponent
+        let suffix = fileURL.pathExtension
+        let siblings = (try? fileManager.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil)) ?? []
+        for url in siblings + [fileURL] {
+            let name = url.lastPathComponent
+            let isBackup = name.hasPrefix(base + ".corrupt-") && url.pathExtension == suffix
+            if url == fileURL || isBackup {
+                try? fileManager.removeItem(at: url)
+            }
+        }
+    }
+
     private func quarantine(reason: String) -> SaveLoadResult<Payload> {
         let stamp = Int(Date().timeIntervalSince1970)
         let backup = fileURL.deletingPathExtension()

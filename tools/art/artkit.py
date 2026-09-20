@@ -15,18 +15,41 @@ from PIL import Image, ImageDraw
 SUPERSAMPLE = 8
 
 
-def _rgba(color):
+# Colour tokens. A sprite that has to be dressed at runtime (the hero) is
+# drawn with names instead of numbers: "cloak", or "cloak:0.75" for a shade of
+# it. The preview resolves them through `INK`; the Swift keeps them as calls
+# on the `ink` value the caller passes in, so one drawing serves every colour.
+INK = {}
+
+
+def _tone(hex_value, k):
+    channels = [min(255, max(0, int(round(((hex_value >> shift) & 255) * k)))) for shift in (16, 8, 0)]
+    return (channels[0] << 16) | (channels[1] << 8) | channels[2]
+
+
+def _split(color):
     if isinstance(color, tuple):
-        hex_value, alpha = color
-    else:
-        hex_value, alpha = color, 1.0
+        return color[0], color[1]
+    return color, 1.0
+
+
+def _rgba(color):
+    hex_value, alpha = _split(color)
+    if isinstance(hex_value, str):
+        name, _, factor = hex_value.partition(":")
+        hex_value = _tone(INK[name], float(factor) if factor else 1.0)
     return ((hex_value >> 16) & 255, (hex_value >> 8) & 255, hex_value & 255, int(round(alpha * 255)))
 
 
 def _swift_color(color):
+    value, alpha = _split(color)
+    if isinstance(value, str):
+        name, _, factor = value.partition(":")
+        expression = f"ink.{name}({_num(float(factor))})" if factor else f"ink.{name}()"
+        return expression if alpha == 1.0 else f"{expression}.withAlphaComponent({_num(alpha)})"
     if isinstance(color, tuple):
-        return f"UIColor(rgb: 0x{color[0]:06X}, alpha: {_num(color[1])})"
-    return f"UIColor(rgb: 0x{color:06X})"
+        return f"UIColor(rgb: 0x{value:06X}, alpha: {_num(alpha)})"
+    return f"UIColor(rgb: 0x{value:06X})"
 
 
 def _num(value):
@@ -113,6 +136,13 @@ class Sprite:
             self.ops.append(("line", pts + [pts[0]], outline, self._w(width)))
             self.swift.append(f"strokePolygon(ctx, {self._swift_points(pts)}, {_swift_color(outline)}, "
                               f"width: {_num(self._w(width))})")
+
+    def outline(self, points, color, width=1.0):
+        """Just the edge of a closed shape, for drawing it over what it shades."""
+        pts = self._pts(points)
+        self.ops.append(("line", pts + [pts[0]], color, self._w(width)))
+        self.swift.append(f"strokePolygon(ctx, {self._swift_points(pts)}, {_swift_color(color)}, "
+                          f"width: {_num(self._w(width))})")
 
     def blob(self, points, color, outline=None, width=1.0):
         """A smooth closed shape through the midpoints of `points`."""
@@ -223,6 +253,18 @@ class Sprite:
                 layer = Image.fromarray(arr, "RGBA")
             canvas = Image.alpha_composite(canvas, layer)
         return canvas.resize((int(self.width * scale), int(self.height * scale)), Image.LANCZOS)
+
+    def layer_source(self, parameters="_ ink: HeroInk"):
+        """Emits the drawing as a function into a context the caller owns,
+        rather than as a finished sprite: one layer of a dressed figure."""
+        lines = []
+        if self.doc:
+            lines.append(f"    /// {self.doc}")
+        lines.append(f"    static func {self.name}(_ ctx: CGContext, {parameters}) {{")
+        for statement in self.swift:
+            lines.append(f"        {statement}")
+        lines.append("    }")
+        return "\n".join(lines)
 
     def swift_source(self):
         if self.anchor is not None:
