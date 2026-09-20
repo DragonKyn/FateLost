@@ -478,7 +478,7 @@ final class GameScene: SKScene {
 
     private func currentIntent() -> PlayerIntent {
         releaseLostJoystickTouch()
-        PlayerIntent(move: projection.worldDirection(fromScreen: joystick.output))
+        return PlayerIntent(move: projection.worldDirection(fromScreen: joystick.output))
     }
 
     private func render(frameDelta: CGFloat) {
