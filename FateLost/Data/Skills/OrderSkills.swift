@@ -402,7 +402,7 @@ enum WarchanterSkills: OrderContent {
         effects: [orderAbility("anthem", "Anthem", symbol: "music.note.list", cooldown: rv(65, -5),
                                ultimate: true,
                                .zone(zone(rv(3.6), duration: rv(10, 1.5), tick: 0.5,
-                                          dmg(0.5, 0.2, .sonic, [.spell, .area, .ability]),
+                                          dmg(0.5, 0.2, .arcane, [.spell, .area, .ability]),
                                           buff: [mod(.damage, .increased, 0.3),
                                                  mod(.attackSpeed, .increased, 0.3),
                                                  mod(.armor, .flat, 30)],
