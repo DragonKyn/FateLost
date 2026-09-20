@@ -99,6 +99,7 @@ final class SpriteCatalog {
         .decorVoidRift, .decorFloatingStone, .decorBrokenStatue, .decorBarricade, .decorSkullPile,
         .decorBlackObelisk,
         .dropVial, .dropMagnet, .dropChestCache, .dropChestChest, .dropChestHoard,
+        .shrineBlood, .shrineFortune, .shrineRuin,
         .decorPlagueBell, .decorMoltenChain, .decorBrokenStair,
         .decorSiegeRam, .decorRuinedArch, .decorHollowThrone,
         .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxSpark, .fxRing, .fxSplat,

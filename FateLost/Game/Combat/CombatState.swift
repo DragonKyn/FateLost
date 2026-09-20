@@ -21,6 +21,12 @@ struct CombatState {
     /// Finds opened but not yet answered, oldest first. Each becomes an offer
     /// once the last one has been chosen.
     var pendingFinds: [LootTier] = []
+    /// Shrines standing in the world, and bargains taken but not yet carried
+    /// out by the simulation.
+    var shrines: [Shrine] = []
+    var pendingShrines: [ShrineKind] = []
+    /// Seconds left on a Shrine of Ruin's curse.
+    var curseRemaining: Double = 0
     /// Broad-phase lookup of enemy indices. Rebuilt whenever enemies move.
     var grid: ToroidalSpatialGrid
     var random: SeededRandom

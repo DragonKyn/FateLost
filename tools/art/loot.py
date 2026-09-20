@@ -1,4 +1,4 @@
-"""FateLost's spoils: what an enemy leaves behind that is not experience.
+"""FateLost's spoils: what an enemy leaves behind, and the shrines a realm raises.
 
 Run from the repo root:
 
@@ -38,6 +38,15 @@ GEM_HOT = 0xE4FAFF
 MAGNET_RED = 0xC23A34
 MAGNET_BLUE = 0x3A5AC2
 STEEL = 0xC4CAD2
+STONE = 0x6A6660
+STONE_LIGHT = 0x8A8680
+STONE_DARK = 0x46433E
+BONE = 0xD8CDB0
+BONE_SHADE = 0xA89C80
+HOLLOW = 0x16110E
+OBSIDIAN = 0x1E1A24
+VOID = 0x5A3F8C
+VOID_HOT = 0xC79BFF
 
 
 def _mix(a, b, t):
@@ -191,8 +200,105 @@ def dropChestHoard():
     return s
 
 
+
+# ---------------------------------------------------------------------------
+# Shrines
+# ---------------------------------------------------------------------------
+
+def shrineBlood():
+    s = standing("shrineBlood", 40, 50, "An altar with a basin that is never empty.")
+    g = 48
+    s.ellipse(2, g - 6, 36, 9, _shade(OBSIDIAN, 0.2))
+    s.glow(20, g - 18, 17, RED, 0.5)
+    # Plinth and slab.
+    s.poly([(4, g - 1), (36, g - 1), (34, g - 9), (6, g - 9)], STONE_DARK, outline=INK, width=0.9)
+    s.poly([(7, g - 9), (33, g - 9), (31.5, g - 16), (8.5, g - 16)], STONE, outline=INK, width=0.9)
+    s.poly([(20, g - 9), (33, g - 9), (31.5, g - 16), (20, g - 16)], _shade(STONE, 0.25))
+    # Runes cut into the face, run red.
+    for x in (12, 20, 28):
+        s.line((x, g - 14.4), (x, g - 10.6), RED, 0.8)
+        s.line((x - 1.6, g - 12.6), (x + 1.6, g - 12.6), RED, 0.6)
+    # The basin, brimming.
+    s.ellipse(9, g - 22.6, 22, 9.4, STONE_LIGHT, outline=INK, width=0.9)
+    s.ellipse(11, g - 21.4, 18, 6.8, RED_DEEP)
+    s.ellipse(12.4, g - 20.6, 15, 4.8, RED)
+    s.ellipse(14, g - 20.2, 5, 1.8, _light(RED, 0.5))
+    for x, y in ((12, g - 15.6), (27, g - 15.2)):
+        s.taper([(x, y), (x + 0.2, y + 2.6)], RED, 1.2, 0.4)
+    # A skull left as an offering, and a candle stub.
+    s.blob([(3, g - 24), (5, g - 28.6), (9, g - 30), (13, g - 28.6), (14.6, g - 24), (12, g - 21.4), (5.6, g - 21.4)],
+           BONE, outline=INK, width=0.8)
+    s.ellipse(5, g - 26.4, 3, 3, HOLLOW)
+    s.ellipse(9.6, g - 26.4, 3, 3, HOLLOW)
+    s.poly([(8.6, g - 23.8), (9.8, g - 23.8), (9.2, g - 22.2)], HOLLOW)
+    s.poly([(29, g - 24), (31.6, g - 24), (31.4, g - 29), (29.2, g - 29)], BONE_SHADE, outline=INK, width=0.6)
+    s.glow(30.3, g - 31, 5, GOLD_LIGHT, 0.8)
+    s.blob([(30.3, g - 34), (31.6, g - 30.6), (30.3, g - 29.6), (29, g - 30.6)], GOLD_LIGHT)
+    return s
+
+
+def shrineFortune():
+    s = standing("shrineFortune", 40, 56, "An idol worn smooth by everyone who was hoping.")
+    g = 54
+    s.ellipse(3, g - 6, 34, 8, _shade(OBSIDIAN, 0.2))
+    s.glow(20, g - 34, 22, GOLD, 0.5)
+    s.glow(20, g - 40, 12, GOLD_LIGHT, 0.4)
+    # Steps.
+    s.poly([(4, g - 1), (36, g - 1), (34, g - 6), (6, g - 6)], STONE_DARK, outline=INK, width=0.9)
+    s.poly([(8, g - 6), (32, g - 6), (30, g - 11), (10, g - 11)], STONE, outline=INK, width=0.9)
+    # The pillar, carved with rays.
+    s.poly([(13, g - 11), (27, g - 11), (25, g - 32), (15, g - 32)], STONE_LIGHT, outline=INK, width=0.9)
+    s.poly([(20, g - 11), (27, g - 11), (25, g - 32), (20, g - 32)], _shade(STONE_LIGHT, 0.25))
+    for y in (g - 16, g - 21, g - 26):
+        s.line((15, y), (25, y), GOLD_DARK, 0.6)
+    # The coin at its head.
+    s.ellipse(9, g - 46, 22, 22, GOLD, outline=INK, width=1.0)
+    s.ellipse(11.6, g - 43.4, 16.8, 16.8, GOLD_DARK)
+    s.ellipse(13, g - 42, 14, 14, GOLD)
+    for k in range(8):
+        import math
+        a = k * math.pi / 4
+        s.line((20 + math.cos(a) * 3, g - 35 + math.sin(a) * 3), (20 + math.cos(a) * 6.4, g - 35 + math.sin(a) * 6.4),
+               GOLD_LIGHT, 0.6)
+    s.dot(20, g - 35, 2.2, GOLD_LIGHT)
+    s.curve([(12, g - 41), (16, g - 45), (22, g - 46)], _light(GOLD, 0.5), 0.8)
+    # Coins left at the foot.
+    for x, y, r in ((9, g - 2.4, 2.4), (30.6, g - 2.2, 2.6), (14, g - 1.8, 2.0)):
+        s.ellipse(x - r, y - r * 0.6, r * 2, r * 1.3, GOLD, outline=INK, width=0.5)
+    return s
+
+
+def shrineRuin():
+    s = standing("shrineRuin", 40, 58, "A spike of black glass that has been waiting for company.")
+    g = 56
+    s.ellipse(3, g - 6, 34, 8, _shade(OBSIDIAN, 0.2))
+    s.glow(20, g - 26, 22, VOID, 0.55)
+    # Broken ground it grew through.
+    s.poly([(4, g - 1), (10, g - 8), (14, g - 1)], OBSIDIAN, outline=INK, width=0.6)
+    s.poly([(26, g - 1), (31, g - 9), (36, g - 1)], OBSIDIAN, outline=INK, width=0.6)
+    # The spike.
+    s.poly([(11, g - 1), (13, g - 30), (18, g - 44), (20, g - 55), (23, g - 42), (28, g - 28), (29, g - 1)],
+           OBSIDIAN, outline=INK, width=1.0)
+    s.poly([(20, g - 55), (23, g - 42), (28, g - 28), (29, g - 1), (20, g - 1)], _light(OBSIDIAN, 0.16))
+    s.poly([(11, g - 1), (13, g - 30), (18, g - 44), (20, g - 55), (19.6, g - 1)], _shade(OBSIDIAN, 0.5))
+    # An eye that has opened in it.
+    s.blob([(13, g - 24), (20, g - 30), (27, g - 24), (20, g - 19)], VOID_HOT, outline=INK, width=0.7)
+    s.blob([(16, g - 24), (20, g - 27), (24, g - 24), (20, g - 21.4)], VOID)
+    s.ellipse(18.6, g - 26.2, 2.8, 4.4, HOLLOW)
+    s.dot(19.4, g - 25.6, 0.7, VOID_HOT)
+    # Cracks with light behind them.
+    s.curve([(16, g - 12), (18, g - 16), (17, g - 19)], VOID_HOT, 0.7)
+    s.curve([(24, g - 12), (22.6, g - 15), (24, g - 18)], VOID_HOT, 0.7)
+    s.curve([(19, g - 40), (20.4, g - 36), (19.6, g - 33)], VOID_HOT, 0.6)
+    # Shards hanging in the air around it.
+    for x, y, r in ((6, g - 34, 2.6), (34, g - 38, 2.2), (4, g - 20, 1.8), (36, g - 20, 2.0)):
+        s.poly([(x, y - r * 1.6), (x + r, y), (x, y + r * 1.4), (x - r, y)], OBSIDIAN, outline=VOID_HOT, width=0.5)
+    return s
+
+
 def all_sprites():
-    return [dropVial(), dropMagnet(), dropChestCache(), dropChestChest(), dropChestHoard()]
+    return [dropVial(), dropMagnet(), dropChestCache(), dropChestChest(), dropChestHoard(),
+            shrineBlood(), shrineFortune(), shrineRuin()]
 
 
 HEADER = '''import UIKit
@@ -201,7 +307,7 @@ HEADER = '''import UIKit
 // this file by hand.
 
 /// What the horde leaves behind: draughts, a lodestone, and three grades of
-/// chest. They stand on the ground and are anchored at their base. The
+/// chest; and the three shrines a realm raises. They stand on the ground and are anchored at their base. The
 /// drawing primitives these call live in PlaceholderArt+Drawing.swift.
 extension PlaceholderArt {
 '''

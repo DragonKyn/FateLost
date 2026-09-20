@@ -51,6 +51,9 @@ enum CombatEvent: Equatable {
     /// The realm's final champion fell: the run is won.
     case realmConquered
     case experienceCollected(amount: Int)
+    /// A shrine rose out of the ground, and one was agreed to.
+    case shrineAppeared(kind: ShrineKind, position: CGPoint)
+    case shrineUsed(kind: ShrineKind, position: CGPoint)
     /// A drop was picked up.
     case dropCollected(kind: DropKind, position: CGPoint)
     /// A relic was taken, at the rank it now stands at.

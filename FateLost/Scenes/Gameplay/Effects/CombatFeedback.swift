@@ -273,6 +273,22 @@ final class CombatFeedback {
                 lastEmberTime = now
                 audio.play(SoundCue.emberChimes[emberCombo])
 
+            case let .shrineAppeared(kind, position):
+                effects.ring(at: position, radius: 2.2, color: ShrineRenderer.tint(for: kind), lifetime: 0.9)
+                effects.floatingText("A shrine stirs", at: playerPosition, color: ShrineRenderer.tint(for: kind),
+                                     size: 15, lifetime: 1.6)
+                audio.play(.abilityShadow)
+
+            case let .shrineUsed(kind, position):
+                let tint = ShrineRenderer.tint(for: kind)
+                effects.ring(at: position, radius: 2.6, color: tint, lifetime: 0.8)
+                effects.motes(at: position, count: 16, color: tint, spread: 1.2)
+                effects.floatingText(kind.name, at: playerPosition, color: tint, size: 17, lifetime: 1.5)
+                audio.play(kind == .ruin ? .abilityShadow : .abilityHoly)
+                if kind == .ruin {
+                    camera.addTrauma(tuning.explosionTrauma)
+                }
+
             case let .dropCollected(kind, position):
                 switch kind {
                 case .vial:

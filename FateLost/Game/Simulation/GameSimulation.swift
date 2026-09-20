@@ -93,6 +93,8 @@ struct GameSimulation {
     private var statusSystem = StatusSystem()
     private var statSignature: StatSignature?
     private var alliesNeedSync = true
+    /// The wave a shrine was last considered for.
+    private var shrineWave = 1
 
     var world: ToroidalWorld { arena.world }
     var enemies: EnemyStore { combat.enemies }
@@ -218,7 +220,9 @@ struct GameSimulation {
         resolveDeaths()
 
         PickupSystem.step(&combat, player: player, dt: dt)
+        ShrineSystem.step(&combat, player: player, dt: dt)
         if alive {
+            carryOutShrines()
             gainExperience()
             openNextFind()
         }
@@ -245,6 +249,11 @@ struct GameSimulation {
     /// ordinary horde thins out so the fight is against the champion.
     private mutating func advanceWaves(_ dt: TimeInterval) {
         let due = waves.step(&combat, dt: dt)
+        if waves.state.index != shrineWave {
+            shrineWave = waves.state.index
+            ShrineSystem.waveBegan(shrineWave, isBossWave: realm.waves.isBossWave(shrineWave), &combat,
+                                   player: player)
+        }
         spawner.wave = waves.state.index
         spawner.rateMultiplier = waves.pressure * waves.spawnShare
         combat.stats.wave = max(combat.stats.wave, waves.state.index)
@@ -302,9 +311,10 @@ struct GameSimulation {
     private mutating func updateEnemyScaling() {
         let minutes = elapsed / 60
         let scaling = tuning.progression
-        combat.enemyHealthScale = 1 + scaling.enemyHealthPerMinute * minutes
-            + scaling.enemyHealthPerMinuteSquared * minutes * minutes
-        combat.enemyDamageScale = 1 + scaling.enemyDamagePerMinute * minutes
+        let curse = combat.curseRemaining > 0 ? ShrineTuning.curseStrength : 1
+        combat.enemyHealthScale = (1 + scaling.enemyHealthPerMinute * minutes
+            + scaling.enemyHealthPerMinuteSquared * minutes * minutes) * curse
+        combat.enemyDamageScale = (1 + scaling.enemyDamagePerMinute * minutes) * curse
     }
 
     private mutating func tickTimers(_ dt: TimeInterval) {
@@ -324,6 +334,7 @@ struct GameSimulation {
             }
         }
         combat.cheatDeathCooldown = max(0, combat.cheatDeathCooldown - dt)
+        combat.curseRemaining = max(0, combat.curseRemaining - dt)
         AllySystem.tickCooldowns(&combat, dt: dt)
     }
 
@@ -659,6 +670,27 @@ struct GameSimulation {
         return true
     }
 
+    /// Carries out the bargains the player has walked onto.
+    private mutating func carryOutShrines() {
+        guard !combat.pendingShrines.isEmpty else { return }
+        let taken = combat.pendingShrines
+        combat.pendingShrines.removeAll()
+        for kind in taken {
+            switch kind {
+            case .blood:
+                player.health = max(1, player.health - player.maxHealth * ShrineTuning.bloodCost)
+                combat.pendingFinds.append(.chest)
+            case .fortune:
+                let experience = Int((Double(progression.required) * ShrineTuning.fortuneExperience).rounded())
+                combat.dropExperience(max(1, experience), at: player.position)
+                combat.pendingHealing += player.maxHealth * ShrineTuning.fortuneHeal
+            case .ruin:
+                combat.curseRemaining = ShrineTuning.curseSeconds
+                combat.pendingFinds.append(.hoard)
+            }
+        }
+    }
+
     /// Opens the oldest chest waiting, once the last find has been answered.
     private mutating func openNextFind() {
         guard offer == nil, let tier = combat.pendingFinds.first else { return }
@@ -705,6 +737,16 @@ struct GameSimulation {
     mutating func spawnDrop(_ kind: DropKind, offset: CGPoint = .zero) {
         combat.place(kind, near: world.wrap(player.position + offset), scatter: 0)
     }
+
+    /// Developer tooling and tests: raises a shrine `offset` world units from
+    /// the player.
+    mutating func spawnShrine(_ kind: ShrineKind, offset: CGPoint = .zero) {
+        combat.shrines.append(Shrine(id: combat.makeEntityID(), kind: kind,
+                                     position: world.wrap(player.position + offset)))
+    }
+
+    /// Seconds left on a Shrine of Ruin's curse; zero when none.
+    var curseRemaining: Double { combat.curseRemaining }
 
     mutating func spawnEnemies(_ count: Int) {
         spawner.spawnBurst(count, into: &combat, player: player, hardCap: tuning.enemyAI.hardCap,

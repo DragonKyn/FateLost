@@ -21,6 +21,8 @@ struct GameplayHUDState: Equatable {
     /// The champion holding the wave open, if any.
     var bossTitle: String?
     var bossHealthFraction: Double = 0
+    /// Whole seconds left on a Shrine of Ruin's curse; zero when none.
+    var curseSeconds: Int = 0
 }
 
 /// The build as the skill tree screen needs it. Published when it changes.
@@ -141,6 +143,7 @@ final class GameScene: SKScene {
     private let projectileRenderer: ProjectileRenderer
     private let pickupRenderer: PickupRenderer
     private let dropRenderer: DropRenderer
+    private let shrineRenderer: ShrineRenderer
     private let zoneRenderer: ZoneRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
@@ -211,6 +214,7 @@ final class GameScene: SKScene {
         projectileRenderer = ProjectileRenderer(catalog: catalog, projection: projection, layer: standing)
         pickupRenderer = PickupRenderer(catalog: catalog, projection: projection, layer: standing)
         dropRenderer = DropRenderer(catalog: catalog, projection: projection, layer: standing)
+        shrineRenderer = ShrineRenderer(catalog: catalog, projection: projection, layer: standing)
         zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                     layer: decals)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
@@ -400,6 +404,9 @@ final class GameScene: SKScene {
         zoneRenderer.update(zones: simulation.combat.zones, frame: renderFrame, time: animationTime)
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
         dropRenderer.update(drops: simulation.combat.drops, frame: renderFrame, time: animationTime)
+        shrineRenderer.update(shrines: simulation.combat.shrines, playerPosition: simulation.player.position,
+                              frame: renderFrame, time: animationTime)
+        updateBeacons()
         enemyRenderer.update(enemies: simulation.enemies, frame: renderFrame, time: animationTime, dt: frameDelta,
                              showHitboxes: dependencies.developer.showHitboxes)
         allyRenderer.update(allies: simulation.combat.allies, frame: renderFrame, time: animationTime, dt: frameDelta)
@@ -466,7 +473,8 @@ final class GameScene: SKScene {
                                      summonsDismissed: simulation.areSummonsDismissed,
                                      hasSummons: simulation.hasSummons,
                                      bossTitle: wave.isBossActive ? wave.bossTitle : nil,
-                                     bossHealthFraction: wave.bossHealthFraction)
+                                     bossHealthFraction: wave.bossHealthFraction,
+                                     curseSeconds: Int(simulation.curseRemaining.rounded(.up)))
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
@@ -518,6 +526,37 @@ final class GameScene: SKScene {
                                secondsSurvived: seconds, stats: simulation.stats,
                                level: simulation.progression.level, allocation: simulation.allocation,
                                outcome: outcome, wave: simulation.wave.index, relics: simulation.relics))
+    }
+
+    // MARK: - Beacons
+
+    /// Points at chests and shrines that are off the edge of the screen. A
+    /// find is worth crossing a fight for, but only if you can tell where it is.
+    private func updateBeacons() {
+        guard let layout = hud.layout else { return }
+        let scale = max(cameraController.camera.xScale, 0.0001)
+        let here = projection.toScreen(renderFrame.unwrapped(simulation.player.position))
+        var marks: [BeaconMark] = []
+        for drop in simulation.combat.drops {
+            guard case .chest(let tier) = drop.kind else { continue }
+            let there = projection.toScreen(renderFrame.unwrapped(drop.position))
+            marks.append(BeaconMark(id: drop.id, offset: (there - here) / scale, color: Self.beaconColor(tier)))
+        }
+        for shrine in simulation.combat.shrines {
+            let there = projection.toScreen(renderFrame.unwrapped(shrine.position))
+            marks.append(BeaconMark(id: shrine.id, offset: (there - here) / scale,
+                                    color: ShrineRenderer.tint(for: shrine.kind)))
+        }
+        marks.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
+        hud.showBeacons(Array(marks.prefix(4)), screenSize: layout.screenSize, time: animationTime)
+    }
+
+    private static func beaconColor(_ tier: LootTier) -> UIColor {
+        switch tier {
+        case .cache: return ItemRarity.common.color.uiColor
+        case .chest: return ItemRarity.rare.color.uiColor
+        case .hoard: return ItemRarity.legendary.color.uiColor
+        }
     }
 
     // MARK: - Finds

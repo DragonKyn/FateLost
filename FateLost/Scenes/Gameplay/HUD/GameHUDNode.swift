@@ -9,6 +9,7 @@ import SpriteKit
 @MainActor
 final class GameHUDNode: SKNode {
     let joystick = VirtualJoystickNode()
+    private let beacons = BeaconLayer()
     private let abilityButtons = (0..<3).map { _ in AbilityButtonNode(isUltimate: false) }
     private let ultimateButton = AbilityButtonNode(isUltimate: true)
 
@@ -17,6 +18,7 @@ final class GameHUDNode: SKNode {
     override init() {
         super.init()
         zPosition = DepthSorting.Band.hud
+        addChild(beacons)
         addChild(joystick)
         for button in abilityButtons {
             addChild(button)
@@ -38,6 +40,11 @@ final class GameHUDNode: SKNode {
         }
         ultimateButton.configure(diameter: layout.ultimateButtonSize)
         ultimateButton.position = layout.ultimateSlot
+    }
+
+    /// Points at anything worth walking to that is off the edge of the screen.
+    func showBeacons(_ marks: [BeaconMark], screenSize: CGSize, time: TimeInterval) {
+        beacons.show(marks, screenSize: screenSize, time: time)
     }
 
     /// Animates a press on slot 0–2, or 3 for the ultimate.
