@@ -88,7 +88,7 @@ extension CombatEvent {
 }
 
 /// Running totals for the end-of-run summary.
-struct RunStats: Equatable {
+struct RunStats: Equatable, Codable {
     var kills = 0
     var damageDealt: Double = 0
     var damageTaken: Double = 0

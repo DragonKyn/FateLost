@@ -26,8 +26,8 @@ export const PASSWORD_MIN_LENGTH = 1;
 
 /** Largest JSON text frame, in bytes. */
 export const MAX_TEXT_FRAME = 20_000;
-/** Largest binary frame from a client (an input packet is far smaller). */
-export const MAX_CLIENT_BINARY = 512;
+/** Largest binary frame from a client: an input packet is tiny, a build command a few KB. */
+export const MAX_CLIENT_BINARY = 4096;
 /** Largest binary frame from the host (a snapshot). */
 export const MAX_HOST_BINARY = 24_000;
 export const MAX_LOADOUT_BYTES = 16_000;
@@ -127,7 +127,7 @@ export class ApiError extends Error {
  * spoof another. Zero-width joiners fall in here too, which costs a few
  * compound emoji and buys names that always mean what they show.
  */
-const FORBIDDEN_NAME_CHARACTERS = /[\p{Cc}\p{Cf}\p{Cn}\p{Co}\p{Cs}\p{Zl}\p{Zp}]/u;
+const FORBIDDEN_NAME_CHARACTERS = /[\p{Cc}\p{Cf}\p{Cn}\p{Co}\p{Cs}\p{Zl}\p{Zp}ㅤᅟᅠﾠ⠀឴឵͏]/u;
 const VISIBLE_NAME_CHARACTER = /[\p{L}\p{N}\p{S}\p{P}]/u;
 
 /** Returns the cleaned name, or null if it cannot be used. */

@@ -47,7 +47,7 @@ extension GameSimulation {
     /// is split field by field, see `CombatState.heroFieldNames`.)
     static let sharedFieldNames: [String] = [
         "run", "realm", "arena", "tuning", "combat", "elapsed", "cheats", "slots", "activeHero", "members",
-        "timeSinceWipe", "stepCounter", "spawnFocusScratch", "targetScratch", "movement", "spawner", "enemyAI",
+        "timeSinceWipe", "stepCounter", "spawnFocusScratch", "targetScratch", "mirror", "movement", "spawner", "enemyAI",
         "waves", "projectileSystem", "statusSystem", "shrineWave",
     ]
 
@@ -59,7 +59,8 @@ extension GameSimulation {
         precondition(!party.isEmpty && party.count <= PartyTuning.maximumHeroes,
                      "a party is one to four heroes")
         self.init(run: run, tuning: tuning, legacy: party[0].legacy, bonusRerolls: party[0].bonusRerolls)
-        members[0] = PartyMember(id: party[0].id, name: party[0].name, slot: party[0].slot)
+        members[0] = PartyMember(id: party[0].id, name: party[0].name, slot: party[0].slot,
+                                 starterWeaponID: party[0].weaponID)
         guard party.count > 1 else { return }
 
         slots = [HeroSlot(player: player, progression: progression, allocation: allocation,
@@ -100,7 +101,8 @@ extension GameSimulation {
             legacy: config.legacy,
             bonusRerolls: max(0, config.bonusRerolls),
             combat: HeroCombat(seed: seed)))
-        members.append(PartyMember(id: config.id, name: config.name, slot: config.slot))
+        members.append(PartyMember(id: config.id, name: config.name, slot: config.slot,
+                                   starterWeaponID: weapon.id))
 
         let previous = activeHero
         activate(index)

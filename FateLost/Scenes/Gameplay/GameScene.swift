@@ -23,6 +23,28 @@ struct GameplayHUDState: Equatable {
     var bossHealthFraction: Double = 0
     /// Whole seconds left on a Shrine of Ruin's curse; zero when none.
     var curseSeconds: Int = 0
+    /// The party in a multiplayer run, this hero included.
+    var party: [PartyHUDMember] = []
+    /// This hero has fallen and waits at a marker for a friend.
+    var isFallen = false
+    /// Whose eyes the camera borrows while this hero lies fallen.
+    var spectating: String?
+    /// A fallen friend this hero is standing beside and could revive.
+    var reviveTarget: String?
+    /// 0...1 while this hero is channelling a revive.
+    var reviveProgress: Double?
+    /// 0...1 while a friend is reviving this hero.
+    var beingRevivedProgress: Double?
+}
+
+/// One member of the party, as the corner of the screen lists them.
+struct PartyHUDMember: Equatable {
+    var slot: Int
+    var name: String
+    var healthFraction: Double
+    var isDefeated: Bool
+    var isMe: Bool
+    var isConnected: Bool
 }
 
 /// The build as the skill tree screen needs it. Published when it changes.
@@ -49,7 +71,7 @@ struct RunSummary: Equatable {
 
     let realm: RealmID
     let weapon: WeaponID
-    let secondsSurvived: Int
+    var secondsSurvived: Int
     let stats: RunStats
     let level: Int
     let allocation: SkillAllocation
@@ -79,6 +101,10 @@ final class GameScene: SKScene {
         var bonusRerolls = 0
         /// How the player chose to look.
         var hero = HeroAppearance.standard
+        /// The party's link, in a multiplayer run.
+        var party: PartyRunDriver?
+        /// Everyone in the party, host first, when this phone is the host.
+        var partyConfigs: [PartyHeroConfig] = []
     }
 
     private enum Timing {
@@ -106,6 +132,12 @@ final class GameScene: SKScene {
     private var animationTime: TimeInterval = 0
     /// Ability buttons pressed since the last simulation step.
     private var pendingAbilityPresses: UInt8 = 0
+    /// The player asked to interact (start a revive) since the last step.
+    private var pendingInteract = false
+    private var partyDriver: PartyRunDriver? { dependencies.party }
+    /// The party as last drawn, for the HUD and the arrows.
+    private var currentPresentation = PartyPresentation()
+    private var localMenuOpen = false
 
     /// Freezes simulation while leaving rendering alive (pause menu, level-up).
     var isGameplayPaused = false {
@@ -147,6 +179,7 @@ final class GameScene: SKScene {
     private let projectileRenderer: ProjectileRenderer
     private let pickupRenderer: PickupRenderer
     private let dropRenderer: DropRenderer
+    private let partyRenderer: PartyRenderer
     private let shrineRenderer: ShrineRenderer
     private let zoneRenderer: ZoneRenderer
     private let chargeLanes: ChargeLaneRenderer
@@ -175,8 +208,18 @@ final class GameScene: SKScene {
     init(run: RunConfiguration, dependencies: Dependencies) {
         self.dependencies = dependencies
         let tuning = dependencies.tuning
-        let simulation = GameSimulation(run: run, tuning: tuning, legacy: dependencies.legacy,
+        var simulation: GameSimulation
+        if let driver = dependencies.party, driver.role == .host, dependencies.partyConfigs.count > 1 {
+            // The host runs the world for everyone.
+            simulation = GameSimulation(run: run, tuning: tuning, party: dependencies.partyConfigs)
+        } else {
+            simulation = GameSimulation(run: run, tuning: tuning, legacy: dependencies.legacy,
                                         bonusRerolls: dependencies.bonusRerolls)
+            if let driver = dependencies.party, driver.role == .client {
+                // A guest only watches: the host's picture fills this simulation.
+                simulation.beginMirroring(slot: UInt8(clamping: driver.mySlot))
+            }
+        }
         self.simulation = simulation
 
         // Collaborators are built from locals: `self` cannot be read until
@@ -221,6 +264,7 @@ final class GameScene: SKScene {
         pickupRenderer = PickupRenderer(catalog: catalog, projection: projection, layer: standing)
         dropRenderer = DropRenderer(catalog: catalog, projection: projection, layer: standing)
         shrineRenderer = ShrineRenderer(catalog: catalog, projection: projection, layer: standing)
+        partyRenderer = PartyRenderer(projection: projection, layer: standing, catalog: catalog)
         zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                     layer: decals)
         chargeLanes = ChargeLaneRenderer(projection: projection, layer: decals)
@@ -333,7 +377,9 @@ final class GameScene: SKScene {
 
         guard !isGameplayPaused else { return }
         animationTime += frameDelta
-        runDeveloperCommands()
+        if partyDriver == nil {
+            runDeveloperCommands()
+        }
 
         // Hit-stop holds the simulation for a beat; rendering carries on so
         // shake and flashes still play.
@@ -343,30 +389,57 @@ final class GameScene: SKScene {
             hitStopRemaining -= frameDelta
             simulatedDelta = 0
         }
-        if simulation.isPlayerDefeated {
+        // A lone hero's fall slows time; a party's only when all of it has fallen.
+        if partyDriver == nil ? simulation.isPlayerDefeated : simulation.isPartyWiped {
             simulatedDelta *= Timing.defeatTimeScale
         }
 
-        simulation.cheats = SimulationCheats(godMode: dependencies.developer.godMode,
-                                             spawningEnabled: dependencies.developer.spawningEnabled)
-        let steps = timestep.advance(by: simulatedDelta)
-        var intent = currentIntent()
-        let started = CACurrentMediaTime()
-        for _ in 0..<steps {
-            // A find that has just opened holds the rest of the frame.
-            if simulation.offer != nil { break }
+        var events: [CombatEvent] = []
+        if let driver = partyDriver, driver.role == .client {
+            // A guest sends what its player wants and draws what the host says.
+            var intent = currentIntent()
             intent.abilityPresses = pendingAbilityPresses
-            simulation.step(dt: timestep.step, intent: intent)
-            // A press is used by the first step that sees it.
+            intent.interact = pendingInteract
             pendingAbilityPresses = 0
+            pendingInteract = false
+            events = driver.clientFrame(&simulation, intent: intent, dt: frameDelta)
+        } else {
+            simulation.cheats = SimulationCheats(godMode: dependencies.developer.godMode,
+                                                 spawningEnabled: dependencies.developer.spawningEnabled)
+            let steps = timestep.advance(by: simulatedDelta)
+            var intent = currentIntent()
+            let started = CACurrentMediaTime()
+            partyDriver?.hostWillStep(&simulation, dt: frameDelta)
+            for _ in 0..<steps {
+                // A find that has just opened holds a lone run still; a party
+                // plays on around the player who is choosing.
+                if partyDriver == nil, simulation.offer != nil { break }
+                intent.abilityPresses = pendingAbilityPresses
+                intent.interact = pendingInteract
+                simulation.step(dt: timestep.step, intent: intent)
+                // A press is used by the first step that sees it.
+                pendingAbilityPresses = 0
+                pendingInteract = false
+            }
+            recordSimulationTime(CACurrentMediaTime() - started)
+
+            // Events are presented before renderers update, so a killed enemy's
+            // view still exists to spawn its falling body from.
+            if let driver = partyDriver {
+                let tagged = simulation.drainPartyEvents()
+                driver.hostDidFrame(&simulation, events: tagged, dt: frameDelta)
+                events = tagged.filter { !$0.event.isPersonal || $0.hero == 0 }.map { $0.event }
+            } else {
+                events = simulation.drainEvents()
+            }
         }
-        recordSimulationTime(CACurrentMediaTime() - started)
+        // A hit taken shows on the hero, on any phone.
+        for event in events {
+            if case .playerHit = event { simulation.player.timeSinceHit = 0 }
+        }
 
         let lowHealth = simulation.player.health < simulation.player.maxHealth * Timing.lowHealthFraction
             && !simulation.isPlayerDefeated
-        // Events are presented before renderers update, so a killed enemy's
-        // view still exists to spawn its falling body from.
-        let events = simulation.drainEvents()
         feedback.playerPosition = simulation.player.position
         feedback.playerSpriteID = simulation.activeForm?.sprite ?? .playerAdventurer
         feedback.present(events, lowHealth: lowHealth, frame: renderFrame, dt: CGFloat(frameDelta))
@@ -385,7 +458,10 @@ final class GameScene: SKScene {
 
     private func render(frameDelta: CGFloat) {
         let player = simulation.player
-        renderFrame.moveFocus(toWrapped: player.position)
+        let presentation = partyDriver?.presentation(of: simulation) ?? PartyPresentation()
+        currentPresentation = presentation
+        // A fallen hero watches a friend fight on.
+        renderFrame.moveFocus(toWrapped: spectatePosition(for: player, in: presentation) ?? player.position)
 
         let rebaseShift = renderFrame.rebaseIfNeeded(thresholdPeriods: tuning.rendering.rebaseThresholdPeriods)
         let rebased = rebaseShift != .zero
@@ -394,8 +470,9 @@ final class GameScene: SKScene {
         }
 
         let playerScreen = projection.toScreen(renderFrame.focusUnwrapped)
-        playerView.position = playerScreen
-        playerView.zPosition = DepthSorting.z(forScreenY: playerScreen.y)
+        let selfScreen = projection.toScreen(renderFrame.unwrapped(player.position))
+        playerView.position = selfScreen
+        playerView.zPosition = DepthSorting.z(forScreenY: selfScreen.y)
         let screenVelocity = projection.toScreen(player.velocity)
         playerView.setForm(simulation.activeForm)
         playerView.apply(player, screenVelocity: screenVelocity, dt: frameDelta)
@@ -408,7 +485,7 @@ final class GameScene: SKScene {
 
         ground.update(focusUnwrapped: renderFrame.focusUnwrapped, force: rebased)
         decorations.update(frame: renderFrame, radius: visibleWorldRadius(), force: rebased)
-        zoneRenderer.update(zones: simulation.combat.zones, frame: renderFrame, time: animationTime)
+        zoneRenderer.update(zones: simulation.allZones, frame: renderFrame, time: animationTime)
         chargeLanes.update(enemies: simulation.combat.enemies, playerRadius: tuning.combat.playerRadius,
                            frame: renderFrame, time: animationTime)
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
@@ -419,8 +496,14 @@ final class GameScene: SKScene {
         playerView.setWeapon(simulation.weapon.spriteID)
         enemyRenderer.update(enemies: simulation.enemies, frame: renderFrame, time: animationTime, dt: frameDelta,
                              showHitboxes: dependencies.developer.showHitboxes)
-        allyRenderer.update(allies: simulation.combat.allies, frame: renderFrame, time: animationTime, dt: frameDelta)
+        allyRenderer.update(allies: simulation.allAllies, frame: renderFrame, time: animationTime, dt: frameDelta)
         projectileRenderer.update(projectiles: simulation.projectiles, frame: renderFrame)
+        if let driver = partyDriver {
+            partyRenderer.update(heroes: presentation.heroes, mySlot: driver.mySlot, roster: driver.roster,
+                                 frame: renderFrame, dt: frameDelta, time: animationTime)
+            partyRenderer.update(markers: presentation.markers, roster: driver.roster, frame: renderFrame,
+                                 time: animationTime)
+        }
         effects.update(frame: renderFrame, dt: frameDelta)
 
         if let layout = hud.layout {
@@ -475,16 +558,18 @@ final class GameScene: SKScene {
         let progression = simulation.progression
         let fraction = progression.required > 0 ? Double(progression.experience) / Double(progression.required) : 0
         let wave = simulation.wave
-        let state = GameplayHUDState(health: player.health, maxHealth: player.maxHealth, barrier: player.barrier,
+        let base = GameplayHUDState(health: player.health, maxHealth: player.maxHealth, barrier: player.barrier,
                                      elapsedSeconds: Int(simulation.elapsed), wave: wave.index,
                                      level: progression.level,
                                      experienceFraction: min(1, fraction), unspentPoints: progression.unspentPoints,
-                                     kills: simulation.stats.kills, allyCount: simulation.allies.count,
+                                     kills: simulation.stats.kills, allyCount: simulation.ownAllyCount,
                                      summonsDismissed: simulation.areSummonsDismissed,
                                      hasSummons: simulation.hasSummons,
                                      bossTitle: wave.isBossActive ? wave.bossTitle : nil,
                                      bossHealthFraction: wave.bossHealthFraction,
                                      curseSeconds: Int(simulation.curseRemaining.rounded(.up)))
+        var state = base
+        applyPartyHUD(to: &state)
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
@@ -519,6 +604,19 @@ final class GameScene: SKScene {
 
     private func deliverSummaryIfDue() {
         guard !summaryDelivered else { return }
+        if let driver = partyDriver {
+            // The host decides when a party's run is over; everyone is told.
+            guard driver.role == .host else { return }
+            if simulation.isRealmConquered {
+                summaryDelivered = true
+                driver.hostFinished(outcome: .conquered, simulation: &simulation)
+            } else if let since = simulation.timeSinceWipe,
+                      since >= Timing.defeatSummaryDelay * Timing.defeatTimeScale {
+                summaryDelivered = true
+                driver.hostFinished(outcome: .defeated, simulation: &simulation)
+            }
+            return
+        }
         // Taking the realm ends the run as surely as falling does.
         if simulation.isRealmConquered {
             deliverSummary(outcome: .conquered, seconds: Int(simulation.elapsed))
@@ -545,8 +643,21 @@ final class GameScene: SKScene {
     private func updateBeacons() {
         guard let layout = hud.layout else { return }
         let scale = max(cameraController.camera.xScale, 0.0001)
-        let here = projection.toScreen(renderFrame.unwrapped(simulation.player.position))
+        let here = projection.toScreen(renderFrame.focusUnwrapped)
         var marks: [BeaconMark] = []
+        // A friend lying fallen is worth more than any chest: they are first,
+        // in the same arrows that lead to chests and shrines, drawn as crosses
+        // and named.
+        var fallen: [BeaconMark] = []
+        if let driver = partyDriver {
+            for marker in currentPresentation.markers where marker.slot != driver.mySlot {
+                let there = projection.toScreen(renderFrame.unwrapped(marker.position))
+                fallen.append(BeaconMark(id: -1000 - marker.slot, offset: (there - here) / scale,
+                                         color: UIColor(rgb: 0xC8B4F0), label: driver.roster[marker.slot]?.name,
+                                         isFallenAlly: true))
+            }
+            fallen.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
+        }
         for drop in simulation.combat.drops {
             guard case .chest(let tier) = drop.kind else { continue }
             let there = projection.toScreen(renderFrame.unwrapped(drop.position))
@@ -558,7 +669,8 @@ final class GameScene: SKScene {
                                     color: ShrineRenderer.tint(for: shrine.kind)))
         }
         marks.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
-        hud.showBeacons(Array(marks.prefix(4)), screenSize: layout.screenSize, time: animationTime)
+        hud.showBeacons(Array(fallen.prefix(3)) + Array(marks.prefix(4)), screenSize: layout.screenSize,
+                        time: animationTime)
     }
 
     private static func beaconColor(_ tier: LootTier) -> UIColor {
@@ -583,6 +695,13 @@ final class GameScene: SKScene {
     /// Takes one of the cards on offer.
     @discardableResult
     func chooseRelic(at index: Int) -> Bool {
+        if let driver = partyDriver, driver.role == .client {
+            guard simulation.offer != nil else { return false }
+            driver.send(NetCommand(kind: .chooseRelic, index: index))
+            simulation.offer = nil
+            publishOfferIfChanged()
+            return true
+        }
         let accepted = simulation.chooseRelic(at: index)
         publishProgressionIfChanged(force: true)
         publishHUDStateIfChanged()
@@ -593,6 +712,13 @@ final class GameScene: SKScene {
     /// Takes the weapon on offer.
     @discardableResult
     func chooseWeapon() -> Bool {
+        if let driver = partyDriver, driver.role == .client {
+            guard simulation.offer != nil else { return false }
+            driver.send(NetCommand(kind: .chooseWeapon))
+            simulation.offer = nil
+            publishOfferIfChanged()
+            return true
+        }
         let accepted = simulation.chooseWeapon()
         publishHUDStateIfChanged()
         publishOfferIfChanged()
@@ -602,6 +728,11 @@ final class GameScene: SKScene {
     /// Spends the offer's reroll.
     @discardableResult
     func rerollOffer() -> Bool {
+        if let driver = partyDriver, driver.role == .client {
+            guard let offer = simulation.offer, offer.rerollsLeft > 0 else { return false }
+            driver.send(NetCommand(kind: .rerollOffer))
+            return true
+        }
         let accepted = simulation.rerollOffer()
         publishOfferIfChanged()
         return accepted
@@ -612,6 +743,19 @@ final class GameScene: SKScene {
     /// Commits a skill draft. Returns false if the simulation rejected it.
     @discardableResult
     func commitBuild(_ draft: SkillAllocation, slots: [AbilityID?]) -> Bool {
+        if let driver = partyDriver, driver.role == .client {
+            driver.send(NetCommand(kind: .commit, ranks: draft.ranks, slots: slots))
+            // The choice shows at once; the host's word confirms it.
+            simulation.allocation = draft
+            simulation.progression.unspentPoints = max(0, simulation.progression.earnedPoints - draft.spent)
+            simulation.combat.install(CompiledBuild.compile(draft, relics: simulation.relics))
+            simulation.abilitySlots = GameSimulation.sanitize(slots, abilities: simulation.combat.build.abilities)
+            simulation.buildVersion += 1
+            publishProgressionIfChanged(force: true)
+            publishHUDStateIfChanged()
+            updateAbilityButtons()
+            return true
+        }
         let accepted = simulation.commit(draft, slots: slots)
         publishProgressionIfChanged(force: true)
         publishHUDStateIfChanged()
@@ -621,6 +765,12 @@ final class GameScene: SKScene {
 
     /// Sends the player's summons away, or calls them back.
     func toggleSummons() {
+        if let driver = partyDriver, driver.role == .client {
+            driver.send(NetCommand(kind: .toggleSummons))
+            simulation.combat.companionsDismissed.toggle()
+            publishHUDStateIfChanged()
+            return
+        }
         simulation.toggleSummonsDismissed()
         publishHUDStateIfChanged()
     }
@@ -629,6 +779,72 @@ final class GameScene: SKScene {
         simulation.equip(slots)
         publishProgressionIfChanged(force: true)
         updateAbilityButtons()
+    }
+
+    // MARK: - Party
+
+    /// Lets the party's controller change the simulation in place.
+    func mutateSimulation(_ body: (inout GameSimulation) -> Void) {
+        body(&simulation)
+    }
+
+    /// The player asked to interact: start reviving a friend beside them.
+    func pressInteract() {
+        pendingInteract = true
+    }
+
+    /// A menu is open on this player's screen. The world goes on around them,
+    /// so their hero is sheltered while they choose.
+    func setMenuShelter(_ open: Bool) {
+        guard partyDriver != nil, open != localMenuOpen else { return }
+        localMenuOpen = open
+        if partyDriver?.role == .host {
+            simulation.setMenuOpen(open, forHero: 0)
+        }
+        partyDriver?.menuChanged(open: open)
+    }
+
+    /// Where the camera goes while this hero lies fallen: the nearest friend
+    /// still standing.
+    private func spectatePosition(for player: PlayerState, in presentation: PartyPresentation) -> CGPoint? {
+        guard let driver = partyDriver, player.isDefeated else { return nil }
+        let living = presentation.heroes.filter { $0.slot != driver.mySlot && !$0.isDefeated && $0.isConnected }
+        return living.min {
+            simulation.world.distanceSquared(player.position, $0.position)
+                < simulation.world.distanceSquared(player.position, $1.position)
+        }?.position
+    }
+
+    private func applyPartyHUD(to state: inout GameplayHUDState) {
+        guard let driver = partyDriver else { return }
+        let me = driver.mySlot
+        state.party = currentPresentation.heroes.map { hero in
+            PartyHUDMember(slot: hero.slot, name: driver.roster[hero.slot]?.name ?? "Ally",
+                           healthFraction: hero.maxHealth > 0 ? max(0, min(1, hero.health / hero.maxHealth)) : 0,
+                           isDefeated: hero.isDefeated, isMe: hero.slot == me, isConnected: hero.isConnected)
+        }
+        let player = simulation.player
+        state.isFallen = player.isDefeated
+        if player.isDefeated {
+            let living = currentPresentation.heroes.filter { $0.slot != me && !$0.isDefeated && $0.isConnected }
+            let target = living.min {
+                simulation.world.distanceSquared(player.position, $0.position)
+                    < simulation.world.distanceSquared(player.position, $1.position)
+            }
+            state.spectating = target.flatMap { driver.roster[$0.slot]?.name }
+        }
+        let start = GameTuning.standard.party.reviveStartRange + 0.4
+        for marker in currentPresentation.markers {
+            if marker.slot == me {
+                state.beingRevivedProgress = marker.reviverSlot != nil ? marker.progress : nil
+            } else if marker.reviverSlot == me {
+                state.reviveProgress = marker.progress
+                state.reviveTarget = driver.roster[marker.slot]?.name
+            } else if !player.isDefeated, state.reviveTarget == nil,
+                      simulation.world.distance(player.position, marker.position) <= start {
+                state.reviveTarget = driver.roster[marker.slot]?.name
+            }
+        }
     }
 
     // MARK: - Touch input

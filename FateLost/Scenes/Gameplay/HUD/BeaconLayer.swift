@@ -6,6 +6,11 @@ struct BeaconMark {
     let id: Int
     let offset: CGPoint
     let color: UIColor
+    /// A name to show beside the arrow: the fallen teammate it points to.
+    var label: String? = nil
+    /// Drawn as a cross, so a friend who needs reviving is never mistaken for
+    /// a shrine or a chest.
+    var isFallenAlly = false
 }
 
 /// Chevrons at the edge of the screen pointing at chests and shrines that
@@ -25,6 +30,7 @@ final class BeaconLayer: SKNode {
     }
 
     private var arrows: [SKShapeNode] = []
+    private var labels: [SKLabelNode] = []
 
     override init() {
         super.init()
@@ -41,6 +47,13 @@ final class BeaconLayer: SKNode {
             let arrow = Self.makeArrow()
             addChild(arrow)
             arrows.append(arrow)
+            let label = SKLabelNode()
+            label.fontName = "AvenirNext-DemiBold"
+            label.fontSize = 11
+            label.verticalAlignmentMode = .center
+            label.isHidden = true
+            addChild(label)
+            labels.append(label)
         }
 
         let halfWidth = screenSize.width / 2 - Margin.side
@@ -51,6 +64,7 @@ final class BeaconLayer: SKNode {
         for (index, arrow) in arrows.enumerated() {
             guard index < marks.count else {
                 arrow.isHidden = true
+                labels[index].isHidden = true
                 continue
             }
             let mark = marks[index]
@@ -58,6 +72,7 @@ final class BeaconLayer: SKNode {
             let onScreen = abs(offset.x) <= halfWidth && offset.y <= top && offset.y >= bottom
             guard !onScreen, offset.lengthSquared > 1 else {
                 arrow.isHidden = true
+                labels[index].isHidden = true
                 continue
             }
 
@@ -72,6 +87,21 @@ final class BeaconLayer: SKNode {
             arrow.zRotation = atan2(offset.y, offset.x)
             arrow.fillColor = mark.color
             arrow.alpha = pulse
+            arrow.strokeColor = mark.isFallenAlly ? UIColor(rgb: 0x2A2036) : UIColor(white: 0, alpha: 0.85)
+            arrow.setScale(mark.isFallenAlly ? 1.25 : 1)
+
+            let label = labels[index]
+            if let text = mark.label {
+                label.isHidden = false
+                label.text = text
+                label.fontColor = mark.color
+                label.alpha = pulse
+                // Beside the arrow, on the side toward the middle of the screen.
+                let inward = CGPoint(x: -offset.x, y: -offset.y).normalized
+                label.position = CGPoint(x: arrow.position.x + inward.x * 34, y: arrow.position.y + inward.y * 22)
+            } else {
+                label.isHidden = true
+            }
         }
     }
 

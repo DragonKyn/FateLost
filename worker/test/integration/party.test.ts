@@ -375,7 +375,7 @@ describe("a run", () => {
     expect(host.frames).toHaveLength(0);
 
     await startRun(host, guests);
-    guest.sendBinary([1, ...new Array(600).fill(3)]);
+    guest.sendBinary([1, ...new Array(5000).fill(3)]);
     guest.sendBinary([99, 1, 2]);
     guest.sendBinary([1, 4, 4]);
     const frame = await host.waitForFrame((f) => f[0] === 1);

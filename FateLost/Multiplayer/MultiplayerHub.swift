@@ -150,7 +150,7 @@ final class MultiplayerHub {
         run?.stop()
         let controller = PartyRunController(info: info, hub: self, services: services)
         run = controller
-        router?.showPartyRun(controller)
+        router?.showPartyRun(controller, services: services)
     }
 
     private func runEnded(_ info: RunEndInfo) {

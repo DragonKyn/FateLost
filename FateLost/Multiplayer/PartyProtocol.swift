@@ -15,7 +15,7 @@ enum PartyProtocol {
     static let roomCodeAlphabet = Array("ABCDEFGHJKMNPQRSTUVWXYZ23456789")
     static let nameMaxLength = 16
     static let passwordMaxLength = 64
-    static let maxClientFrame = 512
+    static let maxClientFrame = 4096
     static let maxHostFrame = 24_000
     /// Target byte meaning "every other member".
     static let targetAll: UInt8 = 0xFF
@@ -93,6 +93,9 @@ enum DisplayName {
                 continue
             }
         }
+        // A few letters and marks that are drawn as nothing at all.
+        let blankLetters: Set<UInt32> = [0x3164, 0x115F, 0x1160, 0xFFA0, 0x2800, 0x17B4, 0x17B5, 0x034F]
+        if normalised.unicodeScalars.contains(where: { blankLetters.contains($0.value) }) { return nil }
         var collapsed = ""
         var previousWasSpace = false
         for scalar in normalised.unicodeScalars {

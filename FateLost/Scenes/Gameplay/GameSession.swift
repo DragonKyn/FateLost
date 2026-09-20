@@ -31,6 +31,12 @@ final class GameSession {
     private(set) var pendingLevelUps = 0
     /// The find waiting for a choice, if any.
     private(set) var offer: RelicOffer?
+    /// The party this run is played with, in a multiplayer run.
+    let party: PartyRunController?
+    /// How a party's run ended, once it has.
+    private(set) var partyResults: PartyResults?
+
+    var isParty: Bool { party != nil }
 
     var isPaused: Bool { pauseReason != nil }
     var isSkillTreePresented: Bool { pauseReason == .skillTree }
@@ -39,12 +45,15 @@ final class GameSession {
     @ObservationIgnored let scene: GameScene
     @ObservationIgnored private let audio: AudioManager
     @ObservationIgnored private var levelUpTask: Task<Void, Never>?
+    @ObservationIgnored private var statusTask: Task<Void, Never>?
 
     /// Seconds the level-up burst plays before the tree opens.
     private static let levelUpTreeDelay: Duration = .milliseconds(650)
 
-    init(run: RunConfiguration, services: AppServices, tuning: GameTuning = .standard) {
+    init(run: RunConfiguration, services: AppServices, tuning: GameTuning = .standard,
+         party: PartyRunController? = nil) {
         self.run = run
+        self.party = party
         realm = RealmCatalog.realm(run.realmID)
         let starter = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
         weapon = starter
@@ -55,10 +64,14 @@ final class GameSession {
             developer: services.developer,
             audio: services.audio,
             haptics: services.haptics,
-            legacy: services.modifiers(startingWith: starter),
-            bonusRerolls: services.bonusRerolls,
-            hero: services.hero
+            // In a party the host builds every hero, from what each player sent.
+            legacy: party == nil ? services.modifiers(startingWith: starter) : [],
+            bonusRerolls: party == nil ? services.bonusRerolls : 0,
+            hero: services.hero,
+            party: party,
+            partyConfigs: party?.role == .host ? party?.info.partyConfigs() ?? [] : []
         ))
+        party?.scene = scene
         scene.onHUDStateChange = { [weak self] state in
             self?.hud = state
         }
@@ -75,6 +88,11 @@ final class GameSession {
             self?.levelUpTask?.cancel()
             self?.summary = summary
         }
+        party?.onResults = { [weak self] results in
+            self?.levelUpTask?.cancel()
+            self?.partyResults = results
+            self?.scene.resetInput()
+        }
     }
 
     /// Starts the realm's music and ambience. Called when the run appears.
@@ -82,6 +100,27 @@ final class GameSession {
         audio.setMusicDucked(false)
         audio.playMusic(MusicDirector.battleTheme(for: realm.id))
         audio.playAmbience(MusicDirector.ambience(for: realm.id))
+        beginWatchingParty()
+    }
+
+    /// Keeps the party's connection status (reconnecting, host away) fresh.
+    private func beginWatchingParty() {
+        guard let party, statusTask == nil else { return }
+        statusTask = Task { [weak self, weak party] in
+            while !Task.isCancelled {
+                guard let party, let hub = party.hub else { return }
+                party.updateStatus(hostAwayUntil: hub.client.hostAwayUntil, state: hub.client.state)
+                try? await Task.sleep(for: .seconds(1))
+                _ = self
+            }
+        }
+    }
+
+    /// Tears down what a party run left running.
+    func endPresentation() {
+        statusTask?.cancel()
+        statusTask = nil
+        levelUpTask?.cancel()
     }
 
     // MARK: - Pausing
@@ -94,15 +133,25 @@ final class GameSession {
         guard pauseReason == nil else { return }
         pauseReason = reason
         scene.resetInput()
-        scene.isGameplayPaused = true
-        audio.setMusicDucked(true)
+        if isParty {
+            // The world does not wait for one player: their hero is sheltered
+            // for as long as the menu is open (and for a while at most).
+            scene.setMenuShelter(true)
+        } else {
+            scene.isGameplayPaused = true
+            audio.setMusicDucked(true)
+        }
     }
 
     func resume() {
         guard pauseReason != nil else { return }
         pauseReason = nil
-        scene.isGameplayPaused = false
-        audio.setMusicDucked(false)
+        if isParty {
+            scene.setMenuShelter(false)
+        } else {
+            scene.isGameplayPaused = false
+            audio.setMusicDucked(false)
+        }
     }
 
     // MARK: - Finds

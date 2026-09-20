@@ -46,12 +46,6 @@ struct RootView: View {
             case .lobby:
                 LobbyView()
                     .transition(.opacity)
-            case .partyRun:
-                if let run = router.activePartyRun {
-                    PartyRunScreen(run: run)
-                        .id(ObjectIdentifier(run))
-                        .transition(.opacity)
-                }
             case .gameplay:
                 if let session = router.activeSession {
                     GameplayScreen(session: session)
@@ -86,7 +80,7 @@ struct RootView: View {
     /// Menus share one theme; the gameplay screen starts its realm's music
     /// itself when the run appears.
     private func updateMusic(for screen: AppScreen) {
-        guard screen != .gameplay, screen != .partyRun else { return }
+        guard screen != .gameplay else { return }
         // Leaving a paused run must not leave the menu music ducked.
         services.audio.setMusicDucked(false)
         services.audio.stopAmbience()

@@ -95,6 +95,9 @@ struct GameSimulation {
     /// Scratch space reused every step so the party allocates nothing.
     var spawnFocusScratch: [SpawnFocus] = []
     var targetScratch: [AITarget] = []
+    /// Set on a phone that is watching a run rather than running it; see
+    /// `MirrorWorld`. Nil everywhere else.
+    var mirror: MirrorWorld?
 
     var progression: ProgressionState
     var allocation = SkillAllocation()
@@ -127,6 +130,7 @@ struct GameSimulation {
     var enemies: EnemyStore { combat.enemies }
     /// Every projectile in flight: each hero's own, and the horde's.
     var projectiles: [Projectile] {
+        if let mirror { return mirror.projectiles }
         if slots.count > 1 || !combat.hostileProjectiles.isEmpty {
             var all = combat.projectiles
             for hero in slots.indices where hero != activeHero {
@@ -147,7 +151,13 @@ struct GameSimulation {
     var summonCooldowns: [String: Double] { combat.summonCooldowns }
     /// Whether this build fields summons at all, so the HUD can stay clear
     /// for everyone else.
-    var hasSummons: Bool { !combat.build.companions.isEmpty || !combat.allies.isEmpty }
+    var hasSummons: Bool {
+        if let mirror { return mirror.hasSummons }
+        return !combat.build.companions.isEmpty || !combat.allies.isEmpty
+    }
+
+    /// The summons the HUD counts: this hero's own, even when the drawing shows everyone's.
+    var ownAllyCount: Int { mirror?.allyCount ?? combat.allies.count }
     /// Seconds until the weapon may attack again.
     var weaponCooldown: Double { weaponSystem.cooldown }
 
@@ -641,6 +651,11 @@ struct GameSimulation {
     func cooldown(forSlot slot: Int) -> (remaining: Double, total: Double)? {
         guard slot < abilitySlots.count, let id = abilitySlots[slot],
               let learned = combat.build.abilities[id] else { return nil }
+        if let mirror {
+            // Watching: the host keeps the cooldowns and reports them.
+            let reported = mirror.cooldowns[id]
+            return (reported?.remaining ?? 0, reported?.total ?? learned.cooldown)
+        }
         let total = learned.cooldown * (1 - combat.sheet[.cooldownReduction])
         return (combat.abilityCooldowns[id] ?? 0, total)
     }

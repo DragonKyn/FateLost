@@ -75,7 +75,13 @@ final class SpriteCatalog {
 
     /// Every sprite the gameplay scene may use, preloaded up front so no
     /// texture is generated mid-run.
-    static let gameplaySprites: [SpriteID] = [
+    nonisolated static let gameplaySprites: [SpriteID] = GameplaySprites.all
+}
+
+/// The list itself, outside the catalog's main-actor isolation so the
+/// network layer can build its tables from it too.
+enum GameplaySprites {
+    static let all: [SpriteID] = [
         .playerAdventurer, .shadow,
         .enemyGoblin, .enemyGoblinHooded, .enemyGoblinHelmed, .enemyGoblinSkulker, .enemyGoblinSkulkerPale,
         .enemyGoblinSpearman, .enemyGoblinSpearmanRed, .enemyGoblinBrute, .enemyGoblinBruteScarred,

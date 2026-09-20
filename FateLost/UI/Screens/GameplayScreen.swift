@@ -21,13 +21,20 @@ struct GameplayScreen: View {
                                onSummons: { session.toggleSummons() },
                                onDeveloper: { openDeveloperPanel() })
 
+            if session.isParty {
+                PartyRunOverlay(session: session)
+            }
+
             if showRealmTitle {
                 RealmTitleCard(realm: session.realm)
                     .transition(.opacity)
                     .allowsHitTesting(false)
             }
 
-            if let summary = session.summary {
+            if let results = session.partyResults {
+                PartyResultsView(results: results)
+                    .transition(.opacity)
+            } else if let summary = session.summary {
                 RunSummaryView(
                     summary: summary,
                     realm: session.realm,
@@ -70,6 +77,7 @@ struct GameplayScreen: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else if session.pauseReason == .menu {
                 PauseMenu(
+                    isParty: session.isParty,
                     onResume: {
                         services.audio.play(.uiConfirm)
                         session.resume()
@@ -77,7 +85,11 @@ struct GameplayScreen: View {
                     onSettings: { router.isSettingsPresented = true },
                     onAbandon: {
                         services.audio.play(.uiBack)
-                        router.endRun()
+                        if session.isParty {
+                            services.multiplayer.leaveParty()
+                        } else {
+                            router.endRun()
+                        }
                     }
                 )
                 .transition(.opacity)
@@ -144,7 +156,7 @@ private struct GameplayHUDOverlay: View {
                                   action: onSummons)
                 }
                 SkillPointsButton(points: session.hud.unspentPoints, action: onSkills)
-                if services.isDeveloperModeOn {
+                if services.isDeveloperModeOn, !session.isParty {
                     hudButton(systemImage: "wrench.and.screwdriver", label: "Developer tools", action: onDeveloper)
                 }
                 hudButton(systemImage: "pause.fill", label: "Pause", action: onPause)
@@ -229,6 +241,7 @@ private struct RealmTitleCard: View {
 }
 
 private struct PauseMenu: View {
+    var isParty = false
     let onResume: () -> Void
     let onSettings: () -> Void
     let onAbandon: () -> Void
@@ -237,7 +250,7 @@ private struct PauseMenu: View {
         ZStack {
             Color.black.opacity(0.6).ignoresSafeArea()
             VStack(spacing: 14) {
-                Text("PAUSED")
+                Text(isParty ? "MENU" : "PAUSED")
                     .font(FLTheme.Typeface.title(34))
                     .tracking(6)
                     .foregroundStyle(FLTheme.Palette.parchment)
@@ -246,7 +259,7 @@ private struct PauseMenu: View {
                     .buttonStyle(.flPrimary)
                 Button("Settings", action: onSettings)
                     .buttonStyle(.flSecondary)
-                Button("Abandon Run", action: onAbandon)
+                Button(isParty ? "Leave Party" : "Abandon Run", action: onAbandon)
                     .buttonStyle(.flDestructive)
             }
             .frame(width: 280)

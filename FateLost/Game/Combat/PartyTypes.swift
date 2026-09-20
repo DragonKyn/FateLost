@@ -113,11 +113,14 @@ struct PartyMember: Equatable {
     /// Experience earned while fallen, paid out on revival.
     var bankedExperience = 0
     var intent = PlayerIntent.idle
+    /// The weapon the hero began the run with.
+    var starterWeaponID: WeaponID
 
-    init(id: String = "", name: String = "", slot: Int = 0) {
+    init(id: String = "", name: String = "", slot: Int = 0, starterWeaponID: WeaponID = "") {
         self.id = id
         self.name = name
         self.slot = slot
+        self.starterWeaponID = starterWeaponID
     }
 }
 

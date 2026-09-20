@@ -22,7 +22,7 @@ final class PartyLoadoutTests: XCTestCase {
         let mine = profile(owning: 4, weaponRank: 3)
         let ids = PartyLegacy.ids(from: mine, weapon: StarterWeapons.sword)
         XCTAssertEqual(ids.filter { LegacyTree.node($0) != nil }.count, 4)
-        XCTAssertTrue(ids.contains("mastery.sword.3"))
+        XCTAssertTrue(ids.contains("mastery.\(StarterWeapons.sword.id).3"))
         XCTAssertTrue(ids.contains { $0.hasPrefix("rerolls.") })
     }
 
@@ -46,19 +46,19 @@ final class PartyLoadoutTests: XCTestCase {
     }
 
     func testMadeUpIDsAreIgnored() {
-        let ids = ["not.a.node", "../../etc", "mastery.sword.nine", "mastery", "rerolls.many", ""]
+        let ids = ["not.a.node", "../../etc", "mastery.\(StarterWeapons.sword.id).nine", "mastery", "rerolls.many", ""]
         XCTAssertTrue(PartyLegacy.modifiers(from: ids, weapon: StarterWeapons.sword).isEmpty)
         XCTAssertEqual(PartyLegacy.bonusRerolls(from: ids), 0)
     }
 
     func testMasteryOnlyCountsForTheWeaponCarried() {
-        XCTAssertFalse(PartyLegacy.modifiers(from: ["mastery.sword.3"], weapon: StarterWeapons.sword).isEmpty)
-        XCTAssertTrue(PartyLegacy.modifiers(from: ["mastery.sword.3"], weapon: StarterWeapons.bow).isEmpty)
+        XCTAssertFalse(PartyLegacy.modifiers(from: ["mastery.\(StarterWeapons.sword.id).3"], weapon: StarterWeapons.sword).isEmpty)
+        XCTAssertTrue(PartyLegacy.modifiers(from: ["mastery.\(StarterWeapons.sword.id).3"], weapon: StarterWeapons.bow).isEmpty)
     }
 
     func testMasteryAndRerollsAreCappedAtWhatIsPossible() {
-        let big = PartyLegacy.modifiers(from: ["mastery.sword.999"], weapon: StarterWeapons.sword)
-        let capped = PartyLegacy.modifiers(from: ["mastery.sword.\(WeaponMastery.maxRank)"], weapon: StarterWeapons.sword)
+        let big = PartyLegacy.modifiers(from: ["mastery.\(StarterWeapons.sword.id).999"], weapon: StarterWeapons.sword)
+        let capped = PartyLegacy.modifiers(from: ["mastery.\(StarterWeapons.sword.id).\(WeaponMastery.maxRank)"], weapon: StarterWeapons.sword)
         XCTAssertEqual(big.count, capped.count)
         XCTAssertEqual(PartyLegacy.bonusRerolls(from: ["rerolls.99"]), CodexRewards.thresholds.count)
         XCTAssertEqual(PartyLegacy.bonusRerolls(from: ["rerolls.-4"]), 0)
@@ -103,8 +103,8 @@ final class PartyLoadoutTests: XCTestCase {
         let info = RunStartInfo(
             resumed: false, runId: "r", runNumber: 1, seed: "9", realm: "ashenWilds", hostId: "h", you: "h",
             roster: [
-                .init(id: "g2", name: "Kevin", fateId: "FL-AAAA-BBBB", slot: 2, weapon: "staff", hero: nil, legacy: nil),
-                .init(id: "h", name: "Jesse", fateId: "FL-AAAA-BBBB", slot: 0, weapon: "sword", hero: nil,
+                .init(id: "g2", name: "Kevin", fateId: "FL-AAAA-BBBB", slot: 2, weapon: StarterWeapons.staff.id, hero: nil, legacy: nil),
+                .init(id: "h", name: "Jesse", fateId: "FL-AAAA-BBBB", slot: 0, weapon: StarterWeapons.sword.id, hero: nil,
                       legacy: [node.id, "rerolls.2"]),
                 .init(id: "g1", name: "Whitney", fateId: "FL-AAAA-BBBB", slot: 1, weapon: "no-such-weapon", hero: nil,
                       legacy: nil),
@@ -122,8 +122,8 @@ final class PartyLoadoutTests: XCTestCase {
         let info = RunStartInfo(
             resumed: false, runId: "r", runNumber: 1, seed: "12345", realm: "ashenWilds", hostId: "h", you: "h",
             roster: [
-                .init(id: "h", name: "Jesse", fateId: "FL-AAAA-BBBB", slot: 0, weapon: "sword", hero: nil, legacy: []),
-                .init(id: "g", name: "Whitney", fateId: "FL-AAAA-BBBB", slot: 1, weapon: "bow", hero: nil, legacy: nil),
+                .init(id: "h", name: "Jesse", fateId: "FL-AAAA-BBBB", slot: 0, weapon: StarterWeapons.sword.id, hero: nil, legacy: []),
+                .init(id: "g", name: "Whitney", fateId: "FL-AAAA-BBBB", slot: 1, weapon: StarterWeapons.bow.id, hero: nil, legacy: nil),
             ])
         let run = RunConfiguration(realmID: .ashenWilds, starterWeaponID: StarterWeapons.sword.id, seed: info.seedValue)
         var simulation = GameSimulation(run: run, tuning: .standard, party: info.partyConfigs())

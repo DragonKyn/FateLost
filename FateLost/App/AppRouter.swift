@@ -18,7 +18,6 @@ enum AppScreen: Equatable {
     case hostGame
     case joinGame
     case lobby
-    case partyRun
 }
 
 /// Owns navigation between top-level screens and the active run.
@@ -31,7 +30,6 @@ enum AppScreen: Equatable {
 final class AppRouter {
     private(set) var screen: AppScreen = .launch
     private(set) var activeSession: GameSession?
-    private(set) var activePartyRun: PartyRunController?
     var isSettingsPresented = false
     var isDeveloperPanelPresented = false
 
@@ -54,13 +52,19 @@ final class AppRouter {
     }
 
     /// Puts the party's run on screen.
-    func showPartyRun(_ run: PartyRunController) {
-        activePartyRun = run
-        show(.partyRun)
+    func showPartyRun(_ controller: PartyRunController, services: AppServices) {
+        let info = controller.info
+        let realm = RealmID(rawValue: info.realm) ?? .ashenWilds
+        let weapon = info.myEntry?.weapon ?? StarterWeapons.sword.id
+        let run = RunConfiguration(realmID: realm, starterWeaponID: weapon, seed: info.seedValue)
+        activeSession?.endPresentation()
+        activeSession = GameSession(run: run, services: services, party: controller)
+        show(.gameplay)
     }
 
     /// Leaves the current run and returns to the menu.
     func endRun() {
+        activeSession?.endPresentation()
         activeSession = nil
         show(.mainMenu)
     }
