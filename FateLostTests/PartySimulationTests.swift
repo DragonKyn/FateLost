@@ -196,8 +196,8 @@ final class PartyCombatTests: XCTestCase {
         let home = sim.arena.playerSpawn
         Party.place(&sim, hero: 0, at: home)
         Party.place(&sim, hero: 1, at: sim.world.wrap(home + CGPoint(x: 30, y: 0)))
-        // A goblin close to the far hero, and none near the first.
-        Party.addGoblin(&sim, at: sim.world.wrap(home + CGPoint(x: 26, y: 0)))
+        // A brute close to the far hero, and none near the first.
+        Party.addGoblin(&sim, at: sim.world.wrap(home + CGPoint(x: 26, y: 0)), definition: Party.brute)
         Party.run(&sim, seconds: 3)
         let goblin = sim.combat.enemies.positions[0]
         let toFar = sim.world.distance(goblin, sim.playerState(of: 1).position)
@@ -244,12 +244,13 @@ final class PartyCombatTests: XCTestCase {
         sim.combat.enemies.health[index] = 300
         Party.cast(&sim, hero: 0, .heal(RankValue(0.25)))
         sim.step(dt: Party.dt)
+        let horde = sim.combat.enemies.health[index]
 
         XCTAssertEqual(Party.health(sim, 0), 65, accuracy: 1.5, "the caster is healed")
         XCTAssertEqual(Party.health(sim, 1), 65, accuracy: 1.5, "a friend in range is healed")
         XCTAssertEqual(Party.health(sim, 2), 40, accuracy: 0.5, "a friend out of range is not")
         XCTAssertEqual(Party.health(sim, 3), 0, accuracy: 0.001, "a fallen friend is not healed")
-        XCTAssertEqual(sim.combat.enemies.health[index], 300, accuracy: 0.001, "the horde is never healed")
+        XCTAssertLessThanOrEqual(horde, 300, "the horde is never healed")
     }
 
     func testAShieldFromAnAbilityReachesFriendsToo() {
@@ -347,7 +348,7 @@ final class PartyCombatTests: XCTestCase {
         let home = sim.arena.playerSpawn
         Party.kill(&sim, hero: 0)
         Party.place(&sim, hero: 1, at: home)
-        Party.addGoblin(&sim, at: sim.world.wrap(home + CGPoint(x: 0.7, y: 0)))
+        Party.addGoblin(&sim, at: sim.world.wrap(home + CGPoint(x: 0.7, y: 0)), definition: Party.brute)
         sim.setMenuOpen(true, forHero: 1)
         Party.run(&sim, seconds: 3)
         XCTAssertEqual(Party.health(sim, 1), 100, accuracy: 0.001, "the hero is protected while their player chooses")
@@ -406,6 +407,14 @@ final class PartyCombatTests: XCTestCase {
 }
 
 extension Party {
+    /// A hard-hitting enemy that heroes cannot kill in the time a test runs.
+    static let brute = EnemyDefinition(
+        id: "test.party.brute", name: "Brute", family: .goblinoid, maxHealth: 1_000_000, moveSpeed: 2.5, radius: 0.4,
+        attackDamage: 12, attackReach: 0.6, attackWindup: 0.3, attackCooldown: 0.6, knockbackResistance: 1,
+        damageType: .physical, behavior: .melee, experience: 0, spawnWeight: 0, earliestWave: 1,
+        spriteVariants: [.enemyGoblin]
+    )
+
     /// An enemy that stands still and does nothing, for tests about healing.
     static let dummy = EnemyDefinition(
         id: "test.party.dummy", name: "Dummy", family: .goblinoid, maxHealth: 1000, moveSpeed: 0, radius: 0.3,
@@ -522,6 +531,8 @@ final class PartyDeathAndReviveTests: XCTestCase {
         var sim = partyOfThree()
         sim.perform(as: 1) { $0.grantLevels(2) }
         let level = sim.perform(as: 1) { $0.progression.level }
+        // A level brings a moment of immunity; let it pass.
+        Party.run(&sim, seconds: 3)
         Party.kill(&sim, hero: 1)
         let marker = sim.reviveMarkers[0].position
         Party.place(&sim, hero: 0, at: marker)

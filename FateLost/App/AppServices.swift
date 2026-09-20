@@ -30,6 +30,7 @@ final class AppServices {
     @ObservationIgnored let audio: AudioManager
     @ObservationIgnored private let legacyStore: LegacyStore
     @ObservationIgnored private let heroStore: HeroStore
+    @ObservationIgnored private var storedMultiplayer: MultiplayerHub?
 
     init(settings: SettingsStore = SettingsStore(), developer: DeveloperOptions = DeveloperOptions(),
          legacyStore: LegacyStore = LegacyStore(), heroStore: HeroStore = HeroStore()) {
@@ -43,6 +44,17 @@ final class AppServices {
         hero = heroStore.load().restricted(to: { loaded.owns($0) })
         haptics = HapticsService(isEnabled: { [weak settings] in settings?.settings.hapticsEnabled ?? false })
         audio = AudioManager(volumes: { [weak settings] in settings?.settings ?? .defaults })
+    }
+
+    // MARK: Multiplayer
+
+    /// Parties, names and the connection behind them. Made the first time
+    /// anything asks, so a solo player never touches the network.
+    var multiplayer: MultiplayerHub {
+        if let storedMultiplayer { return storedMultiplayer }
+        let hub = MultiplayerHub(services: self)
+        storedMultiplayer = hub
+        return hub
     }
 
     // MARK: Developer mode
@@ -79,6 +91,9 @@ final class AppServices {
     /// Erases every save: the profile and everything on it, the hero, and the
     /// settings, developer mode included. What follows is a fresh install.
     func sealFate() {
+        // Multiplayer goes too: the name, the identity and any party.
+        multiplayer.eraseEverything()
+        storedMultiplayer = nil
         legacyStore.erase()
         heroStore.erase()
         settings.reset()

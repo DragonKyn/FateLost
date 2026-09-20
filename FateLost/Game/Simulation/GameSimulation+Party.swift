@@ -366,6 +366,9 @@ extension GameSimulation {
             activate(hero)
             dismissPlayerForces()
             if heroCount > 1 {
+                // The body stays where it fell, and the marker with it.
+                player.knockback = .zero
+                player.velocity = .zero
                 combat.reviveMarkers.append(ReviveMarker(hero: hero, position: player.position))
                 combat.events.append(.heroFell(hero: hero, position: player.position))
             }

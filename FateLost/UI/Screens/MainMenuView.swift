@@ -46,7 +46,7 @@ struct MainMenuView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-                VStack(spacing: 14) {
+                VStack(spacing: 10) {
                     Button("Play") {
                         services.haptics.play(.uiTap)
                         services.audio.play(.uiConfirm)
@@ -54,12 +54,19 @@ struct MainMenuView: View {
                     }
                     .buttonStyle(.flPrimary)
 
+                    Button("Multiplayer") {
+                        services.haptics.play(.uiTap)
+                        services.audio.play(.uiConfirm)
+                        router.show(.multiplayer)
+                    }
+                    .buttonStyle(.flSecondaryCompact)
+
                     Button("Legacy") {
                         services.haptics.play(.uiTap)
                         services.audio.play(.uiConfirm)
                         router.show(.legacy)
                     }
-                    .buttonStyle(.flSecondary)
+                    .buttonStyle(.flSecondaryCompact)
                     .overlay(alignment: .topTrailing) { echoBadge }
 
                     Button("Statistics") {
@@ -67,12 +74,12 @@ struct MainMenuView: View {
                         services.audio.play(.uiConfirm)
                         router.show(.statistics)
                     }
-                    .buttonStyle(.flSecondary)
+                    .buttonStyle(.flSecondaryCompact)
 
                     Button("Settings") {
                         router.isSettingsPresented = true
                     }
-                    .buttonStyle(.flSecondary)
+                    .buttonStyle(.flSecondaryCompact)
 
                     if services.isDeveloperModeOn {
                         Button {
@@ -80,7 +87,7 @@ struct MainMenuView: View {
                         } label: {
                             Label("Developer", systemImage: "wrench.and.screwdriver")
                         }
-                        .buttonStyle(.flSecondary)
+                        .buttonStyle(.flSecondaryCompact)
                     }
                 }
                 .frame(width: 260)
