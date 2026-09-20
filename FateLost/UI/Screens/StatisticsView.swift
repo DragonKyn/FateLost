@@ -61,7 +61,8 @@ struct StatisticsView: View {
                     }
                 }
             }
-            .padding(FLTheme.Metrics.screenPadding)
+            .padding(.horizontal, FLTheme.Metrics.screenPadding)
+            .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
     }
 

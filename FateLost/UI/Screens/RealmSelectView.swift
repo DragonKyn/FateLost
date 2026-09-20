@@ -8,37 +8,45 @@ struct RealmSelectView: View {
         ZStack {
             EmberBackground(emberCount: 20)
 
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
                 FLScreenHeader(title: "Choose a Realm",
                                subtitle: "Each conquered realm opens the way to the next.") {
                     services.audio.play(.uiBack)
                     router.show(.mainMenu)
                 }
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    LazyHStack(spacing: 16) {
-                        ForEach(RealmCatalog.all) { realm in
-                            let unlocked = services.isRealmUnlocked(realm)
-                            let previous = RealmUnlockRules.prerequisite(for: realm, catalog: RealmCatalog.all)
-                            RealmCard(realm: realm,
-                                      isUnlocked: unlocked,
-                                      isConquered: services.realmProgress.conquered.contains(realm.id),
-                                      prerequisite: previous)
-                                .onTapGesture {
-                                    guard unlocked else { return }
-                                    services.haptics.play(.uiTap)
-                                    services.audio.play(.uiConfirm)
-                                    router.show(.weaponSelect(realm.id))
-                                }
+                // The cards take whatever height the screen leaves, so they
+                // fit a short landscape phone instead of running into the
+                // header.
+                GeometryReader { proxy in
+                    let cardHeight = min(326, max(250, proxy.size.height - 8))
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        LazyHStack(spacing: 16) {
+                            ForEach(RealmCatalog.all) { realm in
+                                let unlocked = services.isRealmUnlocked(realm)
+                                let previous = RealmUnlockRules.prerequisite(for: realm, catalog: RealmCatalog.all)
+                                RealmCard(realm: realm,
+                                          isUnlocked: unlocked,
+                                          isConquered: services.realmProgress.conquered.contains(realm.id),
+                                          prerequisite: previous,
+                                          height: cardHeight)
+                                    .onTapGesture {
+                                        guard unlocked else { return }
+                                        services.haptics.play(.uiTap)
+                                        services.audio.play(.uiConfirm)
+                                        router.show(.weaponSelect(realm.id))
+                                    }
+                            }
                         }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 6)
+                    // Cards slide out under the screen padding instead of being
+                    // cut off at it.
+                    .scrollClipDisabled()
                 }
-                // Cards slide out under the screen padding instead of being cut
-                // off at it.
-                .scrollClipDisabled()
             }
-            .padding(FLTheme.Metrics.screenPadding)
+            .padding(.horizontal, FLTheme.Metrics.screenPadding)
+            .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
     }
 }
@@ -48,13 +56,24 @@ private struct RealmCard: View {
     let isUnlocked: Bool
     let isConquered: Bool
     let prerequisite: RealmDefinition?
+    /// The height the screen can give the card. The map takes up the slack.
+    let height: CGFloat
+
+    /// Everything on the card that is not the map: the header row, name,
+    /// list of what it introduces, tagline, the two figures, the gaps
+    /// between them and the padding.
+    private static let fixedContent: CGFloat = 202
+
+    private var mapHeight: CGFloat {
+        min(96, max(44, height - Self.fixedContent))
+    }
 
     private var accent: Color {
         realm.arena.theme.atmosphere.particleColor.withAlpha(1).color
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text(romanNumeral(realm.order))
                     .font(FLTheme.Typeface.heading(15))
@@ -74,7 +93,7 @@ private struct RealmCard: View {
             // image: a filled image reports its natural width, which is wider
             // than the card, and that pushed the whole card's text off its edge.
             Color.clear
-                .frame(height: 96)
+                .frame(height: mapHeight)
                 .overlay { RealmMap(realm: realm, isUnlocked: isUnlocked) }
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -112,8 +131,8 @@ private struct RealmCard: View {
                     .foregroundStyle(FLTheme.Palette.locked)
             }
         }
-        .padding(16)
-        .frame(width: 244, height: 326)
+        .padding(12)
+        .frame(width: 244, height: height)
         .flPanel(highlighted: isUnlocked && !isConquered)
         .opacity(isUnlocked ? 1 : 0.6)
         .contentShape(Rectangle())
@@ -149,8 +168,8 @@ private struct RealmMap: View {
 
     @State private var image: UIImage?
 
-    /// The card's inner width (244 less 16 of padding each side) by the frame's height.
-    private static let size = CGSize(width: 212, height: 96)
+    /// The card's inner width (244 less 12 of padding each side) by the tallest the map gets.
+    private static let size = CGSize(width: 220, height: 96)
 
     var body: some View {
         ZStack {

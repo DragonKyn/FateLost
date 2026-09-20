@@ -81,7 +81,8 @@ struct CharacterView: View {
                 }
                 .frame(maxHeight: .infinity)
             }
-            .padding(FLTheme.Metrics.screenPadding)
+            .padding(.horizontal, FLTheme.Metrics.screenPadding)
+            .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
         .animation(.easeOut(duration: 0.16), value: inspected)
         .onAppear { breathing = true }

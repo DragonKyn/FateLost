@@ -46,6 +46,10 @@ enum FLTheme {
         /// Apple's minimum comfortable touch target, with room to spare.
         static let minimumTouchTarget: CGFloat = 52
         static let screenPadding: CGFloat = 24
+        /// Top and bottom margin on screens that have to fit a landscape phone,
+        /// which is only about 380 points tall once the home indicator is out
+        /// of the way. Twenty-four each way was a quarter of what is left.
+        static let screenPaddingVertical: CGFloat = 12
     }
 }
 

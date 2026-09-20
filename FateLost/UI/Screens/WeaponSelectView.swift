@@ -13,7 +13,7 @@ struct WeaponSelectView: View {
         ZStack {
             EmberBackground(emberCount: 20)
 
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: 10) {
                 FLScreenHeader(title: "Take Up a Weapon",
                                subtitle: "\(realm.name) — your weapon does not decide what you become.") {
                     services.audio.play(.uiBack)
@@ -54,7 +54,8 @@ struct WeaponSelectView: View {
                     .frame(width: 260)
                 }
             }
-            .padding(FLTheme.Metrics.screenPadding)
+            .padding(.horizontal, FLTheme.Metrics.screenPadding)
+            .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
     }
 }
@@ -66,10 +67,10 @@ private struct WeaponCard: View {
     var mastery = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Image(systemName: isUnlocked ? symbol : "lock.fill")
-                    .font(.system(size: 26, weight: .semibold))
+                    .font(.system(size: 22, weight: .semibold))
                     .foregroundStyle(isSelected ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
                 Spacer()
                 Text(weapon.damageType.displayName)
@@ -78,15 +79,18 @@ private struct WeaponCard: View {
             }
 
             Text(weapon.name)
-                .font(FLTheme.Typeface.heading(21))
+                .font(FLTheme.Typeface.heading(20))
                 .foregroundStyle(FLTheme.Palette.parchment)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
 
             Text(weapon.summary)
-                .font(FLTheme.Typeface.body(13))
+                .font(FLTheme.Typeface.body(12))
                 .foregroundStyle(FLTheme.Palette.parchmentDim)
+                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Spacer(minLength: 4)
+            Spacer(minLength: 2)
 
             if isUnlocked, mastery > 0 {
                 Text("Mastery \(mastery) of \(WeaponMastery.maxRank)")
@@ -98,7 +102,7 @@ private struct WeaponCard: View {
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
             }
 
-            VStack(spacing: 6) {
+            VStack(spacing: 5) {
                 statRow("Damage", value: String(format: "%.0f", weapon.baseDamage),
                         fraction: weapon.baseDamage / 24)
                 statRow("Speed", value: String(format: "%.2f/s", weapon.attackSpeed),
@@ -106,7 +110,7 @@ private struct WeaponCard: View {
                 statRow("Range", value: String(format: "%.1f", weapon.range), fraction: weapon.range / 8)
             }
         }
-        .padding(16)
+        .padding(12)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .flPanel(highlighted: isSelected)
         .opacity(isUnlocked ? 1 : 0.5)
