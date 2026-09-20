@@ -42,6 +42,22 @@ play throughout.
 | 7 Multiclass | Eight orders, the Armoury and weapon mastery | **Done** |
 | 8 Spoils | Relics, chests, shrines, weapon finds and the codex | **Done** |
 | 9 Fate | A customisable hero (five builds, eleven cloaks, ten heads, emblems, metalwork and wings) with earned looks, fairer bosses, a locked developer mode | **Done** |
+| 10 Together | Two to four heroes, one horde: a Cloudflare party service, a persistent lobby, host-authoritative play, revive markers, shared blessings | **Built, unproven on devices** |
+
+## Multiplayer
+
+Fate Lost plays two to four heroes together. One phone hosts and simulates; the others watch and ask. A
+Cloudflare Worker with one Durable Object per party keeps the lobby (room code, optional password, ready
+states, host, run lifecycle) and relays gameplay. A party outlives its runs: after a run everyone returns to
+the same lobby. There is no public lobby list.
+
+* Player guide: Main menu → **Multiplayer** → Host Game or Join Game.
+* How it works: [docs/MULTIPLAYER_ARCHITECTURE.md](docs/MULTIPLAYER_ARCHITECTURE.md), the wire format in
+  [docs/MULTIPLAYER_PROTOCOL.md](docs/MULTIPLAYER_PROTOCOL.md), every skill's party behaviour in
+  [docs/MULTIPLAYER_SKILL_AUDIT.md](docs/MULTIPLAYER_SKILL_AUDIT.md), deployment and rollback in
+  [docs/MULTIPLAYER_RUNBOOK.md](docs/MULTIPLAYER_RUNBOOK.md).
+* The service lives in `worker/` (TypeScript, tested against a local Worker and a deployed staging Worker).
+  Cloudflare credentials are never in the app or the repository.
 
 ## Building
 
