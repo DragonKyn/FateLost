@@ -1,0 +1,82 @@
+# Fate Lost multiplayer: one Worker, two Durable Object classes.
+#
+# The top level is PRODUCTION (the existing worker, fate-lost-multiplayer).
+# `--env staging` deploys a separate worker with its own Durable Objects, so
+# a bad release can be tried and thrown away without touching real parties.
+#
+# Nothing in this file is secret. There are no API keys in the app or here:
+# deployment uses `wrangler login` on the developer's machine.
+
+name = "fate-lost-multiplayer"
+main = "src/index.ts"
+compatibility_date = "2025-11-01"
+workers_dev = true
+
+[observability]
+enabled = true
+
+[vars]
+ENVIRONMENT = "production"
+# PBKDF2-SHA256 rounds for lobby passwords.
+PBKDF2_ITERATIONS = "20000"
+
+[[durable_objects.bindings]]
+name = "PARTY_ROOM"
+class_name = "PartyRoom"
+
+[[durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+# SQLite-backed classes are the only kind available on the Workers Free plan.
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["PartyRoom", "RateLimiter"]
+
+[env.staging]
+name = "fate-lost-multiplayer-staging"
+workers_dev = true
+
+[env.staging.observability]
+enabled = true
+
+[env.staging.vars]
+ENVIRONMENT = "staging"
+PBKDF2_ITERATIONS = "20000"
+
+[[env.staging.durable_objects.bindings]]
+name = "PARTY_ROOM"
+class_name = "PartyRoom"
+
+[[env.staging.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[env.staging.migrations]]
+tag = "v1"
+new_sqlite_classes = ["PartyRoom", "RateLimiter"]
+
+# Local only: short lifetimes so the automated tests can watch a lobby expire
+# and a host time out. Never deployed (`npm test` runs it with wrangler dev).
+[env.test]
+name = "fate-lost-multiplayer-test"
+
+[env.test.vars]
+ENVIRONMENT = "test"
+PBKDF2_ITERATIONS = "1000"
+HOST_GRACE_RUN_MS = "1500"
+HOST_GRACE_LOBBY_MS = "1500"
+ABANDONED_MS = "2500"
+IDLE_LOBBY_MS = "60000"
+
+[[env.test.durable_objects.bindings]]
+name = "PARTY_ROOM"
+class_name = "PartyRoom"
+
+[[env.test.durable_objects.bindings]]
+name = "RATE_LIMITER"
+class_name = "RateLimiter"
+
+[[env.test.migrations]]
+tag = "v1"
+new_sqlite_classes = ["PartyRoom", "RateLimiter"]

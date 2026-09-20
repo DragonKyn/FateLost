@@ -24,3 +24,7 @@ __pycache__/
 # Art previews
 tools/art/*.png
 __pycache__/
+
+# Wrangler caches
+.wrangler/
+node_modules/
