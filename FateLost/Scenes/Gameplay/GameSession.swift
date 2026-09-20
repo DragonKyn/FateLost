@@ -14,6 +14,8 @@ final class GameSession {
         case menu
         case skillTree
         case developer
+        /// A find is waiting to be answered.
+        case offer
     }
 
     let run: RunConfiguration
@@ -27,9 +29,12 @@ final class GameSession {
     private(set) var summary: RunSummary?
     /// Levels gained since the tree was last opened.
     private(set) var pendingLevelUps = 0
+    /// The find waiting for a choice, if any.
+    private(set) var offer: RelicOffer?
 
     var isPaused: Bool { pauseReason != nil }
     var isSkillTreePresented: Bool { pauseReason == .skillTree }
+    var isOfferPresented: Bool { pauseReason == .offer && offer != nil }
 
     @ObservationIgnored let scene: GameScene
     @ObservationIgnored private let audio: AudioManager
@@ -60,6 +65,9 @@ final class GameSession {
         }
         scene.onLevelUp = { [weak self] _ in
             self?.levelGained()
+        }
+        scene.onOfferChange = { [weak self] offer in
+            self?.offerChanged(offer)
         }
         scene.onRunEnded = { [weak self] summary in
             self?.levelUpTask?.cancel()
@@ -93,6 +101,32 @@ final class GameSession {
         pauseReason = nil
         scene.isGameplayPaused = false
         audio.setMusicDucked(false)
+    }
+
+    // MARK: - Finds
+
+    private func offerChanged(_ offer: RelicOffer?) {
+        self.offer = offer
+        guard offer != nil, summary == nil, pauseReason == nil else { return }
+        pause(for: .offer)
+    }
+
+    /// Takes the chosen card and goes back to the fight, or on to the skill
+    /// tree if a level was earned while the chest was being opened.
+    func chooseRelic(at index: Int) {
+        guard scene.chooseRelic(at: index) else { return }
+        offer = scene.currentOffer
+        if pauseReason == .offer {
+            resume()
+        }
+        if progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+            openSkillTree()
+        }
+    }
+
+    func rerollOffer() {
+        guard scene.rerollOffer() else { return }
+        offer = scene.currentOffer
     }
 
     // MARK: - Skill tree

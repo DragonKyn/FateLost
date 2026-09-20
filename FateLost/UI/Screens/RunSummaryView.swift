@@ -65,6 +65,17 @@ struct RunSummaryView: View {
                         }
                         .padding(.top, 6)
                     }
+
+                    if !summary.relics.isEmpty {
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text("RELICS CARRIED")
+                                .font(FLTheme.Typeface.label(10))
+                                .tracking(2)
+                                .foregroundStyle(FLTheme.Palette.parchmentDim)
+                            RelicStrip(relics: summary.relics)
+                        }
+                        .padding(.top, 8)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
 

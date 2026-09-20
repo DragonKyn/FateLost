@@ -31,6 +31,8 @@ struct ProgressionSnapshot: Equatable {
     var allocation = SkillAllocation()
     var abilitySlots: [AbilityID?] = Array(repeating: nil, count: AbilitySlots.count)
     var buildVersion = 0
+    /// Relics carried, for the strip on the HUD and the pause screen.
+    var relics = RelicInventory()
 
     var title: BuildTitle.Title { BuildTitle.title(for: allocation) }
 }
@@ -51,6 +53,7 @@ struct RunSummary: Equatable {
     let allocation: SkillAllocation
     var outcome: Outcome = .defeated
     var wave: Int = 1
+    var relics = RelicInventory()
 }
 
 /// The gameplay scene.
@@ -114,6 +117,9 @@ final class GameScene: SKScene {
     var onLevelUp: ((Int) -> Void)?
     /// Called once when the run is over and the summary should be shown.
     var onRunEnded: ((RunSummary) -> Void)?
+    /// Called when a find opens, or is answered.
+    var onOfferChange: ((RelicOffer?) -> Void)?
+    private var lastOffer: RelicOffer?
     private var lastHUDState = GameplayHUDState()
     private var lastProgression = ProgressionSnapshot()
 
@@ -336,6 +342,8 @@ final class GameScene: SKScene {
         var intent = currentIntent()
         let started = CACurrentMediaTime()
         for _ in 0..<steps {
+            // A find that has just opened holds the rest of the frame.
+            if simulation.offer != nil { break }
             intent.abilityPresses = pendingAbilityPresses
             simulation.step(dt: timestep.step, intent: intent)
             // A press is used by the first step that sees it.
@@ -355,6 +363,7 @@ final class GameScene: SKScene {
         render(frameDelta: CGFloat(frameDelta))
         publishHUDStateIfChanged()
         publishProgressionIfChanged()
+        publishOfferIfChanged()
         reportLevelUps(in: events)
         deliverSummaryIfDue()
     }
@@ -472,7 +481,8 @@ final class GameScene: SKScene {
             || simulation.abilitySlots != lastProgression.abilitySlots else { return }
         let snapshot = ProgressionSnapshot(level: progression.level, unspentPoints: progression.unspentPoints,
                                            earnedPoints: progression.earnedPoints, allocation: simulation.allocation,
-                                           abilitySlots: simulation.abilitySlots, buildVersion: simulation.buildVersion)
+                                           abilitySlots: simulation.abilitySlots, buildVersion: simulation.buildVersion,
+                                           relics: simulation.relics)
         lastProgression = snapshot
         onProgressionChange?(snapshot)
     }
@@ -507,7 +517,36 @@ final class GameScene: SKScene {
         onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.weapon.id,
                                secondsSurvived: seconds, stats: simulation.stats,
                                level: simulation.progression.level, allocation: simulation.allocation,
-                               outcome: outcome, wave: simulation.wave.index))
+                               outcome: outcome, wave: simulation.wave.index, relics: simulation.relics))
+    }
+
+    // MARK: - Finds
+
+    /// The find waiting to be answered, if any.
+    var currentOffer: RelicOffer? { simulation.offer }
+
+    private func publishOfferIfChanged() {
+        guard simulation.offer != lastOffer else { return }
+        lastOffer = simulation.offer
+        onOfferChange?(lastOffer)
+    }
+
+    /// Takes one of the cards on offer.
+    @discardableResult
+    func chooseRelic(at index: Int) -> Bool {
+        let accepted = simulation.chooseRelic(at: index)
+        publishProgressionIfChanged(force: true)
+        publishHUDStateIfChanged()
+        publishOfferIfChanged()
+        return accepted
+    }
+
+    /// Spends the offer's reroll.
+    @discardableResult
+    func rerollOffer() -> Bool {
+        let accepted = simulation.rerollOffer()
+        publishOfferIfChanged()
+        return accepted
     }
 
     // MARK: - Build

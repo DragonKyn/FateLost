@@ -48,6 +48,18 @@ struct GameplayScreen: View {
                     guard echoesEarned == nil else { return }
                     echoesEarned = services.record(summary)
                 }
+            } else if session.isOfferPresented, let offer = session.offer {
+                RelicOfferView(offer: offer, inventory: session.progression.relics,
+                               onChoose: { index in
+                                   services.audio.play(.skillLearn)
+                                   services.haptics.play(.uiTap)
+                                   session.chooseRelic(at: index)
+                               },
+                               onReroll: {
+                                   services.audio.play(.uiConfirm)
+                                   session.rerollOffer()
+                               })
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else if session.isSkillTreePresented {
                 SkillTreeView(session: session)
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
@@ -110,6 +122,7 @@ private struct GameplayHUDOverlay: View {
                     .font(FLTheme.Typeface.number(13))
                     .foregroundStyle(FLTheme.Palette.parchment)
                     .shadow(color: .black, radius: 2)
+                    RelicStrip(relics: session.progression.relics)
                 }
                 Spacer()
                 if session.hud.hasSummons {
