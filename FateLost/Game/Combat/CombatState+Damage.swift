@@ -316,6 +316,7 @@ extension CombatState {
                 }
                 dropExperience(definition.experienceValue + enemies.strain(at: index).experienceBonus,
                                at: position)
+                dropLoot(for: definition, at: position)
 
                 let depth = Int(enemies.lastHitDepth[index])
                 if depth < 2 {

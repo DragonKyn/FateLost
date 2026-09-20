@@ -94,6 +94,30 @@ struct ExperienceOrb {
     var speed: CGFloat = 0
 }
 
+/// What an enemy can leave behind besides experience.
+enum DropKind: Equatable {
+    /// A draught that heals.
+    case vial
+    /// Draws every loose ember to the player at once.
+    case magnet
+    /// Opens on touch into a choice of relics. Richer tiers hold rarer ones.
+    case chest(LootTier)
+}
+
+/// Something lying in the world waiting to be picked up. Vials and magnets
+/// come to the player once they are close; chests stay where they fell and
+/// have to be walked to.
+struct Drop {
+    let id: Int
+    let kind: DropKind
+    var position: CGPoint
+    /// Drawn toward the player. Only vials and magnets ever are.
+    var attracted = false
+    var speed: CGFloat = 0
+    /// Seconds since it landed, for the ones that do not stay forever.
+    var age: Double = 0
+}
+
 /// An effect waiting to run. Triggers queue these instead of acting
 /// immediately, so an effect never runs in the middle of another system's
 /// loop over the enemy arrays.

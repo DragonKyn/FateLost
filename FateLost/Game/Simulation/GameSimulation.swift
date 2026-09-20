@@ -220,6 +220,7 @@ struct GameSimulation {
         PickupSystem.step(&combat, player: player, dt: dt)
         if alive {
             gainExperience()
+            openNextFind()
         }
         applyHealing(dt)
         if combat.killsThisStep > 0 {
@@ -652,10 +653,17 @@ struct GameSimulation {
     mutating func openOffer(tier: LootTier) -> Bool {
         guard offer == nil, !player.isDefeated else { return false }
         let dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics,
-                                      random: &combat.random)
+                                      random: &combat.lootRandom)
         guard !dealt.choices.isEmpty else { return false }
         offer = dealt
         return true
+    }
+
+    /// Opens the oldest chest waiting, once the last find has been answered.
+    private mutating func openNextFind() {
+        guard offer == nil, let tier = combat.pendingFinds.first else { return }
+        combat.pendingFinds.removeFirst()
+        openOffer(tier: tier)
     }
 
     /// Takes one of the cards on offer and closes the find.
@@ -671,7 +679,7 @@ struct GameSimulation {
     @discardableResult
     mutating func rerollOffer() -> Bool {
         guard var current = offer else { return false }
-        guard RelicRoller.reroll(&current, inventory: relics, random: &combat.random) else { return false }
+        guard RelicRoller.reroll(&current, inventory: relics, random: &combat.lootRandom) else { return false }
         offer = current
         return true
     }
@@ -690,6 +698,12 @@ struct GameSimulation {
     mutating func skipWave() {
         waves.skipToNextWave(&combat)
         spawner.wave = waves.state.index
+    }
+
+    /// Developer tooling and tests: leaves a drop at the player's feet, or
+    /// `offset` world units away from them.
+    mutating func spawnDrop(_ kind: DropKind, offset: CGPoint = .zero) {
+        combat.place(kind, near: world.wrap(player.position + offset), scatter: 0)
     }
 
     mutating func spawnEnemies(_ count: Int) {

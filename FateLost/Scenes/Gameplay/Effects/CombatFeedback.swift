@@ -273,6 +273,24 @@ final class CombatFeedback {
                 lastEmberTime = now
                 audio.play(SoundCue.emberChimes[emberCombo])
 
+            case let .dropCollected(kind, position):
+                switch kind {
+                case .vial:
+                    effects.ring(at: position, radius: 1.0, color: UIColor(rgb: 0xE0505A), lifetime: 0.5)
+                    effects.floatingText("Draught", at: playerPosition, color: UIColor(rgb: 0xFF9AA0), size: 15,
+                                         lifetime: 0.9)
+                    audio.play(.heal)
+                case .magnet:
+                    effects.ring(at: position, radius: 2.4, color: UIColor(rgb: 0xE8C25A), lifetime: 0.6)
+                    effects.floatingText("Magnet", at: playerPosition, color: UIColor(rgb: 0xF0D58A), size: 15,
+                                         lifetime: 0.9)
+                    audio.play(SoundCue.emberChimes[4])
+                case .chest(let tier):
+                    effects.ring(at: position, radius: 1.6, color: Self.tierColor(tier), lifetime: 0.7)
+                    effects.motes(at: position, count: 12, color: Self.tierColor(tier), spread: 0.8)
+                    audio.play(.skillTreeOpen)
+                }
+
             case let .relicGained(id, rank):
                 guard let relic = RelicCatalog.relic(id) else { break }
                 let color = relic.rarity.color.uiColor
@@ -314,6 +332,14 @@ final class CombatFeedback {
         damageFlash.alpha = max(hurtFlash * 0.9, danger)
         levelFlash = max(0, levelFlash - dt * 1.3)
         fateFlash.alpha = levelFlash * 0.75
+    }
+
+    private static func tierColor(_ tier: LootTier) -> UIColor {
+        switch tier {
+        case .cache: return ItemRarity.common.color.uiColor
+        case .chest: return ItemRarity.rare.color.uiColor
+        case .hoard: return ItemRarity.legendary.color.uiColor
+        }
     }
 
     private func playHaptic(_ event: HapticEvent, last: inout TimeInterval) {

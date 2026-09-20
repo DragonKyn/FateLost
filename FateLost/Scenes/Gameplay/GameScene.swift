@@ -134,6 +134,7 @@ final class GameScene: SKScene {
     private let allyRenderer: AllyRenderer
     private let projectileRenderer: ProjectileRenderer
     private let pickupRenderer: PickupRenderer
+    private let dropRenderer: DropRenderer
     private let zoneRenderer: ZoneRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
@@ -203,6 +204,7 @@ final class GameScene: SKScene {
         allyRenderer = AllyRenderer(catalog: catalog, projection: projection, layer: standing)
         projectileRenderer = ProjectileRenderer(catalog: catalog, projection: projection, layer: standing)
         pickupRenderer = PickupRenderer(catalog: catalog, projection: projection, layer: standing)
+        dropRenderer = DropRenderer(catalog: catalog, projection: projection, layer: standing)
         zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                     layer: decals)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
@@ -388,6 +390,7 @@ final class GameScene: SKScene {
         decorations.update(frame: renderFrame, radius: visibleWorldRadius(), force: rebased)
         zoneRenderer.update(zones: simulation.combat.zones, frame: renderFrame, time: animationTime)
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
+        dropRenderer.update(drops: simulation.combat.drops, frame: renderFrame, time: animationTime)
         enemyRenderer.update(enemies: simulation.enemies, frame: renderFrame, time: animationTime, dt: frameDelta,
                              showHitboxes: dependencies.developer.showHitboxes)
         allyRenderer.update(allies: simulation.combat.allies, frame: renderFrame, time: animationTime, dt: frameDelta)

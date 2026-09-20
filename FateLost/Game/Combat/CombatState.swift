@@ -16,9 +16,17 @@ struct CombatState {
     var zones: [Zone] = []
     var strikes: [PendingStrike] = []
     var orbs: [ExperienceOrb] = []
+    /// Vials, magnets and chests lying in the world.
+    var drops: [Drop] = []
+    /// Finds opened but not yet answered, oldest first. Each becomes an offer
+    /// once the last one has been chosen.
+    var pendingFinds: [LootTier] = []
     /// Broad-phase lookup of enemy indices. Rebuilt whenever enemies move.
     var grid: ToroidalSpatialGrid
     var random: SeededRandom
+    /// What drops, and what a find holds, has a stream of its own. Loot must
+    /// not shift combat, and combat must not shift loot.
+    var lootRandom: SeededRandom
     var stats = RunStats()
     /// Events produced since the scene last drained them.
     var events: [CombatEvent] = []
@@ -74,6 +82,7 @@ struct CombatState {
         enemies = EnemyStore(capacity: capacity)
         grid = ToroidalSpatialGrid(world: world, cellSize: gridCellSize)
         random = SeededRandom(seed: seed)
+        lootRandom = SeededRandom(seed: seed ^ 0x100_7B0F)
         nearby.reserveCapacity(64)
         nearbySecondary.reserveCapacity(64)
         events.reserveCapacity(256)
