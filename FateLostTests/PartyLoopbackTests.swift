@@ -245,7 +245,7 @@ final class PartyLoopbackTests: XCTestCase {
         XCTAssertFalse(first.host.reviveMarkers.isEmpty)
 
         // Run two: the same three people, a fresh seed, a new simulation.
-        let second = Loopback(heroes: 3, seed: 22)
+        var second = Loopback(heroes: 3, seed: 22)
         XCTAssertEqual(second.host.elapsed, 0)
         XCTAssertTrue(second.host.reviveMarkers.isEmpty)
         XCTAssertEqual(second.host.enemies.count, 0)
