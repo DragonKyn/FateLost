@@ -82,6 +82,28 @@ struct CombatState {
     var enemyHealthScale: Double = 1
     var enemyDamageScale: Double = 1
 
+    // MARK: The party
+    //
+    // Everything above the "Enemy scaling" mark that belongs to one hero (the
+    // build, stats, summons, zones and so on) is swapped in and out as the
+    // simulation turns to each member of the party (`exchangeHero`); what is
+    // below it, and the enemies, drops and shrines, is the shared world.
+
+    /// Enemy shots in flight. Shared, because they look for any hero.
+    var hostileProjectiles: [Projectile] = []
+    /// Every hero's summons as the horde sees them, rebuilt each step.
+    var worldAnchors: [AllyAnchor] = []
+    /// What the horde did to the party this step, waiting to be carried out.
+    var incidents: [WorldIncident] = []
+    /// Blessings that reach beyond their caster, waiting to be delivered.
+    var partyEffects: [PartyEffect] = []
+    var reviveMarkers: [ReviveMarker] = []
+    /// Which hero's state is live in the per-hero fields.
+    var activeHero = 0
+    /// True when more than one hero shares this world, so effects that reach
+    /// beyond their caster are worth queueing.
+    var isParty = false
+
     init(world: ToroidalWorld, tuning: CombatTuning, gridCellSize: CGFloat, capacity: Int, seed: UInt64) {
         self.world = world
         self.tuning = tuning
@@ -137,5 +159,104 @@ struct CombatState {
         let angle = random.range(0, 2 * .pi)
         let distance = radius * CGFloat(random.unit().squareRoot())
         return world.wrap(center + CGPoint(x: CGFloat(cos(angle)), y: CGFloat(sin(angle))) * distance)
+    }
+}
+
+
+/// One hero's share of `CombatState`, held while another hero is live.
+///
+/// `CombatState.exchangeHero` swaps these fields with the live ones, so every
+/// combat system keeps working on "the hero" without knowing a party exists.
+/// `heroFieldNames` and `sharedFieldNames` classify every stored property of
+/// `CombatState`; a test fails if one is added and not classified.
+struct HeroCombat {
+    var projectiles: [Projectile] = []
+    var allies: [Ally] = []
+    var zones: [Zone] = []
+    var strikes: [PendingStrike] = []
+    var pendingFinds: [LootTier] = []
+    var pendingShrines: [ShrineKind] = []
+    var random: SeededRandom
+    var stats = RunStats()
+    var events: [CombatEvent] = []
+    var build = CompiledBuild()
+    var sheet = StatSheet()
+    var level = 1
+    var skillPower: Double = SkillPower.reference
+    var conditions = ConditionState()
+    var playerPosition: CGPoint = .zero
+    var playerFacing = CGPoint(x: 1, y: 0)
+    var playerStealthed = false
+    var pendingActions: [QueuedAction] = []
+    var pendingHealing: Double = 0
+    var experienceCollected = 0
+    var killsThisStep = 0
+    var procCooldowns: [Double] = []
+    var procTimers: [Double] = []
+    var attackCount = 0
+    var abilityCooldowns: [AbilityID: Double] = [:]
+    var cheatDeathCooldown: Double = 0
+    var allyAnchors: [AllyAnchor] = []
+    var summonCooldowns: [String: Double] = [:]
+    var companionsDismissed = false
+    var summonVitalityLevel = 1
+    var summonVitalityGrowth: Double = 0
+
+    init(seed: UInt64) {
+        random = SeededRandom(seed: seed)
+    }
+}
+
+extension CombatState {
+    /// The properties that belong to a hero, in the order `exchangeHero` swaps them.
+    static let heroFieldNames: [String] = [
+        "projectiles", "allies", "zones", "strikes", "pendingFinds", "pendingShrines", "random", "stats", "events",
+        "build", "sheet", "level", "skillPower", "conditions", "playerPosition", "playerFacing", "playerStealthed",
+        "pendingActions", "pendingHealing", "experienceCollected", "killsThisStep", "procCooldowns", "procTimers",
+        "attackCount", "abilityCooldowns", "cheatDeathCooldown", "allyAnchors", "summonCooldowns",
+        "companionsDismissed", "summonVitalityLevel", "summonVitalityGrowth",
+    ]
+
+    /// The properties every hero shares.
+    static let sharedFieldNames: [String] = [
+        "world", "tuning", "enemies", "orbs", "drops", "shrines", "curseRemaining", "grid", "lootRandom", "nearby",
+        "nearbySecondary", "nextEntityID", "enemyHealthScale", "enemyDamageScale", "hostileProjectiles",
+        "worldAnchors", "incidents", "partyEffects", "reviveMarkers", "activeHero", "isParty",
+    ]
+
+    /// Swaps this hero's fields with `other`'s. Moves references and copies
+    /// nothing, so it costs a few dozen pointer writes.
+    mutating func exchangeHero(with other: inout HeroCombat) {
+        swap(&projectiles, &other.projectiles)
+        swap(&allies, &other.allies)
+        swap(&zones, &other.zones)
+        swap(&strikes, &other.strikes)
+        swap(&pendingFinds, &other.pendingFinds)
+        swap(&pendingShrines, &other.pendingShrines)
+        swap(&random, &other.random)
+        swap(&stats, &other.stats)
+        swap(&events, &other.events)
+        swap(&build, &other.build)
+        swap(&sheet, &other.sheet)
+        swap(&level, &other.level)
+        swap(&skillPower, &other.skillPower)
+        swap(&conditions, &other.conditions)
+        swap(&playerPosition, &other.playerPosition)
+        swap(&playerFacing, &other.playerFacing)
+        swap(&playerStealthed, &other.playerStealthed)
+        swap(&pendingActions, &other.pendingActions)
+        swap(&pendingHealing, &other.pendingHealing)
+        swap(&experienceCollected, &other.experienceCollected)
+        swap(&killsThisStep, &other.killsThisStep)
+        swap(&procCooldowns, &other.procCooldowns)
+        swap(&procTimers, &other.procTimers)
+        swap(&attackCount, &other.attackCount)
+        swap(&abilityCooldowns, &other.abilityCooldowns)
+        swap(&cheatDeathCooldown, &other.cheatDeathCooldown)
+        swap(&allyAnchors, &other.allyAnchors)
+        swap(&summonCooldowns, &other.summonCooldowns)
+        swap(&companionsDismissed, &other.companionsDismissed)
+        swap(&summonVitalityLevel, &other.summonVitalityLevel)
+        swap(&summonVitalityGrowth, &other.summonVitalityGrowth)
     }
 }

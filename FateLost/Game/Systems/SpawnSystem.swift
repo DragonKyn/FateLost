@@ -13,6 +13,23 @@ import Foundation
 /// the first wave and the nastier ones unlock later, and every ordinary
 /// creature rolls a strain (see `EnemyStrain`) so no two goblins in a crowd
 /// are quite the same. `WaveSystem` owns *when*; this owns *what* and *where*.
+/// Where the horde is drawn to: a hero, as the spawner needs to know them.
+struct SpawnFocus {
+    var position: CGPoint
+    var velocity: CGPoint
+
+    var isMoving: Bool { velocity.lengthSquared > 0.0001 }
+
+    init(position: CGPoint, velocity: CGPoint = .zero) {
+        self.position = position
+        self.velocity = velocity
+    }
+
+    init(_ player: PlayerState) {
+        self.init(position: player.position, velocity: player.velocity)
+    }
+}
+
 struct SpawnSystem {
     let tuning: SpawnTuning
     /// Enemy kinds this realm fields.
@@ -44,8 +61,17 @@ struct SpawnSystem {
 
     mutating func step(_ combat: inout CombatState, player: PlayerState, elapsed: TimeInterval,
                        dt: TimeInterval, hardCap: Int, speedVariance: CGFloat) {
-        recycleStragglers(&combat, player: player)
-        guard isEnabled, !roster.isEmpty else { return }
+        step(&combat, focuses: [SpawnFocus(player)], elapsed: elapsed, dt: dt, hardCap: hardCap,
+             speedVariance: speedVariance)
+    }
+
+    /// Spawns around a party: each arrival picks one of the heroes to appear
+    /// around. A lone hero is picked without touching the random stream, so
+    /// a solo run is exactly what it always was.
+    mutating func step(_ combat: inout CombatState, focuses: [SpawnFocus], elapsed: TimeInterval,
+                       dt: TimeInterval, hardCap: Int, speedVariance: CGFloat) {
+        recycleStragglers(&combat, focuses: focuses)
+        guard isEnabled, !roster.isEmpty, !focuses.isEmpty else { return }
 
         accumulator += rate(atElapsed: elapsed) * dt
         let limit = min(tuning.maximumAlive, hardCap)
@@ -58,7 +84,8 @@ struct SpawnSystem {
                 break
             }
             let definition = roster[pick(from: &combat.random)]
-            spawn(definition, into: &combat, player: player, speedVariance: speedVariance)
+            let focus = Self.pickFocus(focuses, random: &combat.random)
+            spawn(definition, into: &combat, focus: focus, speedVariance: speedVariance)
         }
     }
 
@@ -66,12 +93,25 @@ struct SpawnSystem {
     /// tooling, and a champion's escort).
     mutating func spawnBurst(_ count: Int, into combat: inout CombatState, player: PlayerState,
                              hardCap: Int, speedVariance: CGFloat) {
-        guard !roster.isEmpty else { return }
+        spawnBurst(count, into: &combat, focuses: [SpawnFocus(player)], hardCap: hardCap,
+                   speedVariance: speedVariance)
+    }
+
+    mutating func spawnBurst(_ count: Int, into combat: inout CombatState, focuses: [SpawnFocus],
+                             hardCap: Int, speedVariance: CGFloat) {
+        guard !roster.isEmpty, !focuses.isEmpty else { return }
         let allowed = max(0, min(count, hardCap - combat.enemies.count))
         for _ in 0..<allowed {
             let definition = roster[pick(from: &combat.random)]
-            spawn(definition, into: &combat, player: player, speedVariance: speedVariance)
+            let focus = Self.pickFocus(focuses, random: &combat.random)
+            spawn(definition, into: &combat, focus: focus, speedVariance: speedVariance)
         }
+    }
+
+    /// One of the heroes, without spending a random number when there is only one.
+    private static func pickFocus(_ focuses: [SpawnFocus], random: inout SeededRandom) -> SpawnFocus {
+        guard focuses.count > 1 else { return focuses[0] }
+        return focuses[min(focuses.count - 1, Int(random.unit() * Double(focuses.count)))]
     }
 
     /// Places one named creature on the ring and hands back its stable id.
@@ -79,10 +119,16 @@ struct SpawnSystem {
     @discardableResult
     mutating func spawnNamed(_ definition: EnemyDefinition, into combat: inout CombatState,
                              player: PlayerState, distance: CGFloat? = nil) -> Int {
-        var position = ringPosition(around: player, random: &combat.random, world: combat.world)
+        spawnNamed(definition, into: &combat, focus: SpawnFocus(player), distance: distance)
+    }
+
+    @discardableResult
+    mutating func spawnNamed(_ definition: EnemyDefinition, into combat: inout CombatState,
+                             focus: SpawnFocus, distance: CGFloat? = nil) -> Int {
+        var position = ringPosition(around: focus, random: &combat.random, world: combat.world)
         if let distance {
-            let offset = combat.world.delta(from: player.position, to: position).normalized * distance
-            position = combat.world.wrap(player.position + offset)
+            let offset = combat.world.delta(from: focus.position, to: position).normalized * distance
+            position = combat.world.wrap(focus.position + offset)
         }
         let kind = combat.enemies.kindIndex(for: definition)
         let id = combat.makeEntityID()
@@ -108,9 +154,9 @@ struct SpawnSystem {
         return 0
     }
 
-    private func spawn(_ definition: EnemyDefinition, into combat: inout CombatState, player: PlayerState,
+    private func spawn(_ definition: EnemyDefinition, into combat: inout CombatState, focus: SpawnFocus,
                        speedVariance: CGFloat) {
-        let position = ringPosition(around: player, random: &combat.random, world: combat.world)
+        let position = ringPosition(around: focus, random: &combat.random, world: combat.world)
         let kind = combat.enemies.kindIndex(for: definition)
         let scale = 1 + CGFloat(combat.random.range(-1, 1)) * speedVariance
         let strain = EnemyStrain.roll(for: definition.rank, wave: wave, random: &combat.random)
@@ -122,7 +168,7 @@ struct SpawnSystem {
 
     /// A point on the spawn ring, sometimes inside a cone ahead of the
     /// player's travel.
-    private func ringPosition(around player: PlayerState, random: inout SeededRandom,
+    private func ringPosition(around player: SpawnFocus, random: inout SeededRandom,
                               world: ToroidalWorld) -> CGPoint {
         var angle = random.range(0, 2 * .pi)
         if player.isMoving, random.chance(tuning.aheadBias) {
@@ -136,15 +182,22 @@ struct SpawnSystem {
         return world.wrap(player.position + offset)
     }
 
-    private mutating func recycleStragglers(_ combat: inout CombatState, player: PlayerState) {
+    private mutating func recycleStragglers(_ combat: inout CombatState, focuses: [SpawnFocus]) {
+        guard !focuses.isEmpty else { return }
         // Always well outside the spawn ring, whatever the screen size.
         let limit = max(tuning.recycleDistance, spawnRadius + 8)
         let limitSquared = limit * limit
-        for index in 0..<combat.enemies.count
-        where combat.world.distanceSquared(combat.enemies.positions[index], player.position) > limitSquared {
+        for index in 0..<combat.enemies.count {
+            // Far from every hero, not just from one of them.
+            var nearest = CGFloat.greatestFiniteMagnitude
+            for focus in focuses {
+                nearest = min(nearest, combat.world.distanceSquared(combat.enemies.positions[index], focus.position))
+            }
+            guard nearest > limitSquared else { continue }
             // A champion is never quietly teleported: the fight is where it is.
             guard !combat.enemies.definition(at: index).isBoss else { continue }
-            combat.enemies.positions[index] = ringPosition(around: player, random: &combat.random,
+            let focus = Self.pickFocus(focuses, random: &combat.random)
+            combat.enemies.positions[index] = ringPosition(around: focus, random: &combat.random,
                                                            world: combat.world)
             combat.enemies.knockback[index] = .zero
             combat.enemies.windup[index] = 0

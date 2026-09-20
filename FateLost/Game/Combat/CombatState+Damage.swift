@@ -276,6 +276,7 @@ extension CombatState {
         player.health -= dealt
         player.invulnerability = tuning.invulnerabilityDuration
         player.timeSinceHit = 0
+        player.hitsTaken += 1
         // `direction` points at the player, so the shove carries on the same way.
         player.knockback = player.knockback + direction * tuning.playerKnockbackSpeed
         stats.damageTaken += dealt

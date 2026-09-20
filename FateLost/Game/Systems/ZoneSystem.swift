@@ -41,10 +41,19 @@ enum ZoneSystem {
 
     private static func pulse(_ zone: Zone, _ combat: inout CombatState, player: inout PlayerState) {
         let spec = zone.spec
-        if !spec.playerBuff.isEmpty,
-           combat.world.distance(player.position, zone.position) <= zone.radius {
-            player.applyBuff(id: "zone.\(zone.id)", modifiers: spec.playerBuff.map { $0.at(1) },
-                             duration: spec.tick * 1.6 + 0.05, maxStacks: 1)
+        if !spec.playerBuff.isEmpty {
+            let modifiers = spec.playerBuff.map { $0.at(1) }
+            let duration = spec.tick * 1.6 + 0.05
+            if combat.world.distance(player.position, zone.position) <= zone.radius {
+                player.applyBuff(id: "zone.\(zone.id)", modifiers: modifiers, duration: duration, maxStacks: 1)
+            }
+            // Consecrated ground and healing auras help every friend standing
+            // in them, not only whoever laid them.
+            if combat.isParty {
+                combat.partyEffects.append(PartyEffect(
+                    source: combat.activeHero, center: zone.position, radius: zone.radius, rule: .allies,
+                    kind: .buff(id: "zone.\(zone.id)", modifiers: modifiers, duration: duration)))
+            }
         }
         guard spec.damage != nil || spec.status != nil || spec.pull > 0 else { return }
 

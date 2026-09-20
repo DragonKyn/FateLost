@@ -39,6 +39,8 @@ struct AllyAnchor {
     let radius: CGFloat
     let taunts: Bool
     let isMortal: Bool
+    /// Whose ally it is. Zero in a solo run.
+    var hero = 0
 }
 
 /// How tough a conjured thing is.

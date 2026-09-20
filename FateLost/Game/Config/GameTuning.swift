@@ -17,6 +17,7 @@ struct GameTuning {
     var projection = ProjectionTuning()
     var controls = ControlsTuning()
     var rendering = RenderingTuning()
+    var party = PartyTuning()
 
     static let standard = GameTuning()
 }
@@ -65,6 +66,9 @@ struct CombatTuning {
     /// Enemies closer than this are hit by a melee swing whatever its arc,
     /// so nothing standing on top of the player is missed.
     var meleePointBlank: CGFloat = 0.55
+    /// How far a healing or shielding ability's blessing reaches to the
+    /// caster's party, in world units, before area size.
+    var supportRadius: CGFloat = 6
 }
 
 struct SpawnTuning {

@@ -53,12 +53,14 @@ enum ActionExecutor {
             let amount = fraction.value * player.maxHealth
             player.barrier = min(player.maxHealth, player.barrier + amount)
             combat.events.append(.barrierGained)
+            bless(.barrier(fraction: fraction.value), context, &combat, player)
         case .heal(let fraction):
             let amount = fraction.value * player.maxHealth
             combat.pendingHealing += amount
             if amount >= 1 {
                 combat.events.append(.playerHealed(amount: amount * combat.sheet[.healingReceived]))
             }
+            bless(.heal(fraction: fraction.value), context, &combat, player)
         case .selfDamage(let fraction):
             player.health = max(1, player.health - player.health * fraction.value)
         case .invulnerable(let seconds):
@@ -107,6 +109,19 @@ enum ActionExecutor {
 
     private static func source(of context: QueuedAction) -> HitSource {
         context.depth == 0 ? .ability : .proc
+    }
+
+    /// Shares a heal or a shield from an ability with the caster's living
+    /// friends nearby. Only abilities bless: healing that comes from a passive
+    /// (life steal, a kill trigger, regeneration) stays personal, so a party
+    /// does not multiply it. Each friend receives the same share of their own
+    /// maximum health.
+    private static func bless(_ kind: PartyEffect.Kind, _ context: QueuedAction, _ combat: inout CombatState,
+                              _ player: PlayerState) {
+        guard combat.isParty, context.ability != nil else { return }
+        let radius = combat.tuning.supportRadius * CGFloat(combat.sheet[.areaSize])
+        combat.partyEffects.append(PartyEffect(source: combat.activeHero, center: player.position, radius: radius,
+                                               rule: .allies, kind: kind))
     }
 
     // MARK: - Placement

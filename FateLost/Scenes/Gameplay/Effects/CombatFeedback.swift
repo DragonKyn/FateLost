@@ -344,6 +344,22 @@ final class CombatFeedback {
                 audio.stopAmbience(fadeDuration: 2)
                 camera.addTrauma(tuning.deathTrauma)
                 haptics.play(.playerDeath)
+
+            case let .heroFell(_, position):
+                effects.ring(at: position, radius: 1.5, color: UIColor(rgb: 0xC8B4E8), lifetime: 0.9)
+                effects.burst(at: position, radius: 1.0, color: UIColor(rgb: 0x3A2A4A), glows: false)
+
+            case .reviveStarted:
+                audio.play(.uiConfirm)
+
+            case .reviveInterrupted:
+                audio.play(.uiBack)
+
+            case let .heroRevived(_, position):
+                effects.ring(at: position, radius: 1.8, color: UIColor(rgb: 0x8FE07A), lifetime: 0.8)
+                effects.motes(at: position, count: 14, color: UIColor(rgb: 0xB8F0A0), spread: 0.8)
+                effects.floatingText("Revived", at: position, color: UIColor(rgb: 0xB8F0A0), size: 18, lifetime: 1.4)
+                audio.play(.skillLearn)
             }
         }
         if hits > 0 {

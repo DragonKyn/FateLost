@@ -47,6 +47,9 @@ struct PlayerState {
     var timeSinceKill: Double = .infinity
     var timeSinceDodge: Double = .infinity
     var timeStationary: Double = 0
+    /// Blows that have landed on the hero. A friend channelling a revive is
+    /// interrupted the moment this changes.
+    var hitsTaken = 0
 
     init(position: CGPoint, maxHealth: Double) {
         self.position = position
@@ -95,6 +98,9 @@ struct PlayerIntent: Equatable {
     var move: CGPoint = .zero
     /// Bit per ability slot pressed this tick (0–2 abilities, 3 ultimate).
     var abilityPresses: UInt8 = 0
+    /// Set for the step in which the player asked to interact: to begin
+    /// reviving a fallen friend they are standing beside.
+    var interact = false
 
     static let idle = PlayerIntent()
 

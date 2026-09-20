@@ -62,6 +62,29 @@ enum CombatEvent: Equatable {
     case relicGained(id: RelicID, rank: Int)
     case levelUp(level: Int, position: CGPoint)
     case playerDefeated
+    /// A hero (by party index) fell, and left a marker where they lay.
+    case heroFell(hero: Int, position: CGPoint)
+    /// A friend began channelling a revive over the marker of `hero`.
+    case reviveStarted(hero: Int, reviver: Int)
+    /// The channel was broken: the reviver was hit, moved away or fell.
+    case reviveInterrupted(hero: Int)
+    /// `hero` is back on their feet.
+    case heroRevived(hero: Int, position: CGPoint)
+}
+
+extension CombatEvent {
+    /// Events about the hero themself, which only their own screen needs.
+    /// Everything else happened in the world and is shown to everyone.
+    var isPersonal: Bool {
+        switch self {
+        case .playerHit, .playerDodged, .playerHealed, .barrierGained, .stealthStarted, .formChanged,
+             .cheatedDeath, .experienceCollected, .relicGained, .weaponWielded, .levelUp, .summonsDismissed,
+             .summonsRecalled:
+            return true
+        default:
+            return false
+        }
+    }
 }
 
 /// Running totals for the end-of-run summary.

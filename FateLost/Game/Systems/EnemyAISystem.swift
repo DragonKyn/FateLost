@@ -42,14 +42,28 @@ struct EnemyAISystem {
     }
 
     private enum Goal {
-        case player
+        case hero(AITarget)
         case ally(AllyAnchor)
         case enemy(Int)
         case flee
         case wander
     }
 
+    /// The single-hero form: one target, and what the horde did to it is
+    /// carried out before returning.
     mutating func step(_ combat: inout CombatState, player: inout PlayerState, godMode: Bool, dt: TimeInterval) {
+        let target = AITarget(position: player.position, isAlive: !player.isDefeated, isHidden: player.isStealthed,
+                              hero: 0)
+        combat.worldAnchors = combat.allyAnchors
+        step(&combat, targets: [target], godMode: godMode, dt: dt)
+        WorldIncidents.applyToLoneHero(&combat, player: &player, godMode: godMode)
+    }
+
+    /// Moves the whole horde toward whichever hero each enemy wants and
+    /// resolves their strikes. What lands on a hero, or on a hero's summon, is
+    /// appended to `combat.incidents` rather than applied, so the caller can
+    /// carry each blow out in the context of the hero it fell on.
+    mutating func step(_ combat: inout CombatState, targets: [AITarget], godMode: Bool, dt: TimeInterval) {
         tick &+= 1
         let enemies = combat.enemies.count
         guard enemies > 0 else { return }
@@ -63,8 +77,6 @@ struct EnemyAISystem {
 
         let step = CGFloat(dt)
         let decay = CGFloat(exp(-Double(combatTuning.knockbackDecay * step)))
-        let playerAlive = !player.isDefeated
-        let hidden = player.isStealthed
 
         for index in 0..<enemies {
             let definition = combat.enemies.definition(at: index)
@@ -75,12 +87,13 @@ struct EnemyAISystem {
 
             // A charge in progress overrides everything else it might do.
             if combat.enemies.special[index] > 0, combat.enemies.dash[index] != .zero {
-                advanceCharge(index, definition: definition, player: &player, combat: &combat,
-                              godMode: godMode, dt: dt, incapacitated: incapacitated)
+                advanceCharge(index, definition: definition, targets: targets, combat: &combat,
+                              dt: dt, incapacitated: incapacitated)
                 continue
             }
 
-            // Decide what this enemy is after.
+            // Decide what this enemy is after: the nearest hero it can find.
+            let reachable = Self.nearestReachable(to: position, in: targets, world: combat.world)
             let goal: Goal
             if mask & StatusKind.fear.bit != 0 {
                 goal = .flee
@@ -90,18 +103,17 @@ struct EnemyAISystem {
                 } else {
                     goal = .wander
                 }
-            } else if let anchor = preferredAlly(near: position, player: player, hidden: hidden,
-                                                 playerAlive: playerAlive, in: combat) {
+            } else if let anchor = preferredAlly(near: position, reachable: reachable, in: combat) {
                 goal = .ally(anchor)
-            } else if hidden || !playerAlive {
-                goal = .wander
+            } else if let reachable {
+                goal = .hero(reachable.target)
             } else {
-                goal = .player
+                goal = .wander
             }
 
             let targetPosition: CGPoint?
             switch goal {
-            case .player: targetPosition = player.position
+            case .hero(let target): targetPosition = target.position
             case .ally(let anchor): targetPosition = anchor.position
             case .enemy(let other): targetPosition = combat.enemies.positions[other]
             case .flee, .wander: targetPosition = nil
@@ -114,7 +126,7 @@ struct EnemyAISystem {
             let distance = toTarget.length
             let contactDistance: CGFloat
             switch goal {
-            case .player: contactDistance = combatTuning.playerRadius + definition.radius
+            case .hero: contactDistance = combatTuning.playerRadius + definition.radius
             case .ally(let anchor): contactDistance = anchor.radius + definition.radius
             case .enemy(let other): contactDistance = combat.enemies.definition(at: other).radius + definition.radius
             default: contactDistance = 0.45 + definition.radius
@@ -134,7 +146,7 @@ struct EnemyAISystem {
                         combat.enemies.attackCooldown[index] = definition.attackCooldown
                         resolveStrike(index, definition: definition, goal: goal, distance: distance,
                                       landingReach: strikeRange * 1.2, toTarget: toTarget,
-                                      player: &player, combat: &combat, godMode: godMode)
+                                      targets: targets, combat: &combat)
                     }
                 } else if targetPosition != nil, combat.enemies.attackCooldown[index] <= 0,
                           distance <= strikeRange {
@@ -161,7 +173,7 @@ struct EnemyAISystem {
             var chase = CGPoint.zero
             var heading = combat.enemies.heading[index]
             switch goal {
-            case .player, .ally, .enemy:
+            case .hero, .ally, .enemy:
                 let direction = distance > 0.0001 ? toTarget / distance : heading
                 heading = direction
                 if distance < standRange - 0.35 {
@@ -172,9 +184,11 @@ struct EnemyAISystem {
                     chase = direction * min(speed, gap / max(step, 0.0001))
                 }
             case .flee:
-                let away = combat.world.delta(from: player.position, to: position).normalized
-                chase = away * speed * 0.9
-                heading = away
+                if let nearest = Self.nearestAlive(to: position, in: targets, world: combat.world) {
+                    let away = combat.world.delta(from: nearest.position, to: position).normalized
+                    chase = away * speed * 0.9
+                    heading = away
+                }
             case .wander:
                 // Mill about, slowly, in whatever direction it last faced.
                 chase = heading * speed * 0.3
@@ -184,12 +198,14 @@ struct EnemyAISystem {
             let knock = combat.enemies.knockback[index]
             var moved = position + (chase + push + knock) * step
 
-            // Never overlap the player's body.
-            let after = combat.world.delta(from: moved, to: player.position)
-            let afterDistance = after.length
+            // Never overlap a hero's body.
             let playerContact = combatTuning.playerRadius + definition.radius
-            if afterDistance < playerContact, afterDistance > 0.0001 {
-                moved = moved - after / afterDistance * (playerContact - afterDistance)
+            for target in targets where target.isAlive {
+                let after = combat.world.delta(from: moved, to: target.position)
+                let afterDistance = after.length
+                if afterDistance < playerContact, afterDistance > 0.0001 {
+                    moved = moved - after / afterDistance * (playerContact - afterDistance)
+                }
             }
 
             combat.enemies.positions[index] = combat.world.wrap(moved)
@@ -198,6 +214,40 @@ struct EnemyAISystem {
                 combat.enemies.heading[index] = heading
             }
         }
+    }
+
+    // MARK: - Targets of the horde
+
+    /// The nearest hero that is alive and not hidden, and how far away.
+    private static func nearestReachable(to position: CGPoint, in targets: [AITarget],
+                                         world: ToroidalWorld) -> (target: AITarget, distance: CGFloat)? {
+        var best: AITarget?
+        var bestSquared = CGFloat.greatestFiniteMagnitude
+        for target in targets where target.isAlive && !target.isHidden {
+            let squared = world.distanceSquared(position, target.position)
+            if squared < bestSquared {
+                bestSquared = squared
+                best = target
+            }
+        }
+        guard let best else { return nil }
+        return (best, bestSquared.squareRoot())
+    }
+
+    /// The nearest hero that is alive, hidden or not: what a frightened
+    /// enemy runs from.
+    private static func nearestAlive(to position: CGPoint, in targets: [AITarget],
+                                     world: ToroidalWorld) -> AITarget? {
+        var best: AITarget?
+        var bestSquared = CGFloat.greatestFiniteMagnitude
+        for target in targets where target.isAlive {
+            let squared = world.distanceSquared(position, target.position)
+            if squared < bestSquared {
+                bestSquared = squared
+                best = target
+            }
+        }
+        return best
     }
 
     // MARK: - Ranges
@@ -237,17 +287,14 @@ struct EnemyAISystem {
     /// has to be both close and closer than the hero by a clear margin, so
     /// minions screen their master without making them untouchable. With the
     /// player hidden or fallen, anything within reach will do.
-    private func preferredAlly(near position: CGPoint, player: PlayerState, hidden: Bool, playerAlive: Bool,
+    private func preferredAlly(near position: CGPoint, reachable: (target: AITarget, distance: CGFloat)?,
                                in combat: CombatState) -> AllyAnchor? {
-        guard !combat.allyAnchors.isEmpty else { return nil }
-        let unreachablePlayer = hidden || !playerAlive
-        let toPlayer = unreachablePlayer
-            ? CGFloat.greatestFiniteMagnitude
-            : combat.world.distance(position, player.position)
+        guard !combat.worldAnchors.isEmpty else { return nil }
+        let toPlayer = reachable?.distance ?? CGFloat.greatestFiniteMagnitude
 
         var best: AllyAnchor?
         var bestScore = CGFloat.greatestFiniteMagnitude
-        for anchor in combat.allyAnchors {
+        for anchor in combat.worldAnchors {
             let distance = combat.world.distance(position, anchor.position)
             let reach = anchor.taunts ? Self.tauntRadius : Self.allyAggroRadius
             guard distance < reach else { continue }
@@ -285,8 +332,8 @@ struct EnemyAISystem {
     // MARK: - Strikes
 
     private func resolveStrike(_ index: Int, definition: EnemyDefinition, goal: Goal, distance: CGFloat,
-                               landingReach: CGFloat, toTarget: CGPoint, player: inout PlayerState,
-                               combat: inout CombatState, godMode: Bool) {
+                               landingReach: CGFloat, toTarget: CGPoint, targets: [AITarget],
+                               combat: inout CombatState) {
         let weakened = 1 - combat.enemies.potency(.weaken, at: index)
         let damage = definition.attackDamage * combat.enemyDamageScale * combat.enemies.damageScale[index]
             * max(0, weakened)
@@ -296,7 +343,7 @@ struct EnemyAISystem {
 
         switch definition.behavior {
         case .exploder(let radius):
-            explode(index, radius: radius, damage: damage, player: &player, combat: &combat, godMode: godMode)
+            explode(index, radius: radius, damage: damage, targets: targets, combat: &combat)
             return
         case .ranged(_, let speed, let sprite):
             loose(index, definition: definition, damage: damage, type: damageType, direction: direction,
@@ -316,9 +363,9 @@ struct EnemyAISystem {
         }
 
         switch goal {
-        case .player:
-            guard distance <= landingReach, !player.isDefeated else { return }
-            combat.strikePlayer(&player, amount: damage, direction: direction, godMode: godMode)
+        case .hero(let target):
+            guard distance <= landingReach, target.isAlive else { return }
+            combat.incidents.append(.strikeHero(hero: target.hero, amount: damage, direction: direction))
         case .ally(let anchor):
             guard distance <= landingReach else { return }
             wound(anchor, amount: damage, combat: &combat)
@@ -335,9 +382,8 @@ struct EnemyAISystem {
 
     /// An enemy's blow landing on a summon, if that summon is still there.
     private func wound(_ anchor: AllyAnchor, amount: Double, combat: inout CombatState) {
-        guard anchor.isMortal, anchor.index < combat.allies.count,
-              combat.allies[anchor.index].id == anchor.id else { return }
-        AllySystem.wound(anchor.index, amount: amount, &combat)
+        guard anchor.isMortal else { return }
+        combat.incidents.append(.woundAlly(hero: anchor.hero, index: anchor.index, id: anchor.id, amount: amount))
     }
 
     /// A shot on its way. Enemy projectiles fly through the same system as
@@ -350,7 +396,7 @@ struct EnemyAISystem {
         var hit = Hit(amount: damage, type: type, tags: [.projectile], direction: direction,
                       knockback: 0.3, canCrit: false, depth: 1, source: .environment)
         hit.status = nil
-        combat.projectiles.append(Projectile(
+        combat.hostileProjectiles.append(Projectile(
             id: combat.makeEntityID(),
             position: origin,
             velocity: direction * speed,
@@ -376,9 +422,8 @@ struct EnemyAISystem {
     }
 
     /// Carries a charge forward, ending it on the first thing it hits.
-    private func advanceCharge(_ index: Int, definition: EnemyDefinition, player: inout PlayerState,
-                               combat: inout CombatState, godMode: Bool, dt: TimeInterval,
-                               incapacitated: Bool) {
+    private func advanceCharge(_ index: Int, definition: EnemyDefinition, targets: [AITarget],
+                               combat: inout CombatState, dt: TimeInterval, incapacitated: Bool) {
         guard !incapacitated else {
             // Knocked out of it mid-run.
             combat.enemies.dash[index] = .zero
@@ -394,14 +439,15 @@ struct EnemyAISystem {
         let reach = definition.radius + definition.attackReach
 
         // Anything it runs through takes the full weight of it, once.
-        let toPlayer = combat.world.delta(from: moved, to: player.position)
-        if !player.isDefeated, toPlayer.length <= reach + combatTuning.playerRadius {
-            combat.strikePlayer(&player, amount: damage, direction: toPlayer.normalized, godMode: godMode)
+        for target in targets where target.isAlive {
+            let toTarget = combat.world.delta(from: moved, to: target.position)
+            guard toTarget.length <= reach + combatTuning.playerRadius else { continue }
+            combat.incidents.append(.strikeHero(hero: target.hero, amount: damage, direction: toTarget.normalized))
             combat.enemies.dash[index] = .zero
             combat.enemies.special[index] = 0
             return
         }
-        let anchors = combat.allyAnchors
+        let anchors = combat.worldAnchors
         for anchor in anchors where anchor.isMortal {
             guard combat.world.distance(moved, anchor.position) <= reach + anchor.radius else { continue }
             wound(anchor, amount: damage, combat: &combat)
@@ -437,19 +483,21 @@ struct EnemyAISystem {
 
     /// A sapper's keg going off: hurts everything nearby, including goblins,
     /// and takes the sapper with it.
-    private func explode(_ index: Int, radius: CGFloat, damage: Double, player: inout PlayerState,
-                         combat: inout CombatState, godMode: Bool) {
+    private func explode(_ index: Int, radius: CGFloat, damage: Double, targets: [AITarget],
+                         combat: inout CombatState) {
         let center = combat.enemies.positions[index]
         combat.events.append(.enemyExploded(position: center, radius: radius))
         combat.enemies.health[index] = 0
 
-        let toPlayer = combat.world.delta(from: center, to: player.position)
-        if !player.isDefeated, toPlayer.length <= radius + combatTuning.playerRadius {
-            combat.strikePlayer(&player, amount: damage, direction: toPlayer.normalized, godMode: godMode)
+        for target in targets where target.isAlive {
+            let toTarget = combat.world.delta(from: center, to: target.position)
+            if toTarget.length <= radius + combatTuning.playerRadius {
+                combat.incidents.append(.strikeHero(hero: target.hero, amount: damage, direction: toTarget.normalized))
+            }
         }
 
         // The blast takes summons with it, the same as any other bystander.
-        let anchors = combat.allyAnchors
+        let anchors = combat.worldAnchors
         for anchor in anchors where anchor.isMortal {
             guard combat.world.distance(center, anchor.position) <= radius + anchor.radius else { continue }
             wound(anchor, amount: damage, combat: &combat)

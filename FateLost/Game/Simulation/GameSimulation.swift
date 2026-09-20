@@ -60,52 +60,83 @@ struct GameSimulation {
     let arena: ArenaLayout
     /// The weapon in the hand. Starts as the one the run began with and
     /// changes if the player takes a weapon from a find.
-    private(set) var weapon: WeaponDefinition
+    var weapon: WeaponDefinition
     let tuning: GameTuning
     /// Permanent bonuses the Legacy board grants this run. Applied as part
     /// of the stat sheet, so every other system sees them as ordinary stats.
-    let legacy: [StatModifier]
+    var legacy: [StatModifier]
     /// Extra rerolls on every find, from the relic codex.
-    let bonusRerolls: Int
+    var bonusRerolls: Int
 
-    private(set) var player: PlayerState
-    private(set) var combat: CombatState
+    var player: PlayerState
+    var combat: CombatState
     /// Simulated seconds since the run began (excludes pauses).
-    private(set) var elapsed: TimeInterval = 0
+    var elapsed: TimeInterval = 0
     /// Simulated seconds since the player fell, or nil while alive.
-    private(set) var timeSinceDefeat: TimeInterval?
+    var timeSinceDefeat: TimeInterval?
     var cheats = SimulationCheats()
 
-    private(set) var progression: ProgressionState
-    private(set) var allocation = SkillAllocation()
+    // MARK: The party
+    //
+    // A run has one hero or several. The hero the fields above and `combat`
+    // describe is the *live* one (`activeHero`); the others wait in `slots`
+    // and are swapped in when it is their turn (`activate`). With one hero
+    // nothing is ever swapped, and the simulation is what it always was.
+
+    /// The swapped-out state of every hero. The live hero's entry is stale.
+    var slots: [HeroSlot] = []
+    /// Which hero is live in the fields above.
+    var activeHero = 0
+    /// Identity and party-only facts about each hero, by index.
+    var members: [PartyMember] = [PartyMember()]
+    /// Seconds since every hero fell, or nil while any stands.
+    var timeSinceWipe: TimeInterval?
+    var stepCounter = 0
+    /// Scratch space reused every step so the party allocates nothing.
+    var spawnFocusScratch: [SpawnFocus] = []
+    var targetScratch: [AITarget] = []
+
+    var progression: ProgressionState
+    var allocation = SkillAllocation()
     /// Equipped abilities; index 3 is the ultimate.
-    private(set) var abilitySlots: [AbilityID?] = Array(repeating: nil, count: AbilitySlots.count)
+    var abilitySlots: [AbilityID?] = Array(repeating: nil, count: AbilitySlots.count)
     /// Bumped whenever the build changes, for observers.
-    private(set) var buildVersion = 0
+    var buildVersion = 0
     /// Relics found this run.
-    private(set) var relics = RelicInventory()
+    var relics = RelicInventory()
     /// The rolled weapon in the hand, or nil while it is still the starter.
-    private(set) var wielded: WeaponFind?
-    private var weaponVersion = 0
+    var wielded: WeaponFind?
+    var weaponVersion = 0
     /// A find waiting for the player to choose from. While it is set the
     /// scene holds the game still and shows the cards.
-    private(set) var offer: RelicOffer?
+    var offer: RelicOffer?
 
-    private let movement: MovementSystem
-    private var spawner: SpawnSystem
-    private var enemyAI: EnemyAISystem
-    private var waves: WaveSystem
-    private var weaponSystem: WeaponSystem
+    let movement: MovementSystem
+    var spawner: SpawnSystem
+    var enemyAI: EnemyAISystem
+    var waves: WaveSystem
+    var weaponSystem: WeaponSystem
     private let projectileSystem = ProjectileSystem()
-    private var statusSystem = StatusSystem()
-    private var statSignature: StatSignature?
-    private var alliesNeedSync = true
+    var statusSystem = StatusSystem()
+    var statSignature: StatSignature?
+    var alliesNeedSync = true
     /// The wave a shrine was last considered for.
-    private var shrineWave = 1
+    var shrineWave = 1
 
     var world: ToroidalWorld { arena.world }
     var enemies: EnemyStore { combat.enemies }
-    var projectiles: [Projectile] { combat.projectiles }
+    /// Every projectile in flight: each hero's own, and the horde's.
+    var projectiles: [Projectile] {
+        if slots.count > 1 || !combat.hostileProjectiles.isEmpty {
+            var all = combat.projectiles
+            for hero in slots.indices where hero != activeHero {
+                all.append(contentsOf: slots[hero].combat.projectiles)
+            }
+            all.append(contentsOf: combat.hostileProjectiles)
+            return all
+        }
+        return combat.projectiles
+    }
     var stats: RunStats { combat.stats }
     var sheet: StatSheet { combat.sheet }
     var isPlayerDefeated: Bool { player.isDefeated }
@@ -173,81 +204,165 @@ struct GameSimulation {
 
     // MARK: - Step
 
+    /// Advances a run with a single hero by one fixed step.
     mutating func step(dt: TimeInterval, intent: PlayerIntent) {
+        members[0].intent = intent
+        step(dt: dt)
+    }
+
+    /// Records what a hero wants to do. Presses (abilities, interact) are
+    /// used by the next step that sees them and then forgotten; movement stays
+    /// until it is changed.
+    mutating func setIntent(_ intent: PlayerIntent, forHero hero: Int) {
+        guard members.indices.contains(hero) else { return }
+        members[hero].intent = intent
+    }
+
+    /// Advances the whole run by one fixed step.
+    ///
+    /// Each hero takes a turn at the parts of the step that are theirs (their
+    /// timers, movement, casts, weapon, summons, pickups); the horde, the wave
+    /// clock and the spawner run once for everyone. A party's turns rotate, so
+    /// no hero always gets first pick of what lies on the ground.
+    mutating func step(dt: TimeInterval) {
+        let count = heroCount
+        let party = count > 1
         elapsed += dt
-        let alive = !player.isDefeated
-        if !alive {
-            timeSinceDefeat = (timeSinceDefeat ?? 0) + dt
+        stepCounter &+= 1
+        let first = party ? stepCounter % count : 0
+
+        // Who is standing at the start of the step, and a clean slate for
+        // what each hero collects.
+        for turn in 0..<count {
+            let hero = (first + turn) % count
+            activate(hero)
+            let alive = !player.isDefeated
+            members[hero].stepAlive = alive
+            if !alive {
+                timeSinceDefeat = (timeSinceDefeat ?? 0) + dt
+            }
+            combat.killsThisStep = 0
+            combat.experienceCollected = 0
         }
-        combat.killsThisStep = 0
-        combat.experienceCollected = 0
+        let anyAlive = members.contains { $0.stepAlive }
+        timeSinceWipe = anyAlive ? nil : (timeSinceWipe ?? 0) + dt
 
         updateEnemyScaling()
-        tickTimers(dt)
-        updateConditions()
-        refreshStats()
+        combat.curseRemaining = max(0, combat.curseRemaining - dt)
+        updateShelters(dt)
 
-        movement.step(&player, intent: alive ? intent : .idle, speedMultiplier: CGFloat(combat.sheet[.moveSpeed]),
-                      world: world, dt: CGFloat(dt))
-        syncPlayerSnapshot()
-        if alive {
-            castAbilities(intent)
+        // Each hero: timers, conditions, stats, movement, casts.
+        for turn in 0..<count {
+            let hero = (first + turn) % count
+            activate(hero)
+            let alive = members[hero].stepAlive
+            var intent = members[hero].intent
+            let sheltered = isSheltered(hero)
+            if sheltered {
+                intent = .idle
+            }
+            tickTimers(dt)
+            if sheltered {
+                player.invulnerability = max(player.invulnerability, 0.25)
+            }
+            updateConditions()
+            refreshStats()
+
+            movement.step(&player, intent: alive ? intent : .idle, speedMultiplier: CGFloat(combat.sheet[.moveSpeed]),
+                          world: world, dt: CGFloat(dt))
+            syncPlayerSnapshot()
+            if alive {
+                castAbilities(intent)
+            }
+            flush()
         }
-        flush()
 
-        if alive {
+        // The world: the wave clock, new arrivals and the horde, once.
+        activate(0)
+        collectSpawnFocuses(anyAlive: anyAlive)
+        if anyAlive {
             advanceWaves(dt)
         }
-        spawner.isEnabled = alive && cheats.spawningEnabled
-        spawner.step(&combat, player: player, elapsed: elapsed, dt: dt, hardCap: tuning.enemyAI.hardCap,
-                     speedVariance: tuning.enemyAI.speedVariance)
+        spawner.isEnabled = anyAlive && cheats.spawningEnabled
+        spawner.step(&combat, focuses: spawnFocusScratch, elapsed: elapsed, dt: dt,
+                     hardCap: tuning.enemyAI.hardCap, speedVariance: tuning.enemyAI.speedVariance)
 
         combat.rebuildGrid()
-        enemyAI.step(&combat, player: &player, godMode: cheats.godMode, dt: dt)
-        flush()
-        if alive && player.isDefeated {
-            dismissPlayerForces()
+        gatherWorldAnchors()
+        collectTargets()
+        enemyAI.step(&combat, targets: targetScratch, godMode: cheats.godMode, dt: dt)
+        projectileSystem.stepHostile(&combat, targets: targetScratch, dt: dt)
+        carryOutIncidents()
+        registerFallenHeroes()
+        stepRevives(dt: dt)
+
+        // Each hero: weapon, summons, shots, zones, procs, deaths, pickups.
+        for turn in 0..<count {
+            let hero = (first + turn) % count
+            activate(hero)
+            let alive = members[hero].stepAlive
+            combat.rebuildGrid()
+            if alive {
+                weaponSystem.step(&combat, player: &player, form: activeForm, dt: dt)
+                flush()
+            }
+            AllySystem.step(&combat, player: player, dt: dt)
+            flush()
+            projectileSystem.stepOwned(&combat, dt: dt)
+            flush()
+            ZoneSystem.step(&combat, player: &player, dt: dt)
+            flush()
+            if turn == 0 {
+                // Afflictions tick once for the whole horde, whoever laid them.
+                statusSystem.step(&combat, dt: dt)
+            }
+            if alive {
+                fireIntervalProcs(dt)
+                flush()
+            }
+            resolveDeaths()
+
+            PickupSystem.step(&combat, player: player, dt: dt)
+            ShrineSystem.step(&combat, player: player, dt: dt)
         }
 
-        combat.rebuildGrid()
-        if alive {
-            weaponSystem.step(&combat, player: &player, form: activeForm, dt: dt)
-            flush()
+        // Experience gathered by anyone is everyone's.
+        if party {
+            shareExperience()
         }
-        AllySystem.step(&combat, player: player, dt: dt)
-        flush()
-        projectileSystem.step(&combat, player: &player, godMode: cheats.godMode, dt: dt)
-        flush()
-        ZoneSystem.step(&combat, player: &player, dt: dt)
-        flush()
-        statusSystem.step(&combat, dt: dt)
-        if alive {
-            fireIntervalProcs(dt)
-            flush()
-        }
-        resolveDeaths()
 
-        PickupSystem.step(&combat, player: player, dt: dt)
-        ShrineSystem.step(&combat, player: player, dt: dt)
-        if alive {
-            carryOutShrines()
-            gainExperience()
-            openNextFind()
+        // Each hero: bargains, levels, finds, healing.
+        for turn in 0..<count {
+            let hero = (first + turn) % count
+            activate(hero)
+            let alive = members[hero].stepAlive
+            if alive {
+                carryOutShrines()
+                gainExperience()
+                openNextFind()
+            } else if party {
+                members[hero].bankedExperience += combat.experienceCollected
+                combat.experienceCollected = 0
+            }
+            applyHealing(dt)
+            if combat.killsThisStep > 0 {
+                player.timeSinceKill = 0
+            }
+            if alive {
+                // Cheap, and it has to run every step now that a companion can
+                // fall and its replacement has to wait its cooldown out.
+                AllySystem.syncCompanions(&combat, player: player)
+            }
+            if alliesNeedSync {
+                alliesNeedSync = false
+                syncAuras()
+            }
+            syncPlayerSnapshot()
+            // Presses are used up by the step that saw them.
+            members[hero].intent.abilityPresses = 0
+            members[hero].intent.interact = false
         }
-        applyHealing(dt)
-        if combat.killsThisStep > 0 {
-            player.timeSinceKill = 0
-        }
-        if alive {
-            // Cheap, and it has to run every step now that a companion can
-            // fall and its replacement has to wait its cooldown out.
-            AllySystem.syncCompanions(&combat, player: player)
-        }
-        if alliesNeedSync {
-            alliesNeedSync = false
-            syncAuras()
-        }
-        syncPlayerSnapshot()
+        activate(0)
     }
 
     /// Runs the wave clock and places whatever champion it calls for.
@@ -255,18 +370,19 @@ struct GameSimulation {
     /// The wave decides what the spawner is allowed to field and how hard it
     /// pushes; when a champion is due, it arrives with an escort and the
     /// ordinary horde thins out so the fight is against the champion.
-    private mutating func advanceWaves(_ dt: TimeInterval) {
+    mutating func advanceWaves(_ dt: TimeInterval) {
         let due = waves.step(&combat, dt: dt)
         if waves.state.index != shrineWave {
             shrineWave = waves.state.index
             ShrineSystem.waveBegan(shrineWave, isBossWave: realm.waves.isBossWave(shrineWave), &combat,
-                                   player: player)
+                                   player: referencePlayer())
         }
         spawner.wave = waves.state.index
-        spawner.rateMultiplier = waves.pressure * waves.spawnShare
+        spawner.rateMultiplier = waves.pressure * waves.spawnShare * partySpawnFactor()
         combat.stats.wave = max(combat.stats.wave, waves.state.index)
-        guard let due, let definition = EnemyCatalog.definition(for: due) else { return }
-        let id = spawner.spawnNamed(definition, into: &combat, player: player,
+        guard let due, let definition = EnemyCatalog.definition(for: due),
+              let focus = spawnFocusScratch.first else { return }
+        let id = spawner.spawnNamed(definition, into: &combat, focus: focus,
                                     distance: spawner.spawnRadius * 0.8)
         guard let index = combat.index(ofEnemy: id) else {
             // The champion never made it onto the field. Carry on with the
@@ -277,26 +393,32 @@ struct GameSimulation {
         }
         let title = definition.epithet.map { "\(definition.name), \($0)" } ?? definition.name
         waves.bossArrived(id: id, title: title, health: combat.enemies.health[index], &combat)
-        spawner.spawnBurst(realm.waves.escortCount, into: &combat, player: player,
+        spawner.spawnBurst(realm.waves.escortCount, into: &combat, focuses: spawnFocusScratch,
                            hardCap: tuning.enemyAI.hardCap, speedVariance: tuning.enemyAI.speedVariance)
     }
 
     /// A fallen hero's power dies with them: missiles, companions, zones,
     /// strikes still falling and afflictions on the horde all end at once.
-    private mutating func dismissPlayerForces() {
+    mutating func dismissPlayerForces() {
         combat.projectiles.removeAll()
         combat.allies.removeAll()
         combat.zones.removeAll()
         combat.strikes.removeAll()
         combat.pendingActions.removeAll()
         combat.allyAnchors.removeAll()
+        // Afflictions on the horde end with a lone hero. In a party they may
+        // belong to any of them, so they run their course.
+        guard heroCount == 1 else { return }
         for index in combat.enemies.statusMask.indices {
             combat.enemies.statusMask[index] = 0
         }
     }
 
-    private mutating func flush() {
+    mutating func flush() {
         ActionExecutor.flush(&combat, player: &player)
+        if !combat.partyEffects.isEmpty {
+            dispatchPartyEffects()
+        }
     }
 
     /// Hands over everything that happened since the last call.
@@ -307,7 +429,7 @@ struct GameSimulation {
     }
 
     /// Removes the dead, letting death triggers (which may kill more) run.
-    private mutating func resolveDeaths() {
+    mutating func resolveDeaths() {
         var rounds = 0
         while rounds < 4, combat.removeDefeatedEnemies() {
             rounds += 1
@@ -316,16 +438,17 @@ struct GameSimulation {
         }
     }
 
-    private mutating func updateEnemyScaling() {
+    mutating func updateEnemyScaling() {
         let minutes = elapsed / 60
         let scaling = tuning.progression
         let curse = combat.curseRemaining > 0 ? ShrineTuning.curseStrength : 1
+        let crowd = 1 + tuning.party.enemyHealthPerExtraHero * Double(max(0, heroCount - 1))
         combat.enemyHealthScale = (1 + scaling.enemyHealthPerMinute * minutes
-            + scaling.enemyHealthPerMinuteSquared * minutes * minutes) * curse
+            + scaling.enemyHealthPerMinuteSquared * minutes * minutes) * curse * crowd
         combat.enemyDamageScale = (1 + scaling.enemyDamagePerMinute * minutes) * curse
     }
 
-    private mutating func tickTimers(_ dt: TimeInterval) {
+    mutating func tickTimers(_ dt: TimeInterval) {
         player.invulnerability = max(0, player.invulnerability - dt)
         player.stealth = max(0, player.stealth - dt)
         player.timeSinceHit += dt
@@ -342,11 +465,10 @@ struct GameSimulation {
             }
         }
         combat.cheatDeathCooldown = max(0, combat.cheatDeathCooldown - dt)
-        combat.curseRemaining = max(0, combat.curseRemaining - dt)
         AllySystem.tickCooldowns(&combat, dt: dt)
     }
 
-    private mutating func updateConditions() {
+    mutating func updateConditions() {
         var conditions = ConditionState()
         conditions.isMoving = player.isMoving
         conditions.timeStationary = player.timeStationary
@@ -372,7 +494,7 @@ struct GameSimulation {
         combat.conditions = conditions
     }
 
-    private mutating func syncPlayerSnapshot() {
+    mutating func syncPlayerSnapshot() {
         combat.playerPosition = player.position
         combat.playerFacing = player.facing
         combat.playerStealthed = player.isStealthed
@@ -380,7 +502,7 @@ struct GameSimulation {
 
     // MARK: - Stats
 
-    private struct StatSignature: Equatable {
+    struct StatSignature: Equatable {
         var conditions: UInt64
         var buffs: Int
         var level: Int
@@ -390,7 +512,7 @@ struct GameSimulation {
     }
 
     /// Recomputes the player's stats when anything feeding them has changed.
-    private mutating func refreshStats(force: Bool = false) {
+    mutating func refreshStats(force: Bool = false) {
         var mask: UInt64 = 0
         for (index, conditional) in combat.build.conditionals.enumerated() where index < 64 {
             if combat.conditions.holds(conditional.condition) {
@@ -455,7 +577,7 @@ struct GameSimulation {
         }
     }
 
-    private mutating func applyHealing(_ dt: TimeInterval) {
+    mutating func applyHealing(_ dt: TimeInterval) {
         guard !player.isDefeated else {
             combat.pendingHealing = 0
             return
@@ -483,7 +605,7 @@ struct GameSimulation {
 
     // MARK: - Abilities
 
-    private mutating func castAbilities(_ intent: PlayerIntent) {
+    mutating func castAbilities(_ intent: PlayerIntent) {
         guard intent.abilityPresses != 0 else { return }
         for slot in 0..<AbilitySlots.count where intent.pressed(slot) {
             guard let id = abilitySlots[slot], let learned = combat.build.abilities[id] else { continue }
@@ -492,7 +614,7 @@ struct GameSimulation {
         }
     }
 
-    private mutating func cast(_ learned: LearnedAbility) {
+    mutating func cast(_ learned: LearnedAbility) {
         let id = learned.definition.id
         combat.abilityCooldowns[id] = learned.cooldown * (1 - combat.sheet[.cooldownReduction])
         combat.stats.abilityUses[id, default: 0] += 1
@@ -510,7 +632,7 @@ struct GameSimulation {
         combat.fireProcs(combat.build.castProcs, origin: player.position)
     }
 
-    private mutating func queueCast(_ action: EffectAction, ability: AbilityID) {
+    mutating func queueCast(_ action: EffectAction, ability: AbilityID) {
         combat.pendingActions.append(QueuedAction(action: action, origin: player.position, targetID: nil,
                                                   direction: player.facing, depth: 0, ability: ability))
     }
@@ -523,7 +645,7 @@ struct GameSimulation {
         return (combat.abilityCooldowns[id] ?? 0, total)
     }
 
-    private mutating func fireIntervalProcs(_ dt: TimeInterval) {
+    mutating func fireIntervalProcs(_ dt: TimeInterval) {
         for procIndex in combat.build.intervalProcs where procIndex < combat.procTimers.count {
             combat.procTimers[procIndex] -= dt
             guard combat.procTimers[procIndex] <= 0 else { continue }
@@ -536,7 +658,7 @@ struct GameSimulation {
 
     // MARK: - Experience and levels
 
-    private mutating func gainExperience() {
+    mutating func gainExperience() {
         let collected = combat.experienceCollected
         guard collected > 0 else { return }
         let gained = max(1, Int((Double(collected) * combat.sheet[.experienceGain]).rounded()))
@@ -548,7 +670,7 @@ struct GameSimulation {
         }
     }
 
-    private mutating func levelUp() {
+    mutating func levelUp() {
         progression.experience -= progression.required
         progression.level += 1
         progression.earnedPoints += 1
@@ -618,7 +740,7 @@ struct GameSimulation {
         abilitySlots = Self.sanitize(slots, abilities: combat.build.abilities)
     }
 
-    private mutating func rebuild() {
+    mutating func rebuild() {
         combat.install(CompiledBuild.compile(allocation, relics: relics))
         buildVersion += 1
         refreshStats(force: true)
@@ -657,7 +779,7 @@ struct GameSimulation {
     }
 
     /// Re-creates the permanent auras the build grants.
-    private mutating func syncAuras() {
+    mutating func syncAuras() {
         combat.zones.removeAll { $0.isAura }
         let context = QueuedAction(action: .all([]), origin: player.position, targetID: nil, direction: .zero,
                                    depth: 0, ability: nil)
@@ -684,7 +806,7 @@ struct GameSimulation {
     }
 
     /// Carries out the bargains the player has walked onto.
-    private mutating func carryOutShrines() {
+    mutating func carryOutShrines() {
         guard !combat.pendingShrines.isEmpty else { return }
         let taken = combat.pendingShrines
         combat.pendingShrines.removeAll()
@@ -705,7 +827,7 @@ struct GameSimulation {
     }
 
     /// Opens the oldest chest waiting, once the last find has been answered.
-    private mutating func openNextFind() {
+    mutating func openNextFind() {
         guard offer == nil, let tier = combat.pendingFinds.first else { return }
         combat.pendingFinds.removeFirst()
         openOffer(tier: tier)

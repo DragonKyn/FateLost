@@ -8,14 +8,30 @@ import Foundation
 /// Projectiles with a splash radius burst on impact, damaging everything
 /// around the point of contact.
 ///
-/// Enemy shots fly through the same code, flagged `isHostile`: they look for
-/// the player and their summons instead of the horde, and are spent on the
-/// first thing they reach.
+/// Enemy shots are kept apart (`CombatState.hostileProjectiles`), because in a
+/// party they look for any hero rather than one: they seek the heroes and
+/// their summons instead of the horde, and are spent on the first thing they
+/// reach.
 struct ProjectileSystem {
     /// Fraction of a projectile's knockback its splash applies.
     private static let splashKnockbackScale: CGFloat = 1.4
 
+    /// Flies the hero's own projectiles and, for a lone hero, the enemy shots
+    /// as well. A party runs `stepOwned` for each hero and `stepHostile` once.
     func step(_ combat: inout CombatState, player: inout PlayerState, godMode: Bool, dt: TimeInterval) {
+        stepOwned(&combat, dt: dt)
+        guard !combat.hostileProjectiles.isEmpty else { return }
+        combat.worldAnchors = combat.allyAnchors
+        let target = AITarget(position: player.position, isAlive: !player.isDefeated, isHidden: false, hero: 0)
+        stepHostile(&combat, targets: [target], dt: dt)
+        WorldIncidents.applyToLoneHero(&combat, player: &player, godMode: godMode)
+    }
+
+    /// The projectiles a hero has loosed: each strikes the first enemy it
+    /// touches. One that can pierce carries on (never striking the same enemy
+    /// twice); any other is spent. A projectile with a splash radius bursts on
+    /// impact, damaging everything around the point of contact.
+    func stepOwned(_ combat: inout CombatState, dt: TimeInterval) {
         guard !combat.projectiles.isEmpty else { return }
         let step = CGFloat(dt)
         let padding = combat.largestEnemyRadius
@@ -37,9 +53,7 @@ struct ProjectileSystem {
             projectile.position = combat.world.wrap(projectile.position + projectile.velocity * step)
 
             var spent = projectile.remainingLife <= 0
-            if !spent, projectile.isHostile {
-                spent = impactOnPlayerSide(projectile, player: &player, godMode: godMode, combat: &combat)
-            } else if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
+            if !spent, let struck = firstContact(of: projectile, padding: padding, combat: &combat) {
                 spent = impact(&projectile, on: struck, combat: &combat)
             }
 
@@ -52,23 +66,45 @@ struct ProjectileSystem {
         }
     }
 
-    /// An enemy shot reaching the player, or one of their summons. Returns
-    /// whether it was spent.
-    private func impactOnPlayerSide(_ projectile: Projectile, player: inout PlayerState, godMode: Bool,
-                                    combat: inout CombatState) -> Bool {
-        let toPlayer = combat.world.delta(from: projectile.position, to: player.position)
-        if !player.isDefeated, toPlayer.length <= projectile.radius + combat.tuning.playerRadius {
-            combat.strikePlayer(&player, amount: projectile.hit.amount, direction: projectile.direction,
-                                godMode: godMode)
-            combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
-            return true
+    /// The shots enemies have loosed. They look for any living hero and any
+    /// summon, and are spent on the first thing they reach. What they hit is
+    /// reported as incidents for the party to carry out.
+    func stepHostile(_ combat: inout CombatState, targets: [AITarget], dt: TimeInterval) {
+        guard !combat.hostileProjectiles.isEmpty else { return }
+        let step = CGFloat(dt)
+        var index = combat.hostileProjectiles.count - 1
+        while index >= 0 {
+            var projectile = combat.hostileProjectiles[index]
+            projectile.remainingLife -= dt
+            projectile.position = combat.world.wrap(projectile.position + projectile.velocity * step)
+            let spent = projectile.remainingLife <= 0 || impactOnPlayerSide(projectile, targets: targets, combat: &combat)
+            if spent {
+                combat.hostileProjectiles.swapRemove(at: index)
+            } else {
+                combat.hostileProjectiles[index] = projectile
+            }
+            index -= 1
         }
-        let anchors = combat.allyAnchors
-        for anchor in anchors where anchor.isMortal {
+    }
+
+    /// An enemy shot reaching a hero, or one of their summons. Returns
+    /// whether it was spent.
+    private func impactOnPlayerSide(_ projectile: Projectile, targets: [AITarget],
+                                    combat: inout CombatState) -> Bool {
+        for target in targets where target.isAlive {
+            let toTarget = combat.world.delta(from: projectile.position, to: target.position)
+            if toTarget.length <= projectile.radius + combat.tuning.playerRadius {
+                combat.incidents.append(.strikeHero(hero: target.hero, amount: projectile.hit.amount,
+                                                    direction: projectile.direction))
+                combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
+                return true
+            }
+        }
+        for anchor in combat.worldAnchors where anchor.isMortal {
             guard combat.world.distance(projectile.position, anchor.position)
                 <= projectile.radius + anchor.radius else { continue }
-            guard anchor.index < combat.allies.count, combat.allies[anchor.index].id == anchor.id else { continue }
-            AllySystem.wound(anchor.index, amount: projectile.hit.amount, &combat)
+            combat.incidents.append(.woundAlly(hero: anchor.hero, index: anchor.index, id: anchor.id,
+                                               amount: projectile.hit.amount))
             combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
             return true
         }
