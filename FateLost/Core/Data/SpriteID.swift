@@ -21,6 +21,11 @@ struct SpriteID: RawRepresentable, Codable, Hashable, ExpressibleByStringLiteral
 extension SpriteID {
     // Player
     static let playerAdventurer: SpriteID = "player.adventurer"
+    /// The same hero in three pieces, so the cloak can move on its own: what is
+    /// behind it (wings, legs), the cloak, and what is in front (metalwork, head).
+    static let playerBehind: SpriteID = "player.behind"
+    static let playerCloak: SpriteID = "player.cloak"
+    static let playerFront: SpriteID = "player.front"
     static let shadow: SpriteID = "fx.shadow"
 
     // Enemies

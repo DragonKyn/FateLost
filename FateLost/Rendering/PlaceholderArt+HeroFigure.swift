@@ -55,6 +55,28 @@ extension PlaceholderArt {
         drawHeroHead(look.head, look.build, ctx, ink)
     }
 
+    /// The figure in three pieces on the same canvas, back to front, so the
+    /// cloak can move on its own while the wings, legs, armour and head stay
+    /// rigid. Laid one over another they are exactly `hero(_:)`.
+    static func heroPieces(_ look: HeroAppearance) -> (behind: Sprite, cloak: Sprite, front: Sprite) {
+        let anchor = CGPoint(x: 0.5, y: (heroCanvas.height - heroFootY) / heroCanvas.height)
+        let ink = HeroInk(look)
+        let behind = render(heroCanvas) { ctx in
+            drawHeroWings(look.wings, look.build, ctx, ink)
+            drawHeroLegs(look.build, ctx, ink)
+        }
+        let cloak = render(heroCanvas) { ctx in
+            drawHeroCloak(look.cloak, look.build, ctx, ink)
+        }
+        let front = render(heroCanvas) { ctx in
+            drawHeroDetail(look.detail, look.build, ctx, ink)
+            drawHeroEmblem(look.emblem, look.build, ctx, ink)
+            drawHeroHead(look.head, look.build, ctx, ink)
+        }
+        return (Sprite(image: behind, anchor: anchor), Sprite(image: cloak, anchor: anchor),
+                Sprite(image: front, anchor: anchor))
+    }
+
     /// The in-game figure, at device resolution.
     static func hero(_ look: HeroAppearance) -> Sprite {
         let image = render(heroCanvas) { paintHero(look, in: $0) }

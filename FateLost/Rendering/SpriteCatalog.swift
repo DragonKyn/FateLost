@@ -28,12 +28,21 @@ final class SpriteCatalog {
         var images: [String: UIImage] = [:]
         var meta: [SpriteID: (size: CGSize, anchor: CGPoint)] = [:]
 
+        var pieces: (behind: PlaceholderArt.Sprite, cloak: PlaceholderArt.Sprite, front: PlaceholderArt.Sprite)?
         for id in ids {
             if id == .playerAdventurer {
                 // The player's own look wins over any stock image.
                 let figure = PlaceholderArt.hero(hero)
                 images[id.rawValue] = figure.image
                 meta[id] = (figure.image.size, figure.anchor)
+            } else if id == .playerBehind || id == .playerCloak || id == .playerFront {
+                // The same figure in pieces, so the cloak can sway on its own.
+                if pieces == nil { pieces = PlaceholderArt.heroPieces(hero) }
+                if let pieces {
+                    let piece = id == .playerBehind ? pieces.behind : (id == .playerCloak ? pieces.cloak : pieces.front)
+                    images[id.rawValue] = piece.image
+                    meta[id] = (piece.image.size, piece.anchor)
+                }
             } else if let asset = UIImage(named: id.rawValue) {
                 images[id.rawValue] = asset
                 meta[id] = (asset.size, fallbackAnchor)
@@ -52,6 +61,11 @@ final class SpriteCatalog {
 
     func texture(_ id: SpriteID) -> SKTexture? {
         entries[id]?.texture
+    }
+
+    /// Whether the id was loaded.
+    func contains(_ id: SpriteID) -> Bool {
+        entries[id] != nil
     }
 
     func size(_ id: SpriteID) -> CGSize {
@@ -82,7 +96,7 @@ final class SpriteCatalog {
 /// network layer can build its tables from it too.
 enum GameplaySprites {
     static let all: [SpriteID] = [
-        .playerAdventurer, .shadow,
+        .playerAdventurer, .playerBehind, .playerCloak, .playerFront, .shadow,
         .enemyGoblin, .enemyGoblinHooded, .enemyGoblinHelmed, .enemyGoblinSkulker, .enemyGoblinSkulkerPale,
         .enemyGoblinSpearman, .enemyGoblinSpearmanRed, .enemyGoblinBrute, .enemyGoblinBruteScarred,
         .enemyGoblinSapper,

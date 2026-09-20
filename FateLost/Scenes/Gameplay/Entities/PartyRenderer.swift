@@ -47,7 +47,7 @@ final class PartyRenderer {
     }
 
     private static let spritesForAHero: [SpriteID] = {
-        var ids: [SpriteID] = [.playerAdventurer, .shadow, .fxGlow]
+        var ids: [SpriteID] = [.playerAdventurer, .playerBehind, .playerCloak, .playerFront, .shadow, .fxGlow]
         ids.append(contentsOf: StarterWeapons.all.map { $0.spriteID })
         ids.append(contentsOf: FormCatalog.all.map { $0.sprite })
         return ids
@@ -126,7 +126,7 @@ final class PartyRenderer {
         let catalog = SpriteCatalog(preloading: Self.spritesForAHero, hero: look)
         let weapon = state.weaponSprite ?? StarterWeapons.definition(for: roster?.weapon ?? "")?.spriteID
             ?? StarterWeapons.sword.spriteID
-        let view = PlayerView(catalog: catalog, weaponSprite: weapon, hand: look.build.hand)
+        let view = PlayerView(catalog: catalog, weaponSprite: weapon, hand: look.build.hand, cloth: look.cloak.clothiness)
         let entry = HeroEntry(view: view, name: roster?.name ?? "Ally", position: state.position)
         entry.root.addChild(view)
 

@@ -258,7 +258,8 @@ final class GameScene: SKScene {
         decorations = DecorationRenderer(placements: simulation.arena.decorations, world: simulation.world,
                                          projection: projection, catalog: catalog,
                                          standingLayer: standing, decalLayer: decals)
-        let player = PlayerView(catalog: catalog, weaponSprite: simulation.weapon.spriteID, hand: dependencies.hero.build.hand)
+        let player = PlayerView(catalog: catalog, weaponSprite: simulation.weapon.spriteID, hand: dependencies.hero.build.hand,
+                                cloth: dependencies.hero.cloak.clothiness)
         playerView = player
         // One world unit along a tile edge spans half a tile diagonal on screen.
         let pointsPerWorldUnit = tuning.projection.tileWidth / 2 * CGFloat(2).squareRoot()

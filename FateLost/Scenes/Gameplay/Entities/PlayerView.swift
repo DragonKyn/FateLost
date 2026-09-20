@@ -8,6 +8,17 @@ final class PlayerView: SKNode {
     private let body = SKNode()
     private let figure: SKSpriteNode
     private let weapon: SKSpriteNode
+    /// The figure in three pieces (behind the cloak, the cloak, in front of it),
+    /// when the catalogue has them. The cloak alone sways.
+    private let figureBehind: SKSpriteNode?
+    private let figureCloak: SKSpriteNode?
+    private let figureFront: SKSpriteNode?
+    private var sway = CapeSway()
+    /// How freely this cloak hangs (see `CloakStyle.clothiness`).
+    private let cloth: CGFloat
+    private var swayClock: Double = 0
+    /// The sway the cloak was last bent by, so a still cloak is not re-bent every frame.
+    private var drawnSway = CGPoint(x: 99, y: 99)
 
     private enum Style {
         static let bobHeight: CGFloat = 2.6
@@ -50,10 +61,16 @@ final class PlayerView: SKNode {
     private var restAngle: CGFloat
     private var weaponSprite: SpriteID
 
-    init(catalog: SpriteCatalog, weaponSprite: SpriteID, hand: CGPoint = BodyBuild.standard.hand) {
+    init(catalog: SpriteCatalog, weaponSprite: SpriteID, hand: CGPoint = BodyBuild.standard.hand,
+         cloth: CGFloat = 1) {
         self.catalog = catalog
+        self.cloth = cloth
         shadowSprite = catalog.makeSprite(.shadow)
         figure = catalog.makeSprite(.playerAdventurer)
+        let hasPieces = catalog.contains(.playerBehind) && catalog.contains(.playerCloak) && catalog.contains(.playerFront)
+        figureBehind = hasPieces ? catalog.makeSprite(.playerBehind) : nil
+        figureCloak = hasPieces ? catalog.makeSprite(.playerCloak) : nil
+        figureFront = hasPieces ? catalog.makeSprite(.playerFront) : nil
         weapon = catalog.makeSprite(weaponSprite)
         self.weaponSprite = weaponSprite
         barrierGlow = catalog.makeSprite(.fxGlow)
@@ -64,6 +81,13 @@ final class PlayerView: SKNode {
         addChild(shadowSprite)
         addChild(body)
         body.addChild(figure)
+        // The pieces stand exactly where the whole figure does, one over another.
+        for (index, piece) in [figureBehind, figureCloak, figureFront].enumerated() {
+            guard let piece else { continue }
+            piece.zPosition = 0.01 * CGFloat(index + 1)
+            body.addChild(piece)
+        }
+        showFigure(asPieces: hasPieces)
 
         weapon.position = hand
         weapon.zRotation = restAngle
@@ -92,10 +116,45 @@ final class PlayerView: SKNode {
         restAngle = id == .weaponBow ? -0.1 : Style.weaponRestAngle
     }
 
+    /// Shows the figure either as its pieces (so the cloak can sway) or as the
+    /// single drawing (a shapeshifted form has no separate cloak).
+    private func showFigure(asPieces pieces: Bool) {
+        let usePieces = pieces && figureCloak != nil
+        figure.isHidden = usePieces
+        figureBehind?.isHidden = !usePieces
+        figureCloak?.isHidden = !usePieces
+        figureFront?.isHidden = !usePieces
+        if !usePieces { sway.reset() }
+    }
+
+    /// Every node the figure is drawn with, so a flash or a swell reaches them all.
+    private var figureNodes: [SKSpriteNode] {
+        [figure] + [figureBehind, figureCloak, figureFront].compactMap { $0 }
+    }
+
+    private func tintFigure(_ color: UIColor?, factor: CGFloat) {
+        for node in figureNodes {
+            if let color { node.color = color }
+            node.colorBlendFactor = factor
+        }
+    }
+
+    /// Bends the cloak by the sway, if it has changed enough to see.
+    private func bendCloak() {
+        guard let cloak = figureCloak, !cloak.isHidden else { return }
+        let offset = sway.offset
+        guard abs(offset.x - drawnSway.x) > 0.02 || abs(offset.y - drawnSway.y) > 0.02 else { return }
+        drawnSway = offset
+        let warp = sway.warp(imageSize: cloak.size, cloth: cloth)
+        cloak.warpGeometry = SKWarpGeometryGrid(columns: 1, rows: CapeSway.bands.count - 1,
+                                                sourcePositions: warp.source, destinationPositions: warp.destination)
+    }
+
     /// Swaps the figure for a form's (or back to the adventurer).
     func setForm(_ form: FormDefinition?) {
         guard form?.id != currentForm else { return }
         currentForm = form?.id
+        showFigure(asPieces: form == nil)
         let id = form?.sprite ?? .playerAdventurer
         figure.texture = catalog.texture(id)
         figure.size = catalog.size(id)
@@ -155,6 +214,10 @@ final class PlayerView: SKNode {
         body.xScale = facingSign
 
         let speedFraction = min(1, screenVelocity.length / 120)
+        // The cloak lags the way the hero is moving, in the hero's own frame.
+        swayClock += Double(dt)
+        sway.step(dt: dt, velocity: CGPoint(x: screenVelocity.x * facingSign, y: screenVelocity.y), time: swayClock)
+        bendCloak()
         let phase = state.strideTime * Style.strideFrequency * 2 * .pi
         let bob = CGFloat(abs(sin(phase))) * Style.bobHeight * speedFraction
         body.position = CGPoint(x: 0, y: bob)
@@ -185,19 +248,16 @@ final class PlayerView: SKNode {
         // form's own tint.
         let sinceHit = CGFloat(state.timeSinceHit)
         if sinceHit < Style.hurtFlashDuration {
-            figure.color = Style.hurtColor
-            figure.colorBlendFactor = 0.75 * (1 - sinceHit / Style.hurtFlashDuration)
+            tintFigure(Style.hurtColor, factor: 0.75 * (1 - sinceHit / Style.hurtFlashDuration))
         } else if levelUpAge < 0.7 {
-            figure.color = UIColor(rgb: 0xFFD27A)
-            figure.colorBlendFactor = 0.8 * (1 - levelUpAge / 0.7)
+            tintFigure(UIColor(rgb: 0xFFD27A), factor: 0.8 * (1 - levelUpAge / 0.7))
         } else if let formTint {
-            figure.color = formTint
-            figure.colorBlendFactor = 0.35
+            tintFigure(formTint, factor: 0.35)
         } else {
-            figure.colorBlendFactor = 0
+            tintFigure(nil, factor: 0)
         }
         let swell = levelUpAge < 0.5 ? 1 + 0.22 * sin(levelUpAge / 0.5 * .pi) : 1
-        figure.setScale(formScale * swell)
+        for node in figureNodes { node.setScale(formScale * swell) }
 
         // Stealth turns the player to a shade; after a hit, a blink for the
         // rest of the immunity.
@@ -223,8 +283,13 @@ final class PlayerView: SKNode {
         body.alpha = 1
         body.position = .zero
         body.zRotation = eased * (.pi / 2) * facingSign
-        figure.color = UIColor(white: 0.15, alpha: 1)
-        figure.colorBlendFactor = 0.5 * eased
+        tintFigure(UIColor(white: 0.15, alpha: 1), factor: 0.5 * eased)
+        // A fallen hero's cloak lies still.
+        if sway.offset != .zero {
+            sway.reset()
+            drawnSway = CGPoint(x: 99, y: 99)
+            bendCloak()
+        }
         weapon.zRotation = restAngle - eased
         shadowSprite.setScale(1 + 0.3 * eased)
     }

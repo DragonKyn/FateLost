@@ -22,6 +22,9 @@ enum PlaceholderArt {
     static func sprite(for id: SpriteID) -> Sprite? {
         switch id {
         case .playerAdventurer: return hero(.standard)
+        case .playerBehind: return heroPieces(.standard).behind
+        case .playerCloak: return heroPieces(.standard).cloak
+        case .playerFront: return heroPieces(.standard).front
         case .shadow: return shadow()
         case .enemyGoblin: return goblin()
         case .enemyGoblinHooded: return goblin(palette: .moss, headgear: .hood(0x2E2A26))
