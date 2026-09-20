@@ -153,7 +153,7 @@ Everything on the wire is in [the protocol](MULTIPLAYER_PROTOCOL.md). In short:
 
 After every second wave (and after a champion that ends an even-numbered wave) a party's horde stops arriving. First
 the wave is *cleared* (`Phase.clearing`, spawn share 0): nothing new comes, and the breather waits for the last enemy of
-the wave to fall (or 45 s, so a straggler out of reach cannot stall the run). Then it rests for 30 seconds
+the wave to fall (or 45 s, so a straggler out of reach cannot stall the run). Then it rests for 90 seconds (a minute and a half)
 (`Phase.resting`, spawn share 0). The heroes use it to raise the fallen and spend points. Each player
 has a **Next Wave** button; when every connected hero has pressed it, the breather ends early (a player who disconnects
 or leaves stops counting). Otherwise it counts down. Solo runs never rest. The countdown and votes travel in the snapshot;

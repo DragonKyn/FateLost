@@ -104,6 +104,31 @@ enum StatID: Int, CaseIterable, Codable {
         }
     }
 
+    /// Stats that are a share of one (a chance, a fraction removed), which
+    /// read as percentages whether they are added flat or increased: a flat
+    /// 0.003 of cooldown reduction is 0.3%, not "0".
+    var isFraction: Bool {
+        switch self {
+        case .dodgeChance, .critChance, .critDamage, .cooldownReduction, .lifeSteal, .summonLifeSteal,
+             .spellEcho, .overhealBarrier:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Stats the game reads as whole numbers: a fraction of one does nothing
+    /// until enough of them have been added together, so no single upgrade
+    /// may add a fraction of one to these.
+    var isWholeNumber: Bool {
+        switch self {
+        case .projectileCount, .pierce, .chainJumps, .summonCount:
+            return true
+        default:
+            return false
+        }
+    }
+
     var displayName: String {
         switch self {
         case .maxHealth: return "Max Health"
@@ -176,5 +201,32 @@ struct StatModifier: Equatable, Codable {
 
     func scaled(by factor: Double) -> StatModifier {
         StatModifier(stat, kind, value * factor)
+    }
+
+    /// How the bonus reads to a player, in the units the stat is really in.
+    /// Percentages and flat amounts alike keep enough precision that a small
+    /// but real bonus never rounds away to nothing.
+    var displayText: String {
+        let name = stat.displayName
+        if kind != .flat || stat.isFraction {
+            return "+\(Self.number(value * 100))% \(name)"
+        }
+        let perSecond = stat == .healthRegen ? " per second" : ""
+        return "+\(Self.number(value)) \(name)\(perSecond)"
+    }
+
+    /// A number with just the decimals it needs: 12, 4.98, 0.3, 0.027.
+    static func number(_ value: Double) -> String {
+        let size = abs(value)
+        guard size > 0 else { return "0" }
+        let decimals = size < 0.1 ? 3 : 2
+        var text = String(format: "%.\(decimals)f", value)
+        if text.contains(".") {
+            while text.hasSuffix("0") { text.removeLast() }
+            if text.hasSuffix(".") { text.removeLast() }
+        }
+        // A value too small even for that keeps two significant figures.
+        if text == "0" || text == "-0" { return String(format: "%.2g", value) }
+        return text
     }
 }

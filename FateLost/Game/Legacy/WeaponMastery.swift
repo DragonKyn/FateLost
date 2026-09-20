@@ -47,7 +47,7 @@ enum WeaponMastery {
         case StarterWeapons.boStaff.id: return StatModifier(.knockback, .increased, 0.06)
         case StarterWeapons.flail.id: return StatModifier(.areaSize, .increased, 0.04)
         case StarterWeapons.warHammer.id: return StatModifier(.knockback, .increased, 0.08)
-        case StarterWeapons.boomerang.id: return StatModifier(.pierce, .flat, 0.4)
+        case StarterWeapons.boomerang.id: return StatModifier(.projectileDamage, .increased, 0.04)
         case StarterWeapons.emberWand.id: return StatModifier(.fireDamage, .increased, 0.04)
         case StarterWeapons.rimeWand.id: return StatModifier(.coldDamage, .increased, 0.04)
         case StarterWeapons.stormWand.id: return StatModifier(.lightningDamage, .increased, 0.04)
@@ -71,22 +71,6 @@ enum WeaponMastery {
     /// How one rank reads on the card.
     static func rankText(for weapon: WeaponDefinition) -> String {
         let lean = affinity(of: weapon)
-        return "+4% damage, +2% attack speed, \(text(for: lean)) per rank"
-    }
-
-    private static func text(for modifier: StatModifier) -> String {
-        let name = modifier.stat.displayName
-        switch modifier.kind {
-        case .flat:
-            return "+\(number(modifier.value)) \(name)"
-        case .increased, .more:
-            return "+\(number(modifier.value * 100))% \(name)"
-        }
-    }
-
-    private static func number(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        if rounded == rounded.rounded() { return String(Int(rounded)) }
-        return String(format: "%g", rounded)
+        return "+4% damage, +2% attack speed, \(lean.displayText) per rank"
     }
 }

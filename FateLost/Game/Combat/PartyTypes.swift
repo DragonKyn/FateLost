@@ -184,7 +184,7 @@ struct PartyTuning {
     /// The horde stops for a breather after every this-many waves (0: never).
     var restEveryWaves = 2
     /// How long the breather lasts if nobody asks to go on.
-    var restSeconds: Double = 30
+    var restSeconds: Double = 90
     /// Distance from the arena's centre point that the party starts spread out.
     var startRingRadius: CGFloat = 1.4
 }

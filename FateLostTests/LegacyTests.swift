@@ -191,3 +191,90 @@ final class LegacyTests: XCTestCase {
         XCTAssertEqual(LegacyStore(fileURL: url).load(), profile)
     }
 }
+
+/// No upgrade may be worth nothing, or read as if it were.
+final class LegacyValueTests: XCTestCase {
+    /// The first number in a line such as "+0.3% Cooldown Reduction".
+    private func leadingNumber(_ text: String) -> Double? {
+        let digits = text.drop { !$0.isNumber }.prefix { $0.isNumber || $0 == "." }
+        return Double(digits)
+    }
+
+    func testEveryNodeIsWorthSomethingAndSaysSo() {
+        for node in LegacyTree.all {
+            XCTAssertGreaterThan(node.modifier.value, 0, "\(node.id) provides nothing")
+            let text = node.effectText
+            let shown = leadingNumber(text)
+            XCTAssertNotNil(shown, "\(node.id) shows no number: \(text)")
+            XCTAssertGreaterThan(shown ?? 0, 0, "\(node.id) reads as zero: \(text)")
+            XCTAssertTrue(text.hasPrefix("+"), text)
+            XCTAssertFalse(text.contains("e+") || text.contains("e-"), "\(node.id) shows an exponent: \(text)")
+        }
+    }
+
+    func testTheShownNumberIsTheRealOneToWithinRounding() {
+        for node in LegacyTree.all {
+            let modifier = node.modifier
+            let real = (modifier.kind != .flat || modifier.stat.isFraction) ? modifier.value * 100 : modifier.value
+            guard let shown = leadingNumber(node.effectText) else { continue }
+            XCTAssertEqual(shown, real, accuracy: max(0.0006, real * 0.03), "\(node.id): \(node.effectText)")
+        }
+    }
+
+    func testFractionStatsAreShownAsPercentages() {
+        for node in LegacyTree.all where node.modifier.stat.isFraction {
+            XCTAssertTrue(node.effectText.contains("%"), "\(node.id) is a fraction shown raw: \(node.effectText)")
+        }
+        let quickRecall = LegacyTree.nodes(in: .focus, tier: 1)[1]
+        XCTAssertEqual(quickRecall.effectText, "+0.3% Cooldown Reduction")
+        let luckyAngle = LegacyTree.nodes(in: .fortune, tier: 1)[2]
+        XCTAssertEqual(luckyAngle.effectText, "+0.3% Critical Chance")
+    }
+
+    func testNoNodeAddsAFractionToAStatTheGameReadsInWholeNumbers() {
+        // +0.06 pierce truncates to nothing until seventeen of them are owned.
+        for node in LegacyTree.all where node.modifier.stat.isWholeNumber {
+            XCTAssertGreaterThanOrEqual(node.modifier.value, 1, "\(node.id) would round away to nothing")
+        }
+    }
+
+    func testNoNodeIsWastedAgainstAStatCap() {
+        var total: [StatID: Double] = [:]
+        for node in LegacyTree.all where node.modifier.kind == .flat {
+            total[node.modifier.stat, default: 0] += node.modifier.value
+        }
+        for (stat, sum) in total {
+            XCTAssertLessThanOrEqual(stat.baseValue + sum, stat.bounds.upperBound,
+                                     "the whole board would run into \(stat.displayName)'s cap")
+        }
+    }
+
+    func testSmallValuesKeepEnoughPrecisionToBeSeen() {
+        XCTAssertEqual(StatModifier(.cooldownReduction, .flat, 0.003).displayText, "+0.3% Cooldown Reduction")
+        XCTAssertEqual(StatModifier(.spellEcho, .flat, 0.002).displayText, "+0.2% Spell Echo")
+        XCTAssertEqual(StatModifier(.healthRegen, .flat, 0.12).displayText, "+0.12 Health Regeneration per second")
+        XCTAssertEqual(StatModifier(.maxHealth, .flat, 4).displayText, "+4 Max Health")
+        XCTAssertEqual(StatModifier(.damage, .increased, 0.006).displayText, "+0.6% Damage")
+        XCTAssertEqual(StatModifier(.critChance, .flat, 0.01).displayText, "+1% Critical Chance")
+        XCTAssertEqual(StatModifier(.critDamage, .flat, 0.06).displayText, "+6% Critical Damage")
+        XCTAssertEqual(StatModifier(.damage, .increased, 0.00027).displayText, "+0.027% Damage")
+        XCTAssertEqual(StatModifier.number(0), "0")
+        XCTAssertFalse(StatModifier(.damage, .increased, 0.0000004).displayText.hasPrefix("+0%"))
+    }
+
+    func testWeaponMasteryIsWorthSomethingAtEveryRank() {
+        for weapon in StarterWeapons.all {
+            let lean = WeaponMastery.affinity(of: weapon)
+            XCTAssertFalse(lean.stat.isWholeNumber && lean.value < 1, "\(weapon.name) leans on a stat that rounds to nothing")
+            XCTAssertGreaterThan(lean.value, 0)
+            for rank in 1...WeaponMastery.maxRank {
+                for modifier in WeaponMastery.modifiers(for: weapon, rank: rank) {
+                    XCTAssertGreaterThan(modifier.value, 0, "\(weapon.name) rank \(rank)")
+                    XCTAssertFalse(modifier.displayText.hasPrefix("+0 ") || modifier.displayText.hasPrefix("+0% "),
+                                   modifier.displayText)
+                }
+            }
+            XCTAssertFalse(WeaponMastery.rankText(for: weapon).contains("+0 "), weapon.name)
+        }
+    }
+}

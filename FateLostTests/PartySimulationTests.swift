@@ -774,10 +774,13 @@ final class PartyBreatherAndPoolTests: XCTestCase {
         XCTAssertEqual(solo.wave.index, 3)
     }
 
-    func testTheBreatherIsThirtySecondsAndThenTheHordeReturns() {
+    func testTheBreatherIsAMinuteAndAHalfAndThenTheHordeReturns() {
         var sim = restingParty()
-        XCTAssertEqual(sim.wave.restRemaining, 30 - 1, accuracy: 1.5)
-        Party.run(&sim, seconds: 31)
+        XCTAssertEqual(sim.tuning.party.restSeconds, 90)
+        XCTAssertEqual(sim.wave.restRemaining, 90 - 1, accuracy: 1.5)
+        Party.run(&sim, seconds: 89)
+        XCTAssertEqual(sim.wave.phase, .resting, "still resting a moment before it ends")
+        Party.run(&sim, seconds: 2)
         XCTAssertEqual(sim.wave.phase, .fighting)
         XCTAssertEqual(sim.wave.index, 3)
     }

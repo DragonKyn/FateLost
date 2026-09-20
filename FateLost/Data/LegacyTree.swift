@@ -87,7 +87,7 @@ enum LegacyTree {
                 Grain(stat: .statusChance, kind: .increased, base: 0.008, title: "Takes Hold"),
                 Grain(stat: .effectDuration, kind: .increased, base: 0.008, title: "Does Not Thaw"),
                 Grain(stat: .projectileSpeed, kind: .increased, base: 0.012, title: "Thrown Harder"),
-                Grain(stat: .pierce, kind: .flat, base: 0.06, title: "Straight Through"),
+                Grain(stat: .projectileDamage, kind: .increased, base: 0.01, title: "Straight Through"),
             ]
         case .shadow:
             return [
@@ -103,7 +103,7 @@ enum LegacyTree {
                 Grain(stat: .summonLifeSteal, kind: .flat, base: 0.002, title: "Shared Breath"),
                 Grain(stat: .effectDuration, kind: .increased, base: 0.008, title: "Stays Longer"),
                 Grain(stat: .healingReceived, kind: .increased, base: 0.008, title: "Tended To"),
-                Grain(stat: .summonCount, kind: .flat, base: 0.05, title: "One More Voice"),
+                Grain(stat: .summonDamage, kind: .more, base: 0.006, title: "One More Voice"),
             ]
         case .fate:
             return [
@@ -133,7 +133,7 @@ enum LegacyTree {
         return (1...tierCount).flatMap { tier -> [LegacyNode] in
             (0..<nodesPerTier).map { column in
                 let grain = grains[column % grains.count]
-                let value = (grain.base * scale(atTier: tier) * 1000).rounded() / 1000
+                let value = (grain.base * scale(atTier: tier) * 10_000).rounded() / 10_000
                 return LegacyNode(
                     id: "legacy.\(branch.rawValue).\(tier).\(column)",
                     branch: branch,

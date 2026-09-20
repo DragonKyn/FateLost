@@ -207,22 +207,12 @@ private struct WeaponCard: View {
     /// What the ranks already bought are worth, spelled out.
     private var heldText: String {
         let held = WeaponMastery.modifiers(for: weapon, rank: rank)
-        return "Held: " + held.map(Self.text(for:)).joined(separator: ", ")
+        return "Held: " + held.map(\.displayText).joined(separator: ", ")
     }
 
     private var denial: String? {
         let reason = isUnlocked ? profile.masteryDenial(for: weapon) : profile.weaponDenial(for: weapon)
         return reason == "Mastered" || reason == "Already on the rack" ? nil : reason
-    }
-
-    private static func text(for modifier: StatModifier) -> String {
-        let name = modifier.stat.displayName
-        switch modifier.kind {
-        case .flat:
-            return String(format: "+%g %@", (modifier.value * 100).rounded() / 100, name)
-        case .increased, .more:
-            return String(format: "+%g%% %@", (modifier.value * 1_000).rounded() / 10, name)
-        }
     }
 
     private func statRow(_ label: String, _ value: String) -> some View {

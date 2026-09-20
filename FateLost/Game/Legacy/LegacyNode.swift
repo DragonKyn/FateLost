@@ -97,23 +97,7 @@ struct LegacyNode: Identifiable, Equatable {
     let cost: Int
 
     /// How the bonus reads on the card.
-    var effectText: String {
-        let stat = modifier.stat.displayName
-        switch modifier.kind {
-        case .flat:
-            return String(format: "+%@ %@", Self.number(modifier.value), stat)
-        case .increased, .more:
-            return String(format: "+%@%% %@", Self.number(modifier.value * 100), stat)
-        }
-    }
-
-    private static func number(_ value: Double) -> String {
-        let rounded = (value * 100).rounded() / 100
-        if rounded == rounded.rounded() {
-            return String(Int(rounded))
-        }
-        return String(format: "%.2g", rounded)
-    }
+    var effectText: String { modifier.displayText }
 }
 
 /// What Legacy is bought with.
