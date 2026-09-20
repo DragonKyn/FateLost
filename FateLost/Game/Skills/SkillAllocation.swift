@@ -112,6 +112,16 @@ struct SkillTreeRules {
         if allocation.rank(of: skill.id) >= skill.maxRank {
             return .maxRank
         }
+        // Reported before anything else: having finished an order is a
+        // permanent answer, and no amount of further spending changes it.
+        if skill.order != nil, skill.tier == .capstone, allocation.rank(of: skill.id) == 0 {
+            let taken = SkillCatalog.orderSkills.filter {
+                $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
+            }
+            if taken.count >= orderCapstones, let first = taken.first {
+                return .orderCapstoneTaken(first.id)
+            }
+        }
         let have = allocation.points(in: skill.archetype, below: skill.tier)
         let need = threshold(for: skill.tier)
         if have < need {
@@ -128,21 +138,12 @@ struct SkillTreeRules {
            !skill.prerequisites.contains(where: { allocation.rank(of: $0) > 0 }) {
             return .needsPrerequisite(skill.prerequisites)
         }
-        if skill.tier == .capstone, allocation.rank(of: skill.id) == 0 {
-            if skill.order != nil {
-                let taken = SkillCatalog.orderSkills.filter {
-                    $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
-                }
-                if taken.count >= orderCapstones, let first = taken.first {
-                    return .orderCapstoneTaken(first.id)
-                }
-            } else {
-                let taken = SkillCatalog.skills(for: skill.archetype).filter {
-                    $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
-                }
-                if taken.count >= capstonesPerArchetype, let first = taken.first {
-                    return .capstoneTaken(first.id)
-                }
+        if skill.order == nil, skill.tier == .capstone, allocation.rank(of: skill.id) == 0 {
+            let taken = SkillCatalog.skills(for: skill.archetype).filter {
+                $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
+            }
+            if taken.count >= capstonesPerArchetype, let first = taken.first {
+                return .capstoneTaken(first.id)
             }
         }
         if availablePoints <= 0 {
