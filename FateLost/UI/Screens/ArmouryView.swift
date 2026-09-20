@@ -52,9 +52,14 @@ private struct RackTile: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 6) {
-                Image(systemName: isUnlocked ? WeaponGlyph.symbol(for: weapon) : "lock.fill")
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(isUnlocked ? FLTheme.Palette.ember : FLTheme.Palette.locked)
+                if isUnlocked {
+                    WeaponIcon(weapon: weapon, size: 30)
+                } else {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundStyle(FLTheme.Palette.locked)
+                        .frame(width: 30, height: 30)
+                }
                 Spacer(minLength: 0)
                 Text(weapon.damageType.displayName)
                     .font(FLTheme.Typeface.label(10))
@@ -123,10 +128,7 @@ private struct WeaponCard: View {
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 9) {
                     HStack(spacing: 10) {
-                        Image(systemName: WeaponGlyph.symbol(for: weapon))
-                            .font(.system(size: 22, weight: .semibold))
-                            .foregroundStyle(FLTheme.Palette.emberBright)
-                            .frame(width: 28)
+                        WeaponIcon(weapon: weapon, size: 40)
                         Text(weapon.name)
                             .font(FLTheme.Typeface.title(19))
                             .foregroundStyle(FLTheme.Palette.parchment)

@@ -706,11 +706,10 @@ struct LobbyView: View {
                 }
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: WeaponGlyph.symbol(for: chosen))
-                        .font(.system(size: 20, weight: .semibold))
-                        .foregroundStyle(FLTheme.Palette.abyss)
+                    WeaponIcon(weapon: chosen, size: 34)
                         .frame(width: 42, height: 42)
-                        .background(Circle().fill(FLTheme.Palette.ember))
+                        .background(Circle().fill(FLTheme.Palette.abyss.opacity(0.8)))
+                        .overlay(Circle().strokeBorder(FLTheme.Palette.ember, lineWidth: 1.5))
                     VStack(alignment: .leading, spacing: 1) {
                         Text(chosen.name)
                             .font(FLTheme.Typeface.heading(17))
