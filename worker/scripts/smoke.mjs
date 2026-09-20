@@ -46,6 +46,10 @@ host.socket.send(JSON.stringify({ t: "start" }));
 const start = await until(() => guest.messages.find((m) => m.t === "runStart"), "runStart");
 guest.socket.send(Uint8Array.from([1, 9, 9]));
 await until(() => host.frames.find((f) => f[0] === 1 && f[1] === 1), "relay");
+// A batch from the host: a snapshot and events for the guest in one message.
+host.socket.send(Uint8Array.from([6, 2, 1, 2, 0, 2, 7, 8, 1, 4, 0, 1, 9]));
+await until(() => guest.frames.find((f) => f[0] === 2 && f[1] === 7 && f[2] === 8), "batched snapshot");
+await until(() => guest.frames.find((f) => f[0] === 4 && f[1] === 9), "batched events");
 host.socket.send(JSON.stringify({ t: "runEnd", runId: start.runId, outcome: "defeated", summary: { wave: 3 } }));
 const lobby = await until(() => guest.messages.filter((m) => m.t === "room").reverse().find((m) => m.room.phase === "lobby" && m.room.lastRun), "lobby");
 if (lobby.room.code !== code || lobby.room.members.length !== 2 || !lobby.room.hasPassword) throw new Error("not the same lobby");
