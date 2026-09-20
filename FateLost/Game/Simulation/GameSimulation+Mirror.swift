@@ -13,6 +13,13 @@ import Foundation
 /// and the local hero walks under their own thumb (client-side prediction),
 /// pulled back gently if the host disagrees.
 struct MirrorWorld {
+    /// A snapshot is a round trip old, so a hero walking at speed is always a
+    /// little ahead of where it says they are. That is lag, not disagreement:
+    /// only a gap the host has plainly caused (it is ignoring the guest's
+    /// position, or moved the hero) is followed, and a big one snapped to.
+    /// Pulling back on every gap slowed a guest to a crawl.
+    static let followDistance: CGFloat = 2.2
+    static let snapDistance: CGFloat = 5
     /// The local player's seat.
     var mySlot: UInt8
     var zones: [Zone] = []
@@ -64,6 +71,7 @@ extension GameSimulation {
         case NetWave.bossFight: phase = .bossFight
         case NetWave.conquered: phase = .conquered
         case NetWave.resting: phase = .resting
+        case NetWave.clearing: phase = .clearing
         default: phase = .fighting
         }
         var wave = WaveState()
@@ -212,12 +220,12 @@ extension GameSimulation {
 
         let error = self.world.delta(from: player.position, to: mine.position)
         let distance = error.length
-        if firstTime || distance > 4 {
+        if firstTime || distance > MirrorWorld.snapDistance {
             player.position = mine.position
             player.velocity = mine.velocity
-        } else if distance > 0.6 {
+        } else if distance > MirrorWorld.followDistance {
             // The host moved the hero (a shove, a dash): follow, gently.
-            player.position = self.world.wrap(player.position + error * 0.3)
+            player.position = self.world.wrap(player.position + error * 0.2)
         }
         combat.playerPosition = player.position
         combat.playerFacing = player.facing

@@ -151,8 +151,10 @@ Everything on the wire is in [the protocol](MULTIPLAYER_PROTOCOL.md). In short:
 
 ### The breather
 
-After every second wave (and after a champion that ends an even-numbered wave) a party's horde stops arriving for
-30 seconds: `WaveState.Phase.resting`, spawn share 0. The heroes use it to raise the fallen and spend points. Each player
+After every second wave (and after a champion that ends an even-numbered wave) a party's horde stops arriving. First
+the wave is *cleared* (`Phase.clearing`, spawn share 0): nothing new comes, and the breather waits for the last enemy of
+the wave to fall (or 45 s, so a straggler out of reach cannot stall the run). Then it rests for 30 seconds
+(`Phase.resting`, spawn share 0). The heroes use it to raise the fallen and spend points. Each player
 has a **Next Wave** button; when every connected hero has pressed it, the breather ends early (a player who disconnects
 or leaves stops counting). Otherwise it counts down. Solo runs never rest. The countdown and votes travel in the snapshot;
 a vote is the `proceed` command.
@@ -168,6 +170,12 @@ Every hero's run is worth echoes as it always was (kills, elites, champions, wav
 party adds those together into one pool and pays **each** player pool ÷ number of heroes, so a friend who fell early
 advances as far as one who carried. The host computes it once (`PartyReport`) and everyone credits the same figure.
 Realm rates now run from ×0.50 (first realm) to ×3.75 (endless), in solo and party alike.
+
+### The guest's own position
+
+A guest walks at once under its own thumb and the host adopts its position (up to 1.6 tiles from where the host has the
+hero). A snapshot is a round trip old, so a hero at speed is always a little ahead of it: that is lag and is left alone.
+The guest follows the host only past 2.2 tiles (a shove, or the host refusing its position) and snaps past 5.
 
 ### Using the free plan sparingly
 

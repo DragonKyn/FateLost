@@ -77,7 +77,7 @@ extension CombatEvent {
     /// Everything else happened in the world and is shown to everyone.
     var isPersonal: Bool {
         switch self {
-        case .playerHit, .playerDodged, .playerHealed, .barrierGained, .stealthStarted, .formChanged,
+        case .playerHit, .playerDodged, .playerHealed, .playerDefeated, .barrierGained, .stealthStarted, .formChanged,
              .cheatedDeath, .experienceCollected, .relicGained, .weaponWielded, .levelUp, .summonsDismissed,
              .summonsRecalled:
             return true

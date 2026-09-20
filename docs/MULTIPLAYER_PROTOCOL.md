@@ -97,7 +97,7 @@ Caps per snapshot: 450 enemies, 200 projectiles, 40 zones, 100 summons, 150 orbs
 FNV-1a folded to 16 bits of the sprite/enemy name; a test asserts they are collision-free. A reader never traps: short or
 inconsistent data returns nothing.
 
-Wave phases: `0` fighting, `1` boss incoming, `2` boss fight, `3` conquered, `4` resting (the party's breather). Content
+Wave phases: `0` fighting, `1` boss incoming, `2` boss fight, `3` conquered, `4` resting (the party's breather), `5` clearing (wave over, finishing the last enemies). Content
 version is 2.
 
 ### Events

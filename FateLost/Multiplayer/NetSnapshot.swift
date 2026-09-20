@@ -124,6 +124,7 @@ struct NetWave: Equatable {
     static let bossFight: UInt8 = 2
     static let conquered: UInt8 = 3
     static let resting: UInt8 = 4
+    static let clearing: UInt8 = 5
 }
 
 /// A picture of the world as one player should see it, sent to them about
@@ -459,6 +460,7 @@ extension GameSimulation {
         case .bossFight: phase = NetWave.bossFight
         case .conquered: phase = NetWave.conquered
         case .resting: phase = NetWave.resting
+        case .clearing: phase = NetWave.clearing
         }
         snapshot.wave = NetWave(index: state.index, phase: phase, bossFraction: state.bossHealthFraction,
                                 bossTitle: state.isBossActive ? state.bossTitle : nil,

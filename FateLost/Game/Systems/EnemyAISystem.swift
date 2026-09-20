@@ -35,6 +35,9 @@ struct EnemyAISystem {
     static let allyPreferenceBias: CGFloat = 1.2
     /// A shooter holds this share of its range, and backs off below it.
     static let standoffShare: CGFloat = 0.65
+    /// How fast a shooter backs away from a hero who closes in, as a share of
+    /// its walking speed. Slow enough that walking at one still works.
+    static let giveGroundShare: CGFloat = 0.55
 
     init(tuning: EnemyAITuning, combatTuning: CombatTuning) {
         self.tuning = tuning
@@ -178,7 +181,7 @@ struct EnemyAISystem {
                 heading = direction
                 if distance < standRange - 0.35 {
                     // Too close to shoot comfortably: give ground.
-                    chase = direction * -speed * 0.8
+                    chase = direction * -speed * Self.giveGroundShare
                 } else {
                     let gap = max(0, distance - standRange)
                     chase = direction * min(speed, gap / max(step, 0.0001))

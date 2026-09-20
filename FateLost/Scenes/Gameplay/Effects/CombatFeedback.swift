@@ -51,6 +51,9 @@ final class CombatFeedback {
     /// The player's look, for dash afterimages.
     var playerSpriteID: SpriteID = .playerAdventurer
     var playerPosition: CGPoint = .zero
+    /// In a party a fall is not the end of the run: the defeat music and the
+    /// silenced ambience are for a lone hero, and a revive would not undo them.
+    var isParty = false
     /// The level-up burst's reach, for sizing its rings.
     var levelUpRadius: CGFloat = 4.2
 
@@ -340,8 +343,10 @@ final class CombatFeedback {
             case .playerDefeated:
                 hurtFlash = 1
                 audio.play(.playerDeath)
-                audio.playMusic(.musicDefeat, fadeDuration: 0.6, loops: false)
-                audio.stopAmbience(fadeDuration: 2)
+                if !isParty {
+                    audio.playMusic(.musicDefeat, fadeDuration: 0.6, loops: false)
+                    audio.stopAmbience(fadeDuration: 2)
+                }
                 camera.addTrauma(tuning.deathTrauma)
                 haptics.play(.playerDeath)
 

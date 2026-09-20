@@ -12,6 +12,9 @@ struct WaveState: Equatable {
         case bossFight
         /// The realm's conquest boss has fallen. The run is won.
         case conquered
+        /// A party's wave has run its course. Nothing new arrives; the breather
+        /// begins once the last enemy of the wave has fallen.
+        case clearing
         /// A party's breather: the horde stops arriving so the fallen can be
         /// raised and builds set, until the clock runs out or everyone is ready.
         case resting
@@ -58,6 +61,10 @@ struct WaveSystem {
     private var afterRest = AfterRest.advance
     /// The wave a breather was last taken after, so one wave never rests twice.
     private var lastRestWave = 0
+    /// How long the last of a wave may hold the breather off before it starts
+    /// anyway (an enemy stuck out of reach must not stall a run).
+    var clearLimit: Double = 45
+    private var clearingFor: Double = 0
     private var restVoted: Set<Int> = []
     private var electorate: Set<Int> = []
 
@@ -77,7 +84,7 @@ struct WaveSystem {
         case .fighting: return 1
         case .bossIncoming: return 0.5
         case .bossFight: return plan.bossSpawnShare
-        case .conquered, .resting: return 0
+        case .conquered, .resting, .clearing: return 0
         }
     }
 
@@ -101,6 +108,15 @@ struct WaveSystem {
 
     private func restFollows(wave: Int) -> Bool {
         restEvery > 0 && wave % restEvery == 0 && wave != lastRestWave
+    }
+
+    /// The wave is over: stop the horde, and rest once the field is empty.
+    private mutating func beginClearing(then next: AfterRest, _ combat: CombatState) {
+        afterRest = next
+        lastRestWave = state.index
+        state.phase = .clearing
+        clearingFor = 0
+        if combat.enemies.count == 0 { beginRest(then: next) }
     }
 
     private mutating func beginRest(then next: AfterRest) {
@@ -137,10 +153,15 @@ struct WaveSystem {
             state.timeInWave += dt
             guard state.timeInWave >= plan.waveSeconds else { return nil }
             if restFollows(wave: state.index) {
-                beginRest(then: .advance)
+                beginClearing(then: .advance, combat)
             } else {
                 advanceWave(&combat)
             }
+            return nil
+
+        case .clearing:
+            clearingFor += dt
+            if combat.enemies.count == 0 || clearingFor >= clearLimit { beginRest(then: afterRest) }
             return nil
 
         case .resting:
@@ -210,7 +231,7 @@ struct WaveSystem {
         }
         state.phase = .fighting
         state.timeInWave = 0
-        if restFollows(wave: state.index) { beginRest(then: .resume) }
+        if restFollows(wave: state.index) { beginClearing(then: .resume, combat) }
     }
 
     /// Gives up on a champion that could not be placed, so a run is never
@@ -226,7 +247,7 @@ struct WaveSystem {
 
     /// Developer tooling: jump straight to the next wave.
     mutating func skipToNextWave(_ combat: inout CombatState) {
-        guard state.phase == .fighting || state.phase == .resting else { return }
+        guard state.phase == .fighting || state.phase == .resting || state.phase == .clearing else { return }
         state.phase = .fighting
         advanceWave(&combat)
     }

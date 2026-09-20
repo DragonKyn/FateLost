@@ -183,6 +183,45 @@ final class WaveTests: XCTestCase {
         XCTAssertEqual(system.state.restVotes, 0, "votes do not carry into the next breather")
     }
 
+    private func addGoblins(_ combat: inout CombatState, count: Int) {
+        for offset in 0..<count {
+            let kind = combat.enemies.kindIndex(for: EnemyCatalog.goblin)
+            combat.enemies.append(id: combat.makeEntityID(), kind: kind, position: CGPoint(x: Double(offset), y: 0),
+                                  speedScale: 1)
+        }
+    }
+
+    func testTheBreatherWaitsForTheLastEnemyOfTheWave() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 10)
+        addGoblins(&combat, count: 3)
+        run(&system, &combat, seconds: 10)
+        XCTAssertEqual(system.state.phase, .clearing, "the wave is over but three enemies remain")
+        XCTAssertEqual(system.spawnShare, 0, "nothing new arrives while they are finished off")
+
+        // The countdown has not started, however long it takes.
+        run(&system, &combat, seconds: 30)
+        XCTAssertEqual(system.state.phase, .clearing)
+        XCTAssertEqual(system.state.index, 2)
+
+        combat.enemies.removeAll()
+        run(&system, &combat, seconds: 0.5)
+        XCTAssertEqual(system.state.phase, .resting)
+        XCTAssertEqual(system.state.restRemaining, 30, accuracy: 0.6, "the full breather starts once they are down")
+    }
+
+    func testAStragglerCannotHoldTheBreatherOffForever() {
+        var system = partySystem()
+        var combat = makeCombat()
+        run(&system, &combat, seconds: 10)
+        addGoblins(&combat, count: 1)
+        run(&system, &combat, seconds: 10)
+        XCTAssertEqual(system.state.phase, .clearing)
+        run(&system, &combat, seconds: system.clearLimit + 1)
+        XCTAssertEqual(system.state.phase, .resting)
+    }
+
     func testAPlayerWhoLeavesNoLongerHoldsTheVote() {
         var system = partySystem()
         var combat = makeCombat()
@@ -218,6 +257,9 @@ final class WaveTests: XCTestCase {
         let id = addBoss(&combat)
         system.bossArrived(id: id, title: "Grask", health: 1_000, &combat)
         combat.enemies.health[0] = 0
+        _ = system.step(&combat, dt: 0.5)
+        XCTAssertEqual(system.state.phase, .clearing, "its body is still on the field")
+        combat.enemies.removeAll()
         _ = system.step(&combat, dt: 0.5)
         XCTAssertEqual(system.state.phase, .resting)
         XCTAssertEqual(system.state.index, 2)

@@ -25,6 +25,9 @@ struct PartyRunOverlay: View {
                 if hud.isFallen {
                     fallenBanner
                 }
+                if hud.isClearing {
+                    banner("The horde has stopped. Finish the last of them.", icon: "flag.fill")
+                }
                 restBanner
                 Spacer()
                 reviveControl
@@ -36,6 +39,7 @@ struct PartyRunOverlay: View {
         .animation(.easeOut(duration: 0.2), value: hud.reviveTarget)
         .animation(.easeOut(duration: 0.2), value: hud.isFallen)
         .animation(.easeOut(duration: 0.25), value: hud.restSeconds == nil)
+        .animation(.easeOut(duration: 0.25), value: hud.isClearing)
     }
 
     // MARK: Pieces

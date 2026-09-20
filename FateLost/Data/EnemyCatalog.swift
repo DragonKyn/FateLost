@@ -40,7 +40,7 @@ enum EnemyCatalog {
     /// are rarer, arrive a wave later and loose a shot only every four seconds.
     static let goblinArcher = EnemyDefinition(
         id: "enemy.goblinArcher", name: "Goblin Archer", family: .goblinoid, rank: .soldier,
-        maxHealth: 15, moveSpeed: 2.6, radius: 0.28,
+        maxHealth: 15, moveSpeed: 2.0, radius: 0.28,
         attackDamage: 8, attackReach: 0.3, attackWindup: 0.55, attackCooldown: 4,
         knockbackResistance: 0, damageType: .physical,
         behavior: .ranged(range: 7, projectileSpeed: 10, sprite: .projectileArrow),

@@ -803,6 +803,15 @@ final class PartyBreatherAndPoolTests: XCTestCase {
         XCTAssertEqual(sim.wave.phase, .fighting)
     }
 
+    func testAGuestFollowsTheHostOnlyWhenTheGapIsMoreThanLag() {
+        // A snapshot is a round trip old, so a hero at full speed is always a
+        // little ahead of it. That must not pull them back.
+        XCTAssertGreaterThan(MirrorWorld.followDistance, 4.5 * 0.4, "well beyond a walking speed's worth of lag")
+        XCTAssertGreaterThan(MirrorWorld.snapDistance, MirrorWorld.followDistance)
+        XCTAssertGreaterThanOrEqual(MirrorWorld.followDistance, HostInput.positionTrust,
+                                    "the host adopts what a guest says up to here, so a smaller gap is never the host's doing")
+    }
+
     func testTheFallenCanBeRevivedDuringTheBreather() {
         var sim = Party.make(2)
         Party.kill(&sim, hero: 1)

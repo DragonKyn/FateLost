@@ -43,6 +43,8 @@ struct GameplayHUDState: Equatable {
     var restVoters = 0
     /// This player has already asked to go on.
     var votedToProceed = false
+    /// The wave is over and its last enemies are being finished off.
+    var isClearing = false
 }
 
 /// One member of the party, as the corner of the screen lists them.
@@ -451,6 +453,7 @@ final class GameScene: SKScene {
         let lowHealth = simulation.player.health < simulation.player.maxHealth * Timing.lowHealthFraction
             && !simulation.isPlayerDefeated
         feedback.playerPosition = simulation.player.position
+        feedback.isParty = partyDriver != nil
         feedback.playerSpriteID = simulation.activeForm?.sprite ?? .playerAdventurer
         feedback.present(events, lowHealth: lowHealth, frame: renderFrame, dt: CGFloat(frameDelta))
 
@@ -462,7 +465,19 @@ final class GameScene: SKScene {
         deliverSummaryIfDue()
     }
 
+    /// A touch can end without the scene being told (an overlay took it, a
+    /// system gesture cancelled it). A stick still holding one would never
+    /// begin again, so a finished touch is let go.
+    private func releaseLostJoystickTouch() {
+        guard let touch = joystickTouch else { return }
+        if touch.phase == .ended || touch.phase == .cancelled {
+            joystickTouch = nil
+            joystick.end()
+        }
+    }
+
     private func currentIntent() -> PlayerIntent {
+        releaseLostJoystickTouch()
         PlayerIntent(move: projection.worldDirection(fromScreen: joystick.output))
     }
 
@@ -827,6 +842,7 @@ final class GameScene: SKScene {
     }
 
     private func applyRestHUD(to state: inout GameplayHUDState, wave: WaveState) {
+        state.isClearing = partyDriver != nil && wave.phase == .clearing
         guard partyDriver != nil, wave.phase == .resting else {
             proceedVoted = false
             return
