@@ -111,6 +111,13 @@ struct SkillDetailPanel: View {
         case .capstoneTaken(let id):
             let name = SkillCatalog.skill(id)?.name ?? "another capstone"
             return "You have already chosen \(name). Each archetype allows one capstone."
+        case .needsSynergy(let archetype, let count):
+            let other = SkillCatalog.archetype(archetype)?.name ?? "the other"
+            return "Spend \(count) more \(count == 1 ? "point" : "points") in the \(other) tree. "
+                + "An order asks for two."
+        case .orderCapstoneTaken(let id):
+            let name = SkillCatalog.skill(id)?.name ?? "another order"
+            return "You have already finished \(name). One order sees you through."
         }
     }
 }

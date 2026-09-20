@@ -23,7 +23,13 @@ enum SkillCatalog {
         .bard: BardSkills.skills,
     ]
 
-    static let all: [SkillDefinition] = ArchetypeID.allCases.flatMap { byArchetype[$0] ?? [] }
+    /// The order boards. Kept out of `byArchetype` on purpose: an order
+    /// node's points count toward its primary archetype, but it is not part
+    /// of that archetype's tree and must never appear in it.
+    static let orderSkills: [SkillDefinition] = OrderCatalog.all
+
+    static let all: [SkillDefinition] =
+        ArchetypeID.allCases.flatMap { byArchetype[$0] ?? [] } + orderSkills
 
     private static let byID: [SkillID: SkillDefinition] = {
         var index: [SkillID: SkillDefinition] = [:]
@@ -60,6 +66,14 @@ enum SkillCatalog {
 
     static func skills(for archetype: ArchetypeID) -> [SkillDefinition] {
         byArchetype[archetype] ?? []
+    }
+
+    static func skills(inOrder order: HybridID) -> [SkillDefinition] {
+        OrderCatalog.byOrder[order] ?? []
+    }
+
+    static func order(_ id: HybridID) -> HybridOrderDefinition? {
+        HybridOrders.order(id)
     }
 
     static func archetype(_ id: ArchetypeID) -> ArchetypeDefinition? {

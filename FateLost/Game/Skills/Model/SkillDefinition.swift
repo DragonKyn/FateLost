@@ -157,13 +157,18 @@ struct SkillDefinition: Identifiable, Equatable {
     /// Any one of these must be learned first.
     let prerequisites: [SkillID]
     let tags: Set<CombatTag>
-    /// Reserved for hybrid nodes (multiclass synergies): a second archetype
-    /// that must also be invested in.
+    /// Hybrid nodes (multiclass synergies): a second archetype that must
+    /// also be invested in before the node will open.
     let synergy: ArchetypeID?
+    /// The order this node belongs to, or nil for an ordinary archetype
+    /// skill. Order nodes are shown on their own board, not in the
+    /// archetype's tree, even though their points count toward `archetype`.
+    let order: HybridID?
 
     init(id: SkillID, name: String, archetype: ArchetypeID, path: PathID?, tier: SkillTier, maxRank: Int,
          kind: SkillKind, symbol: String, text: String, values: [RankValue] = [], effects: [SkillEffect],
-         prerequisites: [SkillID] = [], tags: Set<CombatTag> = [], synergy: ArchetypeID? = nil) {
+         prerequisites: [SkillID] = [], tags: Set<CombatTag> = [], synergy: ArchetypeID? = nil,
+         order: HybridID? = nil) {
         self.id = id
         self.name = name
         self.archetype = archetype
@@ -178,6 +183,7 @@ struct SkillDefinition: Identifiable, Equatable {
         self.prerequisites = prerequisites
         self.tags = tags
         self.synergy = synergy
+        self.order = order
     }
 
     /// The ability this skill grants, if any.

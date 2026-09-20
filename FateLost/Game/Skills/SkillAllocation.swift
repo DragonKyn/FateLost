@@ -70,14 +70,26 @@ struct SkillAllocation: Equatable {
 struct SkillTreeRules {
     /// Points needed in an archetype's lower tiers before a tier opens.
     var tierThresholds: [SkillTier: Int] = [.one: 0, .two: 3, .three: 7, .four: 12, .capstone: 20]
+    /// Points needed in an order node's *second* archetype. Deliberately
+    /// close to the primary thresholds: an order should cost about as much
+    /// again as the tree it hangs off, which is what makes going wide a
+    /// real decision rather than a free extra.
+    var synergyThresholds: [SkillTier: Int] = [.one: 0, .two: 4, .three: 8, .four: 12, .capstone: 14]
     /// Capstones one archetype allows: committing to one subclass's peak
     /// closes the others, so a build has to choose who it becomes.
     var capstonesPerArchetype = 1
+    /// Order capstones allowed across the whole build. One: you become one
+    /// thing, not a collector of endings.
+    var orderCapstones = 1
 
     static let standard = SkillTreeRules()
 
     func threshold(for tier: SkillTier) -> Int {
         tierThresholds[tier] ?? 0
+    }
+
+    func synergyThreshold(for tier: SkillTier) -> Int {
+        synergyThresholds[tier] ?? 0
     }
 
     /// Why a skill can't take another point right now.
@@ -90,6 +102,10 @@ struct SkillTreeRules {
         case needsPrerequisite([SkillID])
         /// Another capstone of this archetype is already taken.
         case capstoneTaken(SkillID)
+        /// This many more points are needed in the order's second archetype.
+        case needsSynergy(ArchetypeID, Int)
+        /// An order capstone is already taken.
+        case orderCapstoneTaken(SkillID)
     }
 
     func denial(for skill: SkillDefinition, in allocation: SkillAllocation, availablePoints: Int) -> Denial? {
@@ -101,16 +117,32 @@ struct SkillTreeRules {
         if have < need {
             return .needsPoints(need - have)
         }
+        if let synergy = skill.synergy {
+            let held = allocation.points(in: synergy)
+            let wanted = synergyThreshold(for: skill.tier)
+            if held < wanted {
+                return .needsSynergy(synergy, wanted - held)
+            }
+        }
         if !skill.prerequisites.isEmpty,
            !skill.prerequisites.contains(where: { allocation.rank(of: $0) > 0 }) {
             return .needsPrerequisite(skill.prerequisites)
         }
         if skill.tier == .capstone, allocation.rank(of: skill.id) == 0 {
-            let taken = SkillCatalog.skills(for: skill.archetype).filter {
-                $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
-            }
-            if taken.count >= capstonesPerArchetype, let first = taken.first {
-                return .capstoneTaken(first.id)
+            if skill.order != nil {
+                let taken = SkillCatalog.orderSkills.filter {
+                    $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
+                }
+                if taken.count >= orderCapstones, let first = taken.first {
+                    return .orderCapstoneTaken(first.id)
+                }
+            } else {
+                let taken = SkillCatalog.skills(for: skill.archetype).filter {
+                    $0.tier == .capstone && $0.id != skill.id && allocation.rank(of: $0.id) > 0
+                }
+                if taken.count >= capstonesPerArchetype, let first = taken.first {
+                    return .capstoneTaken(first.id)
+                }
             }
         }
         if availablePoints <= 0 {
@@ -143,6 +175,10 @@ struct SkillTreeRules {
                !skill.prerequisites.contains(where: { allocation.rank(of: $0) > 0 }) {
                 return false
             }
+            if let synergy = skill.synergy,
+               allocation.points(in: synergy) < synergyThreshold(for: skill.tier) {
+                return false
+            }
         }
         for archetype in ArchetypeID.allCases {
             let capstones = SkillCatalog.skills(for: archetype).filter {
@@ -150,6 +186,10 @@ struct SkillTreeRules {
             }
             if capstones.count > capstonesPerArchetype { return false }
         }
+        let orderCapstonesTaken = SkillCatalog.orderSkills.filter {
+            $0.tier == .capstone && allocation.rank(of: $0.id) > 0
+        }
+        if orderCapstonesTaken.count > orderCapstones { return false }
         return true
     }
 }
@@ -158,19 +198,36 @@ struct SkillTreeRules {
 ///
 /// Everyone starts as an Adventurer. Three points in an archetype earn its
 /// name; a clear lean toward one subclass path earns that path's name
-/// instead ("Frostweaver", "Beastmaster"). The runner-up archetype is shown
-/// beneath, hinting at the hybrids to come.
+/// instead ("Frostweaver", "Beastmaster"). An order outranks both: once
+/// enough of one is taken, that is simply what you are, because reaching it
+/// cost points in two archetypes and nothing else in the build says as much.
 enum BuildTitle {
     struct Title: Equatable {
         let name: String
         let subtitle: String?
         let archetype: ArchetypeID?
+        let order: HybridID?
+
+        init(name: String, subtitle: String?, archetype: ArchetypeID?, order: HybridID? = nil) {
+            self.name = name
+            self.subtitle = subtitle
+            self.archetype = archetype
+            self.order = order
+        }
     }
 
     static let archetypeThreshold = 3
     static let pathThreshold = 6
+    /// Points in one order before it names the build.
+    static let orderThreshold = 4
 
     static func title(for allocation: SkillAllocation) -> Title {
+        if let order = leadingOrder(in: allocation), let definition = HybridOrders.order(order) {
+            let second = SkillCatalog.archetype(definition.synergy)?.name ?? ""
+            let first = SkillCatalog.archetype(definition.primary)?.name ?? ""
+            return Title(name: definition.name, subtitle: "\(first) and \(second) both, and neither",
+                         archetype: definition.primary, order: order)
+        }
         let ranked = ArchetypeID.allCases
             .map { ($0, allocation.points(in: $0)) }
             .filter { $0.1 > 0 }
@@ -197,5 +254,23 @@ enum BuildTitle {
             subtitle = "with the ways of the \(secondary.name)"
         }
         return Title(name: name, subtitle: subtitle, archetype: top.0)
+    }
+
+    /// The order with the most points in it, if any has enough to speak for
+    /// the build. Ties go to the earlier order so the name does not flicker.
+    static func leadingOrder(in allocation: SkillAllocation) -> HybridID? {
+        var best: (HybridID, Int)?
+        for order in HybridID.allCases {
+            let points = points(in: order, of: allocation)
+            guard points >= orderThreshold else { continue }
+            if best == nil || points > best!.1 {
+                best = (order, points)
+            }
+        }
+        return best?.0
+    }
+
+    static func points(in order: HybridID, of allocation: SkillAllocation) -> Int {
+        SkillCatalog.skills(inOrder: order).reduce(0) { $0 + allocation.rank(of: $1.id) }
     }
 }
