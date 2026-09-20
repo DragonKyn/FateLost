@@ -101,6 +101,7 @@ struct GameplayScreen: View {
 /// Minimal always-on information. Kept small and at the edges so the
 /// battlefield stays readable.
 private struct GameplayHUDOverlay: View {
+    @Environment(AppServices.self) private var services
     let session: GameSession
     let onPause: () -> Void
     let onSkills: () -> Void
