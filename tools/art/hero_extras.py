@@ -202,30 +202,79 @@ def war_plate(g):
 
 # -- wings ------------------------------------------------------------------
 
+GOLD = 0xC9A55A
+GOLD_DARK = 0x8E6F2E
+FEATHER_BACK = 0xC5CBDA
+FEATHER_BACK_EDGE = 0x8F97AD
+FEATHER = 0xF3F1EA
+FEATHER_EDGE = 0xB9BCC8
+FEATHER_HI = 0xFFFFFF
+
+
+def _feather(s, base, angle, length, width, color, edge, side, rib=None):
+    """One flight feather: a rounded blade that swells then comes to a soft
+    point, bending a little toward the ground as it goes."""
+    dx, dy = side * math.cos(angle), math.sin(angle)
+    nx, ny = -dy, dx
+    left, right = [], []
+    steps = 9
+    for i in range(steps + 1):
+        t = i / steps
+        swell = math.sin(math.pi * min(1.0, 0.12 + t * 0.88)) ** 0.75
+        w = width * swell * (1 - 0.25 * t)
+        droop = 0.16 * length * t * t
+        cx = base[0] + dx * length * t
+        cy = base[1] + dy * length * t + droop
+        left.append((cx + nx * w, cy + ny * w))
+        right.append((cx - nx * w, cy - ny * w))
+    tip = (base[0] + dx * length, base[1] + dy * length + 0.16 * length)
+    s.poly(left + [tip] + right[::-1], color, outline=INK, width=0.6)
+    if rib is not None:
+        s.line(base, tip, rib, 0.4)
+    return tip
+
+
 def angel(g):
-    s = layer(f"heroWingsAngel{cap(g.build)}", f"A pair of white feathered wings behind a {g.build} frame.")
+    s = layer(f"heroWingsAngel{cap(g.build)}", f"A pair of tiered white wings with gilded edges behind a {g.build} frame.")
     for side in (-1, 1):
-        bx, by = CX + side * 6, g.sy + 3
-        # Two banks of feathers, the back one darker, fanned from up to down.
-        for bank, (shade, edge, scale, count) in enumerate(((0xC9C3B4, 0xA6A08F, 1.0, 9),
-                                                            (0xF4F1E8, 0xD6D1C2, 0.78, 8))):
-            for j in range(count):
-                t = j / (count - 1)
-                angle = math.radians(-72 + t * 104)
-                # Longest along the top edge, shortening toward the body.
-                length = (24 - t * 8) * scale
-                direction = (side * math.cos(angle), math.sin(angle))
-                start = (bx + side * (1.0 + bank * 2), by - 3 + bank * 2 + t * 3)
-                bend = 0.18 * side
-                mid = (start[0] + direction[0] * length * 0.5, start[1] + direction[1] * length * 0.5)
-                end = (start[0] + direction[0] * length + bend * length * 0.2, start[1] + direction[1] * length + length * 0.12)
-                s.taper([start, mid, end], shade, 6.0 - bank * 0.6, 2.0, outline=INK, width=0.5)
-                s.line(start, mid, edge, 0.4)
-        # Short covert feathers where the wing meets the shoulder.
-        for k in range(4):
-            s.ellipse(bx + side * (2 + k * 3.4) - 2.6, by - 9 + k * 1.6, 5.6, 6.4, 0xFAF7EE, outline=INK, width=0.4)
-        # The wing's arm, along the leading edge.
-        s.curve([(bx, by - 1), (bx + side * 6, by - 11), (bx + side * 12, by - 17)], 0xE6E0D0, 2.0)
+        rx, ry = CX + side * 5, g.sy + 3
+        elbow = (rx + side * 7.0, ry - 14.5)
+        wrist = (rx + side * 14.2, ry - 21)
+        # A soft light behind each wing.
+        s.glow(rx + side * 13, ry - 8, 19, 0xFFF1C8, 0.34)
+        # Primaries: the long flight feathers, fanned from the hand.
+        primaries = []
+        for i in range(7):
+            t = i / 6
+            base = (elbow[0] + (wrist[0] - elbow[0]) * (0.45 + 0.55 * t) , elbow[1] + (wrist[1] - elbow[1]) * (0.45 + 0.55 * t))
+            angle = math.radians(56 + (1 - t) * 34)
+            primaries.append((base, angle, 20.5 - (1 - t) * 5))
+        for base, angle, length in reversed(primaries):
+            _feather(s, base, angle, length, 3.9, FEATHER_BACK, FEATHER_BACK_EDGE, side, rib=FEATHER_BACK_EDGE)
+        # Secondaries: shorter, paler, hanging from the arm nearer the body.
+        for i in range(6):
+            t = i / 5
+            base = (rx + (elbow[0] - rx) * (0.15 + 0.85 * t), ry + (elbow[1] - ry) * (0.15 + 0.85 * t) + 1.2)
+            angle = math.radians(72 + (1 - t) * 20)
+            _feather(s, base, angle, 16 - (1 - t) * 3.5, 3.5, FEATHER, FEATHER_EDGE, side, rib=FEATHER_EDGE)
+        # Coverts: two rows of rounded feathers along the arm, overlapping.
+        for row, (radius, offset, colour) in enumerate(((2.9, 2.8, FEATHER), (2.4, 0.6, FEATHER_HI))):
+            for k in range(8):
+                t = k / 7
+                point = (rx + (wrist[0] - rx) * (0.06 + 0.94 * t) - side * 0.6, ry + (wrist[1] - ry) * (0.06 + 0.94 * t) + offset)
+                r = radius * (1.0 - 0.28 * t)
+                s.ellipse(point[0] - r, point[1] - r * 0.85, 2 * r, 2 * r * 1.15, colour, outline=INK, width=0.5)
+        # The gilded leading edge: an arch from the shoulder out to the hand.
+        arch = [(rx, ry)]
+        for k in range(1, 9):
+            u = k / 8
+            arch.append(((1 - u) ** 2 * rx + 2 * (1 - u) * u * (rx + side * 1.2) + u * u * wrist[0],
+                         (1 - u) ** 2 * ry + 2 * (1 - u) * u * (ry - 19) + u * u * wrist[1]))
+        s.taper(arch, GOLD, 2.8, 1.5, outline=INK, width=0.6)
+        s.line((arch[1][0] + side * 0.6, arch[1][1] - 0.4), (arch[5][0], arch[5][1] + 0.4), 0xF3DE9C, 0.5)
+        s.dot(wrist[0], wrist[1], 1.7, GOLD)
+        s.dot(wrist[0], wrist[1], 0.7, 0xF3DE9C)
+        s.dot(elbow[0] + side * 0.4, elbow[1] + 0.6, 1.2, GOLD_DARK)
     return s
 
 

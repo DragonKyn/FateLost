@@ -66,20 +66,20 @@ final class BoomerangTests: XCTestCase {
     func testItComesBackIsCaughtAndIsThrownAgain() {
         var sim = solo()
         addDummy(&sim, offset: CGPoint(x: 4, y: 0))
-        var throws = 0
+        var throwCount = 0
         var sawReturning = false
         var sawCaught = false
         var inFlight = false
         for _ in 0..<(60 * 8) {
             sim.step(dt: dt)
-            throws += fired(sim.drainEvents())
+            throwCount += fired(sim.drainEvents())
             if sim.combat.projectiles.contains(where: \.isReturning) { sawReturning = true }
             if inFlight, sim.combat.projectiles.isEmpty { sawCaught = true }
             inFlight = !sim.combat.projectiles.isEmpty
         }
         XCTAssertTrue(sawReturning, "it never turned for home")
         XCTAssertTrue(sawCaught, "it was never caught: it must not stay in the world or in the hand")
-        XCTAssertGreaterThanOrEqual(throws, 5, "it stopped attacking after the first throw")
+        XCTAssertGreaterThanOrEqual(throwCount, 5, "it stopped attacking after the first throw")
     }
 
     func testTheReturningBoomerangFollowsTheThrowerAsTheyRun() {
