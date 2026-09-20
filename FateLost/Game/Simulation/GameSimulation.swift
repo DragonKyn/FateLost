@@ -78,6 +78,11 @@ struct GameSimulation {
     private(set) var abilitySlots: [AbilityID?] = Array(repeating: nil, count: AbilitySlots.count)
     /// Bumped whenever the build changes, for observers.
     private(set) var buildVersion = 0
+    /// Relics found this run.
+    private(set) var relics = RelicInventory()
+    /// A find waiting for the player to choose from. While it is set the
+    /// scene holds the game still and shows the cards.
+    private(set) var offer: RelicOffer?
 
     private let movement: MovementSystem
     private var spawner: SpawnSystem
@@ -590,7 +595,7 @@ struct GameSimulation {
     }
 
     private mutating func rebuild() {
-        combat.install(CompiledBuild.compile(allocation))
+        combat.install(CompiledBuild.compile(allocation, relics: relics))
         buildVersion += 1
         refreshStats(force: true)
         alliesNeedSync = true
@@ -635,6 +640,48 @@ struct GameSimulation {
         for aura in combat.build.auras {
             ActionExecutor.place(aura, context, &combat, player, isAura: true)
         }
+    }
+
+    // MARK: - Relics
+
+    /// Opens a find for the player to choose from. A find that opens on top
+    /// of another waits its turn rather than replacing it.
+    ///
+    /// - Returns: false if an offer is already open, or nothing is left to offer.
+    @discardableResult
+    mutating func openOffer(tier: LootTier) -> Bool {
+        guard offer == nil, !player.isDefeated else { return false }
+        let dealt = RelicRoller.offer(tier: tier, wave: waves.state.index, inventory: relics,
+                                      random: &combat.random)
+        guard !dealt.choices.isEmpty else { return false }
+        offer = dealt
+        return true
+    }
+
+    /// Takes one of the cards on offer and closes the find.
+    @discardableResult
+    mutating func chooseRelic(at index: Int) -> Bool {
+        guard let current = offer, current.choices.indices.contains(index) else { return false }
+        offer = nil
+        grantRelic(current.choices[index])
+        return true
+    }
+
+    /// Spends the offer's reroll on a fresh set of cards.
+    @discardableResult
+    mutating func rerollOffer() -> Bool {
+        guard var current = offer else { return false }
+        guard RelicRoller.reroll(&current, inventory: relics, random: &combat.random) else { return false }
+        offer = current
+        return true
+    }
+
+    /// Puts a relic in the pack and rebuilds what it changes.
+    mutating func grantRelic(_ choice: RelicChoice) {
+        let rank = relics.add(choice.relic, rank: choice.rank)
+        guard rank > 0 else { return }
+        rebuild()
+        combat.events.append(.relicGained(id: choice.relic, rank: rank))
     }
 
     // MARK: - Developer commands

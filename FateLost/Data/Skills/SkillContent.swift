@@ -7,11 +7,20 @@ import Foundation
 /// reads close to its design note. Every skill is its own `static let`,
 /// which keeps each expression small for the compiler and each skill easy to
 /// find.
-protocol SkillContent {
+protocol SkillContent: EffectShorthand {
     static var archetype: ArchetypeID { get }
 }
 
+/// The part of the shorthand that needs no archetype: stats, damage, statuses
+/// and the shapes an effect can take. Skills and relics both write their
+/// effects with it. `namespace` keeps generated ids (buffs, mostly) apart.
+protocol EffectShorthand {
+    static var namespace: String { get }
+}
+
 extension SkillContent {
+    static var namespace: String { archetype.rawValue }
+
     static func skill(_ id: String, _ name: String, path: String? = nil, tier: SkillTier, ranks: Int,
                       kind: SkillKind, symbol: String, text: String, values: [RankValue] = [],
                       effects: [SkillEffect], requires: [String] = [], tags: Set<CombatTag> = []) -> SkillDefinition {
@@ -40,6 +49,14 @@ extension SkillContent {
         "\(archetype.rawValue).\(name)"
     }
 
+    static func ability(_ id: String, _ name: String, symbol: String, cooldown: RankValue, ultimate: Bool = false,
+                        _ action: EffectAction) -> SkillEffect {
+        .ability(AbilityDefinition(id: abilityID(id), name: name, symbol: symbol, cooldown: cooldown,
+                                   isUltimate: ultimate, action: action))
+    }
+}
+
+extension EffectShorthand {
     static func rv(_ first: Double, _ perRank: Double = 0) -> RankValue {
         RankValue(first, perRank)
     }
@@ -82,12 +99,6 @@ extension SkillContent {
 
     // MARK: Effects
 
-    static func ability(_ id: String, _ name: String, symbol: String, cooldown: RankValue, ultimate: Bool = false,
-                        _ action: EffectAction) -> SkillEffect {
-        .ability(AbilityDefinition(id: abilityID(id), name: name, symbol: symbol, cooldown: cooldown,
-                                   isUltimate: ultimate, action: action))
-    }
-
     static func proc(_ trigger: SkillTrigger, chance: RankValue = 1, cooldown: Double = 0,
                      target: TargetCondition? = nil, requires: PlayerCondition? = nil,
                      _ action: EffectAction) -> SkillEffect {
@@ -97,7 +108,7 @@ extension SkillContent {
 
     static func buff(_ id: String, _ modifiers: [ModifierSpec], duration: RankValue,
                      stacks: Int = 1) -> EffectAction {
-        .buff(BuffSpec(id: "\(archetype.rawValue).\(id)", modifiers: modifiers, duration: duration,
+        .buff(BuffSpec(id: "\(namespace).\(id)", modifiers: modifiers, duration: duration,
                        maxStacks: stacks))
     }
 

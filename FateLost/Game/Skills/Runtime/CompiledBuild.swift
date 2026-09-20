@@ -102,7 +102,13 @@ struct CompiledBuild {
     private(set) var transformProcs: [Int] = []
     private(set) var attackProcs: [Int] = []
 
-    static func compile(_ allocation: SkillAllocation) -> CompiledBuild {
+    /// Compiles a skill allocation, and the relics carried alongside it.
+    ///
+    /// Relics go through the same `add` as skills, so a relic can do anything
+    /// a skill effect can and combat never has to know the difference.
+    /// Abilities and forms are the exception: they live in slots the tree
+    /// screen manages, so a relic that names one is simply ignored.
+    static func compile(_ allocation: SkillAllocation, relics: RelicInventory = RelicInventory()) -> CompiledBuild {
         var build = CompiledBuild()
 
         for archetype in SkillCatalog.archetypes {
@@ -115,14 +121,24 @@ struct CompiledBuild {
 
         for (skill, rank) in allocation.learned {
             for effect in skill.effects {
-                build.add(effect, rank: rank, skill: skill)
+                build.add(effect, rank: rank, source: skill.id)
+            }
+        }
+        for (relic, rank) in relics.held {
+            for effect in relic.effects {
+                switch effect {
+                case .ability, .permanentForm:
+                    continue
+                default:
+                    build.add(effect, rank: rank, source: relic.id)
+                }
             }
         }
         build.indexProcs()
         return build
     }
 
-    private mutating func add(_ effect: SkillEffect, rank: Int, skill: SkillDefinition) {
+    private mutating func add(_ effect: SkillEffect, rank: Int, source: SkillID) {
         switch effect {
         case .stat(let spec):
             modifiers.append(spec.at(rank))
@@ -141,11 +157,11 @@ struct CompiledBuild {
         case .proc(let spec):
             procs.append(ProcRule(trigger: spec.trigger, chance: spec.chance.at(rank), cooldown: spec.cooldown,
                                   target: spec.target, requires: spec.requires, action: spec.action.resolved(rank),
-                                  skillID: skill.id))
+                                  skillID: source))
         case .weapon(let modifier):
             add(modifier, rank: rank)
         case .ability(let definition):
-            abilities[definition.id] = LearnedAbility(definition: definition, rank: rank, skillID: skill.id,
+            abilities[definition.id] = LearnedAbility(definition: definition, rank: rank, skillID: source,
                                                       action: definition.action.resolved(rank),
                                                       cooldown: max(0.5, definition.cooldown.at(rank)))
             if case .transform(let form) = definition.action {
@@ -153,7 +169,7 @@ struct CompiledBuild {
             }
         case .companion(let spec):
             let resolved = spec.resolved(rank)
-            companions.append(CompanionRule(key: "\(skill.id)|\(spec.key)", spec: resolved,
+            companions.append(CompanionRule(key: "\(source)|\(spec.key)", spec: resolved,
                                             count: max(1, Int(resolved.count.value))))
         case .aura(let spec):
             auras.append(spec.resolved(rank))

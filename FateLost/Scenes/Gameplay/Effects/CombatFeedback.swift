@@ -273,6 +273,17 @@ final class CombatFeedback {
                 lastEmberTime = now
                 audio.play(SoundCue.emberChimes[emberCombo])
 
+            case let .relicGained(id, rank):
+                guard let relic = RelicCatalog.relic(id) else { break }
+                let color = relic.rarity.color.uiColor
+                effects.ring(at: playerPosition, radius: 1.4, color: color, lifetime: 0.6)
+                effects.floatingText(relic.title(atRank: rank), at: playerPosition, color: color, size: 17,
+                                     lifetime: 1.6)
+                audio.play(.skillLearn)
+                if relic.rarity >= .epic {
+                    haptics.play(.legendaryItem)
+                }
+
             case let .levelUp(level, position):
                 levelFlash = 1
                 effects.levelUp(at: position, radius: levelUpRadius)
