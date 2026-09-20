@@ -3,11 +3,14 @@ import Foundation
 
 /// How the hero is built. It changes how they look and where the weapon
 /// sits in the hand, and nothing else: no build is stronger, faster or
-/// tougher than another. A body is a choice about who you are, not a stat.
+/// tougher than another. A body is a choice about who you are, not a stat,
+/// so every build is free.
 enum BodyBuild: String, Codable, CaseIterable, Identifiable {
     case lithe
     case standard
     case broad
+    case stout
+    case towering
 
     var id: String { rawValue }
 
@@ -16,6 +19,8 @@ enum BodyBuild: String, Codable, CaseIterable, Identifiable {
         case .lithe: return "Lithe"
         case .standard: return "Wanderer"
         case .broad: return "Broad"
+        case .stout: return "Stout"
+        case .towering: return "Towering"
         }
     }
 
@@ -24,6 +29,8 @@ enum BodyBuild: String, Codable, CaseIterable, Identifiable {
         case .lithe: return "Tall, narrow, quick to vanish."
         case .standard: return "Nothing remarkable. Yet."
         case .broad: return "Shoulders made for carrying things."
+        case .stout: return "Low to the ground and hard to move."
+        case .towering: return "Ducks under most doorways."
         }
     }
 
@@ -33,6 +40,8 @@ enum BodyBuild: String, Codable, CaseIterable, Identifiable {
         case .lithe: return CGPoint(x: 10, y: 21)
         case .standard: return CGPoint(x: 11.5, y: 20)
         case .broad: return CGPoint(x: 14.5, y: 19)
+        case .stout: return CGPoint(x: 13.5, y: 17)
+        case .towering: return CGPoint(x: 13, y: 24)
         }
     }
 }
@@ -43,6 +52,12 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
     case longCoat
     case shroud
     case pilgrim
+    case druid
+    case ninja
+    case wizard
+    case samurai
+    case paladin
+    case vampire
 
     var id: String { rawValue }
 
@@ -53,6 +68,12 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
         case .longCoat: return "Long Coat"
         case .shroud: return "Tattered Shroud"
         case .pilgrim: return "Pilgrim's Cape"
+        case .druid: return "Druid's Mantle"
+        case .ninja: return "Shadow Garb"
+        case .wizard: return "Star Robes"
+        case .samurai: return "Ronin's Kimono"
+        case .paladin: return "Paladin's Tabard"
+        case .vampire: return "Vampire's Cloak"
         }
     }
 
@@ -63,6 +84,12 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
         case .longCoat: return "Buttoned to the knee."
         case .shroud: return "Torn by things that did not let go."
         case .pilgrim: return "A high collar and a long road."
+        case .druid: return "Leaves that have not yet noticed autumn."
+        case .ninja: return "Wrapped tight, with a scarf that will not sit still."
+        case .wizard: return "Wide sleeves, and stars sewn in."
+        case .samurai: return "Winged shoulders, and a master long gone."
+        case .paladin: return "Steel under a sworn colour."
+        case .vampire: return "A collar to hide behind, and a lining to be seen."
         }
     }
 }
@@ -72,6 +99,12 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
     case cowl
     case bare
     case helm
+    case greatHelm
+    case wizardHat
+    case eyeless
+    case horned
+    case plague
+    case skull
 
     var id: String { rawValue }
 
@@ -81,6 +114,12 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
         case .cowl: return "Veiled Cowl"
         case .bare: return "Bare Head"
         case .helm: return "Iron Helm"
+        case .greatHelm: return "Great Helm"
+        case .wizardHat: return "Wizard's Hat"
+        case .eyeless: return "Eyeless Hood"
+        case .horned: return "Horned Helm"
+        case .plague: return "Plague Mask"
+        case .skull: return "Bone Mask"
         }
     }
 
@@ -90,6 +129,102 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
         case .cowl: return "Cloth across the mouth."
         case .bare: return "Nothing to hide. Nothing to hide behind."
         case .helm: return "Dented, and still on."
+        case .greatHelm: return "Shut tight, with a plume for show."
+        case .wizardHat: return "A beard that has earned its own chapter."
+        case .eyeless: return "No face. Nothing looking out."
+        case .horned: return "Loud from across a field."
+        case .plague: return "It has seen worse than you."
+        case .skull: return "What is left, worn on purpose."
+        }
+    }
+}
+
+/// A mark worn over the chest of any outfit.
+enum EmblemStyle: String, Codable, CaseIterable, Identifiable {
+    case plain
+    case skulls
+    case vines
+    case runes
+    case celestial
+    case dragon
+
+    var id: String { rawValue }
+
+    var name: String {
+        switch self {
+        case .plain: return "No Emblem"
+        case .skulls: return "Skull and Bones"
+        case .vines: return "Living Vines"
+        case .runes: return "Arcane Runes"
+        case .celestial: return "Celestial Markings"
+        case .dragon: return "Dragon Crest"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .plain: return "Nothing on the chest."
+        case .skulls: return "A warning, worn where it can be read."
+        case .vines: return "They climb on their own."
+        case .runes: return "Lit in the colour of your eyes."
+        case .celestial: return "A moon and the stars that follow it."
+        case .dragon: return "A wyrm's head, wings swept back."
+        }
+    }
+}
+
+/// Metalwork worn over any outfit.
+enum MetalDetail: String, Codable, CaseIterable, Identifiable {
+    case plain
+    case studs
+    case filigree
+    case pauldrons
+    case warPlate
+
+    var id: String { rawValue }
+
+    var name: String {
+        switch self {
+        case .plain: return "No Metalwork"
+        case .studs: return "Riveted Studs"
+        case .filigree: return "Fine Filigree"
+        case .pauldrons: return "Steel Pauldrons"
+        case .warPlate: return "War Plate"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .plain: return "Cloth and leather only."
+        case .studs: return "Rows of rivets, and a little swagger."
+        case .filigree: return "Curling wire, in your trim colour."
+        case .pauldrons: return "Spiked steel on both shoulders."
+        case .warPlate: return "Breastplate, gorget, tassets and spikes."
+        }
+    }
+}
+
+/// Wings worn behind any outfit.
+enum WingStyle: String, Codable, CaseIterable, Identifiable {
+    case plain
+    case angel
+    case demon
+
+    var id: String { rawValue }
+
+    var name: String {
+        switch self {
+        case .plain: return "No Wings"
+        case .angel: return "Angel Wings"
+        case .demon: return "Demon Wings"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .plain: return "Grounded."
+        case .angel: return "White feathers, and no apology."
+        case .demon: return "Leather and bone, with claws."
         }
     }
 }
@@ -103,7 +238,8 @@ struct HeroSwatch: Identifiable, Equatable, Hashable {
 
 /// Every colour the hero can be dressed in. Each list opens with the colour
 /// the hero has always had, and an unknown id falls back to it, so a saved
-/// choice can never point at something that is gone.
+/// choice can never point at something that is gone. New colours are only
+/// ever added to the end.
 enum HeroPalette {
     static let cloak: [HeroSwatch] = [
         HeroSwatch(id: "crimson", name: "Crimson", hex: 0x5B2323),
@@ -116,6 +252,12 @@ enum HeroPalette {
         HeroSwatch(id: "rust", name: "Rust", hex: 0x7C3B1D),
         HeroSwatch(id: "bone", name: "Bone", hex: 0xA79E8A),
         HeroSwatch(id: "black", name: "Void", hex: 0x1F1C22),
+        HeroSwatch(id: "ivory", name: "Ivory", hex: 0xD8D2C4),
+        HeroSwatch(id: "royal", name: "Royal Blue", hex: 0x2C4FA0),
+        HeroSwatch(id: "emerald", name: "Emerald", hex: 0x1F6B3A),
+        HeroSwatch(id: "rose", name: "Rose", hex: 0x9B3A5A),
+        HeroSwatch(id: "slate", name: "Slate", hex: 0x38404A),
+        HeroSwatch(id: "sunset", name: "Sunset", hex: 0xB8501E),
     ]
 
     static let trim: [HeroSwatch] = [
@@ -126,6 +268,11 @@ enum HeroPalette {
         HeroSwatch(id: "verdigris", name: "Verdigris", hex: 0x4FB39A),
         HeroSwatch(id: "blood", name: "Blood", hex: 0xA12222),
         HeroSwatch(id: "gold", name: "Gold", hex: 0xF0C94A),
+        HeroSwatch(id: "black", name: "Black", hex: 0x14121A),
+        HeroSwatch(id: "copper", name: "Copper", hex: 0xB0703A),
+        HeroSwatch(id: "white", name: "White", hex: 0xF4F2EC),
+        HeroSwatch(id: "sapphire", name: "Sapphire", hex: 0x4A78D8),
+        HeroSwatch(id: "amethyst", name: "Amethyst", hex: 0x9A6AE0),
     ]
 
     static let eyes: [HeroSwatch] = [
@@ -136,6 +283,9 @@ enum HeroPalette {
         HeroSwatch(id: "violet", name: "Violet", hex: 0xC08CFF),
         HeroSwatch(id: "crimson", name: "Crimson", hex: 0xFF4A4A),
         HeroSwatch(id: "moon", name: "Moon", hex: 0xF2F2F2),
+        HeroSwatch(id: "azure", name: "Azure", hex: 0x5A8CFF),
+        HeroSwatch(id: "gold", name: "Gold", hex: 0xFFD84A),
+        HeroSwatch(id: "rose", name: "Rose", hex: 0xFF7AC0),
     ]
 
     static let skin: [HeroSwatch] = [
@@ -145,6 +295,7 @@ enum HeroPalette {
         HeroSwatch(id: "brown", name: "Brown", hex: 0x8A5D3B),
         HeroSwatch(id: "deep", name: "Deep", hex: 0x5C3B26),
         HeroSwatch(id: "ashen", name: "Ashen", hex: 0x9C9A98),
+        HeroSwatch(id: "verdant", name: "Verdant", hex: 0x7BA35E),
     ]
 
     static let hair: [HeroSwatch] = [
@@ -154,6 +305,8 @@ enum HeroPalette {
         HeroSwatch(id: "straw", name: "Straw", hex: 0xC9A65C),
         HeroSwatch(id: "silver", name: "Silver", hex: 0xC4C7CE),
         HeroSwatch(id: "snow", name: "Snow", hex: 0xEDEAE2),
+        HeroSwatch(id: "midnight", name: "Midnight", hex: 0x2E4A8C),
+        HeroSwatch(id: "rose", name: "Rose", hex: 0xD46A9A),
     ]
 
     static func swatch(_ id: String, in list: [HeroSwatch]) -> HeroSwatch {
@@ -161,7 +314,8 @@ enum HeroPalette {
     }
 }
 
-/// The hero's look: a body, a cloak, a head and five colours.
+/// The hero's look: a body, a cloak, a head, five colours and three kinds of
+/// extra (an emblem, metalwork and wings).
 ///
 /// Purely cosmetic and saved on its own, apart from the Legacy board, so
 /// nothing that happens to a run or a profile can cost a player the
@@ -176,6 +330,9 @@ struct HeroAppearance: Codable, Equatable, Hashable {
     var eyeColor = HeroPalette.eyes[0].id
     var skinTone = HeroPalette.skin[0].id
     var hairColor = HeroPalette.hair[0].id
+    var emblem: EmblemStyle = .plain
+    var detail: MetalDetail = .plain
+    var wings: WingStyle = .plain
 
     static let standard = HeroAppearance()
 
@@ -191,6 +348,9 @@ struct HeroAppearance: Codable, Equatable, Hashable {
         eyeColor = (try? values.decodeIfPresent(String.self, forKey: .eyeColor)) ?? eyeColor
         skinTone = (try? values.decodeIfPresent(String.self, forKey: .skinTone)) ?? skinTone
         hairColor = (try? values.decodeIfPresent(String.self, forKey: .hairColor)) ?? hairColor
+        emblem = (try? values.decodeIfPresent(EmblemStyle.self, forKey: .emblem)) ?? .plain
+        detail = (try? values.decodeIfPresent(MetalDetail.self, forKey: .detail)) ?? .plain
+        wings = (try? values.decodeIfPresent(WingStyle.self, forKey: .wings)) ?? .plain
     }
 
     var cloakSwatch: HeroSwatch { HeroPalette.swatch(cloakColor, in: HeroPalette.cloak) }

@@ -2,18 +2,22 @@ import SwiftUI
 
 /// Choose Your Fate: who walks into the dark.
 ///
-/// The hero is a body, a cloak, a head and five colours, and every choice is
-/// purely how they look. Nothing here is stronger than anything else. The
-/// plainer options are free from the start and the more distinctive ones are
-/// bought with echoes, so a look is something a player has been back for.
-/// Each card shows the whole figure wearing that option, locked ones
-/// included, so a player sees what they are saving toward.
+/// The hero is a body, a cloak, a head, colours and extras, and every choice
+/// is purely how they look. Nothing here is stronger than anything else. The
+/// plainer options are free and the elaborate ones cost echoes, roughly in
+/// step with how much they change the figure, so there is always something
+/// worth saving toward.
+///
+/// Buying works the way the rest of Legacy does: select a thing to see it,
+/// read what it costs and why it is locked, and press Unlock. A locked option
+/// is tried on in the preview first, so a player knows what they are buying.
 struct CharacterView: View {
     private enum Page: String, CaseIterable, Identifiable {
         case body = "Body"
         case cloak = "Cloak"
         case head = "Head"
         case colours = "Colours"
+        case extras = "Extras"
 
         var id: String { rawValue }
     }
@@ -22,10 +26,16 @@ struct CharacterView: View {
     @Environment(AppServices.self) private var services
     @State private var page: Page = .body
     @State private var breathing = false
-    /// A locked option the player has tapped, awaiting their answer.
-    @State private var offered: HeroOption?
+    /// A locked option selected to be tried on and, if wanted, bought.
+    @State private var inspected: HeroOption?
 
     private var look: HeroAppearance { services.hero }
+
+    /// What the preview shows: the chosen look, or that look with the
+    /// selected locked option tried on.
+    private var shownLook: HeroAppearance {
+        inspected?.applying(to: look) ?? look
+    }
 
     var body: some View {
         ZStack {
@@ -52,11 +62,19 @@ struct CharacterView: View {
                             }
                         }
                         .pickerStyle(.segmented)
-                        .onChange(of: page) { _, _ in services.haptics.play(.uiTap) }
+                        .onChange(of: page) { _, _ in
+                            services.haptics.play(.uiTap)
+                            inspected = nil
+                        }
 
                         ScrollView(.vertical, showsIndicators: false) {
                             content
                                 .padding(.bottom, 8)
+                        }
+
+                        if let option = inspected {
+                            unlockBar(for: option)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
                     .frame(maxWidth: .infinity)
@@ -65,15 +83,8 @@ struct CharacterView: View {
             }
             .padding(FLTheme.Metrics.screenPadding)
         }
+        .animation(.easeOut(duration: 0.16), value: inspected)
         .onAppear { breathing = true }
-        .alert(offerTitle, isPresented: isOffering) {
-            if let option = offered, services.profile.denial(for: option) == nil {
-                Button("Unlock for \(HeroUnlocks.cost(of: option))") { purchase(option) }
-            }
-            Button("Not now", role: .cancel) {}
-        } message: {
-            Text(offerMessage)
-        }
     }
 
     // MARK: Echoes
@@ -97,21 +108,44 @@ struct CharacterView: View {
 
     // MARK: Buying
 
-    private var isOffering: Binding<Bool> {
-        Binding(get: { offered != nil }, set: { if !$0 { offered = nil } })
-    }
-
-    private var offerTitle: String {
-        offered.map { "Unlock \($0.title)?" } ?? ""
-    }
-
-    private var offerMessage: String {
-        guard let option = offered else { return "" }
-        let cost = HeroUnlocks.cost(of: option)
-        if services.profile.denial(for: option) == nil {
-            return "It costs \(cost) echoes, and you have \(services.profile.echoes)."
+    /// The same shape as the Legacy detail panels: what it is, why it is
+    /// locked, and a single Unlock button that is disabled until it can work.
+    private func unlockBar(for option: HeroOption) -> some View {
+        let denial = services.profile.denial(for: option)
+        return HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(option.title)
+                    .font(FLTheme.Typeface.heading(15))
+                    .foregroundStyle(FLTheme.Palette.parchment)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                if let denial {
+                    Label(denial, systemImage: "lock.fill")
+                        .font(FLTheme.Typeface.body(12))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                } else {
+                    Text("Trying it on")
+                        .font(FLTheme.Typeface.body(12))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                }
+            }
+            Spacer(minLength: 4)
+            Button("Unlock · \(HeroUnlocks.cost(of: option))") { purchase(option) }
+                .buttonStyle(.flPrimaryCompact)
+                .disabled(denial != nil)
+                .frame(width: 150)
+            Button {
+                inspected = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    .frame(width: 36, height: 36)
+            }
+            .accessibilityLabel("Stop trying it on")
         }
-        return "It costs \(cost) echoes. You need \(cost - services.profile.echoes) more, and every run earns some."
+        .padding(10)
+        .flPanel(highlighted: true)
     }
 
     private func purchase(_ option: HeroOption) {
@@ -120,17 +154,19 @@ struct CharacterView: View {
         services.audio.play(.uiConfirm)
         // Something bought is something wanted: wear it straight away.
         services.setHero(option.applying(to: services.hero))
+        inspected = nil
     }
 
-    /// Wears an option if it is owned, and otherwise offers to buy it.
+    /// Wears an option that is owned, and selects one that is not so it can
+    /// be tried on.
     private func choose(_ option: HeroOption) {
+        services.haptics.play(.uiTap)
         if services.owns(option) {
-            services.haptics.play(.uiTap)
             services.audio.play(.uiConfirm)
             services.setHero(option.applying(to: services.hero))
+            inspected = nil
         } else {
-            services.haptics.play(.uiTap)
-            offered = option
+            inspected = option
         }
     }
 
@@ -144,13 +180,13 @@ struct CharacterView: View {
                                          center: .center, startRadius: 0, endRadius: 60))
                     .frame(width: 130, height: 26)
                     .offset(y: -6)
-                HeroPortrait(look: look, height: 200)
+                HeroPortrait(look: shownLook, height: 200)
                     .offset(y: breathing ? -3 : 0)
                     .animation(.easeInOut(duration: 1.7).repeatForever(autoreverses: true), value: breathing)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 210)
-            .flPanel()
+            .flPanel(highlighted: inspected != nil)
 
             HStack(spacing: 8) {
                 Button("Random") {
@@ -158,11 +194,13 @@ struct CharacterView: View {
                     services.audio.play(.uiConfirm)
                     var generator = SystemRandomNumberGenerator()
                     services.setHero(.random(using: &generator, owns: { services.owns($0) }))
+                    inspected = nil
                 }
                 .buttonStyle(.flSecondaryCompact)
                 Button("Reset") {
                     services.haptics.play(.uiTap)
                     services.setHero(.standard)
+                    inspected = nil
                 }
                 .buttonStyle(.flSecondaryCompact)
             }
@@ -178,14 +216,16 @@ struct CharacterView: View {
         case .cloak: optionGrid(HeroUnlocks.cloaks)
         case .head: optionGrid(HeroUnlocks.heads)
         case .colours: colours
+        case .extras: extras
         }
     }
 
     private func optionGrid(_ options: [HeroOption]) -> some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 10)], spacing: 10) {
             ForEach(options) { option in
-                OptionCard(look: option.applying(to: look), name: option.title, blurb: blurb(of: option),
-                           isSelected: option.isWorn(by: look), price: price(of: option))
+                OptionCard(look: option.applying(to: look), name: option.title, blurb: option.blurb,
+                           isSelected: option.isWorn(by: look) || inspected == option,
+                           price: price(of: option))
                     .onTapGesture { choose(option) }
             }
         }
@@ -196,24 +236,32 @@ struct CharacterView: View {
         services.owns(option) ? nil : HeroUnlocks.cost(of: option)
     }
 
-    private func blurb(of option: HeroOption) -> String {
-        switch option {
-        case .build(let value): return value.blurb
-        case .cloak(let value): return value.blurb
-        case .head(let value): return value.blurb
-        default: return ""
+    private var extras: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            extraSection("Emblem", HeroUnlocks.emblems)
+            extraSection("Metalwork", HeroUnlocks.details)
+            extraSection("Wings", HeroUnlocks.wings)
         }
     }
+
+    private func extraSection(_ title: String, _ options: [HeroOption]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FLSectionLabel(text: title.uppercased())
+            optionGrid(options)
+        }
+    }
+
+    // MARK: Colours
 
     private var colours: some View {
         VStack(alignment: .leading, spacing: 14) {
             swatches("Cloak", HeroPalette.cloak, options: HeroUnlocks.cloakColours, selected: look.cloakColor)
             swatches("Trim", HeroPalette.trim, options: HeroUnlocks.trimColours, selected: look.trimColor)
             swatches("Eyes", HeroPalette.eyes, options: HeroUnlocks.eyeColours, selected: look.eyeColor)
-            if look.head == .bare {
+            if look.head == .bare || look.head == .wizardHat {
                 skinAndHair
             } else {
-                Text("Skin and hair are seen with a bare head.")
+                Text("Skin and hair are seen with a bare head or a wizard's hat.")
                     .font(FLTheme.Typeface.body(12))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
             }
@@ -245,7 +293,8 @@ struct CharacterView: View {
                 ForEach(Array(zip(list, options)), id: \.0.id) { swatch, option in
                     let locked = !services.owns(option)
                     Button { choose(option) } label: {
-                        SwatchDot(hex: swatch.hex, isSelected: swatch.id == current.id, isLocked: locked)
+                        SwatchDot(hex: swatch.hex, isSelected: swatch.id == current.id || inspected == option,
+                                  isLocked: locked)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel(locked ? "\(swatch.name), locked, \(HeroUnlocks.cost(of: option)) echoes"
@@ -323,7 +372,7 @@ private struct OptionCard: View {
     var body: some View {
         VStack(spacing: 4) {
             HeroPortrait(look: look, height: 92)
-                .opacity(price == nil ? 1 : 0.8)
+                .opacity(price == nil ? 1 : 0.85)
                 .overlay(alignment: .topTrailing) {
                     if let price {
                         HStack(spacing: 3) {
@@ -341,7 +390,7 @@ private struct OptionCard: View {
                 .font(FLTheme.Typeface.heading(14))
                 .foregroundStyle(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.parchment)
                 .lineLimit(1)
-                .minimumScaleFactor(0.75)
+                .minimumScaleFactor(0.7)
             Text(blurb)
                 .font(FLTheme.Typeface.body(11))
                 .foregroundStyle(FLTheme.Palette.parchmentDim)
@@ -379,13 +428,13 @@ struct HeroPortrait: View {
 @MainActor
 enum HeroPortraits {
     private static var cache: [HeroAppearance: UIImage] = [:]
-    private static let scale: CGFloat = 8
+    private static let scale: CGFloat = 6
 
     static func image(for look: HeroAppearance) -> UIImage {
         if let cached = cache[look] { return cached }
         // A player can make far more looks than they will ever view; keep
         // the memory this holds bounded.
-        if cache.count > 160 { cache.removeAll(keepingCapacity: true) }
+        if cache.count > 200 { cache.removeAll(keepingCapacity: true) }
         let image = PlaceholderArt.heroPortrait(look, scale: scale)
         cache[look] = image
         return image

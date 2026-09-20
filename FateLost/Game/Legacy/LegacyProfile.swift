@@ -24,6 +24,12 @@ struct LegacyProfile: Codable, Equatable {
 
     var totalEarned: Int { echoes + spent }
 
+    /// Adds echoes outright. Only the developer tools use this: a run pays out
+    /// through `record`.
+    mutating func grant(echoes amount: Int) {
+        echoes += max(0, amount)
+    }
+
     /// Extra rerolls on every find, earned by filling in the codex.
     var bonusRerolls: Int { CodexRewards.bonusRerolls(discovered: lifetime.relicsDiscovered) }
 

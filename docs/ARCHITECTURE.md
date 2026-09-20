@@ -459,27 +459,34 @@ at 44.
 
 ## 24. The hero, and fairness in the first realm
 
-**A dressed figure.** The hero is not one sprite. `tools/art/hero.py` draws
-three layers (legs, cloak, head), once for each build and each style within
-it, and emits them as functions that take a context and a `HeroInk`. A layer
-never names a colour: it asks the ink for "the cloak" or "the trim, a little
-darker", and the preview resolves the same names, so what is checked in the
-sketchbook is what ships in any colour. `PlaceholderArt.hero(_:)` composes
-the layers for the game and `heroPortrait(_:scale:)` redraws them large for
-the character screen, so nothing is ever enlarged and blurred.
+**A dressed figure.** The hero is not one sprite. `tools/art/hero.py`
+(with `herokit.py`, `hero_cloaks.py`, `hero_heads.py` and `hero_extras.py`)
+draws layers back to front: wings, legs, cloak, metalwork, chest emblem and
+head, once for each of five builds and each style within them, and emits them
+as functions that take a context and a `HeroInk`. A layer never names a
+colour: it asks the ink for "the cloak" or "the trim, a little darker", and
+the preview resolves the same names, so what is checked in the sketchbook is
+what ships in any colour. A style is written once against a `Geo` (a build's
+proportions) and fits every body. `PlaceholderArt.hero(_:)` composes the
+layers for the game and `heroPortrait(_:scale:)` redraws them large for the
+character screen, so nothing is ever enlarged and blurred.
 
-`HeroAppearance` (build, cloak, head, five colours) is saved on its own, in
-`hero.json`, not in the Legacy profile, and decodes field by field with a
-fallback for an unknown value. `SpriteCatalog` is handed the look when a run
-starts and draws the player from it; the build also decides where the weapon
-is held. A build is a look and never a stat.
+`HeroAppearance` (build, cloak, head, five colours, an emblem, metalwork and
+wings) is saved on its own, in `hero.json`, not in the Legacy profile, and
+decodes field by field with a fallback for an unknown value. `SpriteCatalog`
+is handed the look when a run starts and draws the player from it; the build
+also decides where the weapon is held. A build is a look and never a stat.
 
-**Earned looks.** `HeroOption` names one choice and `HeroUnlocks` prices it.
-Builds, skin and hair are always free, and so is enough of everything else to
-make a character without spending a thing. The distinctive cloaks, heads and
-colours cost echoes, bought from the character screen and kept in
-`LegacyProfile.cosmetics`. A saved look is always cut back to what is owned
-(`restricted(to:)`), whatever happened to the profile since it was saved.
+**Earned looks.** `HeroOption` names one choice and `HeroUnlocks` prices it,
+on the rule that cooler costs more: colours are tens of echoes, cloaks, heads,
+emblems and metalwork are hundreds, and wings are 500 each. Builds, skin and
+hair are always free, and so is enough of everything else to make a character
+without spending a thing. Purchases are kept in `LegacyProfile.cosmetics`, and
+a saved look is always cut back to what is owned (`restricted(to:)`), whatever
+happened to the profile since it was saved. The character screen buys the way
+the rest of Legacy does: select to see (a locked option is tried on in the
+preview), read the cost and the reason, press Unlock. Developer mode can grant
+100, 500 or 1,000 echoes to try all of it.
 
 **Fair charges.** A charger commits to a line when its windup begins
 (`EnemyStore.aim`), draws that lane on the ground for elites and bosses

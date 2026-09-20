@@ -36,17 +36,22 @@ struct HeroInk {
     }
 }
 
-/// Puts the hero together: legs, then cloak, then head, on one canvas.
+/// Puts the hero together on one canvas, back to front: wings, legs, cloak,
+/// metalwork, chest emblem, head.
 extension PlaceholderArt {
     /// Every build shares this canvas, so a sprite is swapped for another
-    /// without the figure jumping. Feet are at y = 60.
-    static let heroCanvas = CGSize(width: 48, height: 64)
-    static let heroFootY: CGFloat = 60
+    /// without the figure jumping. It is wide enough for the widest wings and
+    /// tall enough for the tallest build in a wizard's hat. Feet are at y = 76.
+    static let heroCanvas = CGSize(width: 64, height: 80)
+    static let heroFootY: CGFloat = 76
 
     private static func paintHero(_ look: HeroAppearance, in ctx: CGContext) {
         let ink = HeroInk(look)
+        drawHeroWings(look.wings, look.build, ctx, ink)
         drawHeroLegs(look.build, ctx, ink)
         drawHeroCloak(look.cloak, look.build, ctx, ink)
+        drawHeroDetail(look.detail, look.build, ctx, ink)
+        drawHeroEmblem(look.emblem, look.build, ctx, ink)
         drawHeroHead(look.head, look.build, ctx, ink)
     }
 

@@ -36,6 +36,24 @@ final class HeroTests: XCTestCase {
         }
     }
 
+    func testEveryExtraDrawsOnEveryBuild() {
+        for build in BodyBuild.allCases {
+            for emblem in EmblemStyle.allCases {
+                for detail in MetalDetail.allCases {
+                    for wings in WingStyle.allCases {
+                        var look = HeroAppearance()
+                        look.build = build
+                        look.emblem = emblem
+                        look.detail = detail
+                        look.wings = wings
+                        XCTAssertEqual(PlaceholderArt.hero(look).image.size, PlaceholderArt.heroCanvas,
+                                       "\(build) \(emblem) \(detail) \(wings)")
+                    }
+                }
+            }
+        }
+    }
+
     func testThePlayerSpriteIsTheStandardHero() {
         let stock = PlaceholderArt.sprite(for: .playerAdventurer)
         XCTAssertNotNil(stock)
@@ -151,9 +169,9 @@ final class HeroTests: XCTestCase {
     }
 
     func testTheDistinctiveOptionsAreThePricedOnes() {
-        XCTAssertTrue(HeroUnlocks.priced.contains(.cloak(.shroud)))
-        XCTAssertTrue(HeroUnlocks.priced.contains(.head(.helm)))
-        XCTAssertEqual(HeroUnlocks.priced.count, 2 + 2 + 5 + 4 + 4)
+        for option in [HeroOption.cloak(.vampire), .head(.skull), .wings(.angel), .emblem(.dragon), .detail(.warPlate)] {
+            XCTAssertTrue(HeroUnlocks.priced.contains(option), "\(option.id) should cost something")
+        }
         for option in HeroUnlocks.priced {
             XCTAssertGreaterThan(HeroUnlocks.cost(of: option), 0)
         }
@@ -162,9 +180,79 @@ final class HeroTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(HeroUnlocks.heads.filter(HeroUnlocks.isFree).count, 2)
     }
 
+    func testCoolerCostsMore() {
+        let angel = HeroUnlocks.cost(of: .wings(.angel))
+        XCTAssertEqual(angel, 500)
+        XCTAssertEqual(HeroUnlocks.cost(of: .wings(.demon)), 500)
+        // Wings are the aspiration: dearer than any cloak, head, emblem or metalwork.
+        for option in HeroUnlocks.cloaks + HeroUnlocks.heads + HeroUnlocks.emblems + HeroUnlocks.details {
+            XCTAssertLessThan(HeroUnlocks.cost(of: option), angel, "\(option.id) costs as much as wings")
+        }
+        // A colour is small change beside a whole outfit.
+        let dearestColour = (HeroUnlocks.cloakColours + HeroUnlocks.trimColours + HeroUnlocks.eyeColours)
+            .map(HeroUnlocks.cost).max() ?? 0
+        let cheapestStyle = (HeroUnlocks.cloaks + HeroUnlocks.heads + HeroUnlocks.emblems + HeroUnlocks.details)
+            .filter { !HeroUnlocks.isFree($0) }.map(HeroUnlocks.cost).min() ?? 0
+        XCTAssertLessThan(dearestColour, cheapestStyle)
+        XCTAssertLessThan(HeroUnlocks.cost(of: .emblem(.skulls)), HeroUnlocks.cost(of: .emblem(.dragon)))
+        XCTAssertLessThan(HeroUnlocks.cost(of: .detail(.studs)), HeroUnlocks.cost(of: .detail(.warPlate)))
+    }
+
+    func testEveryStyleAndColourThePlayerAskedForExists() {
+        let cloaks: Set<CloakStyle> = [.vampire, .wizard, .ninja, .samurai, .druid, .paladin]
+        XCTAssertTrue(cloaks.isSubset(of: Set(CloakStyle.allCases)))
+        XCTAssertTrue(HeadStyle.allCases.contains(.eyeless), "the eyeless hood is missing")
+        XCTAssertGreaterThanOrEqual(BodyBuild.allCases.count, 5)
+        XCTAssertTrue(HeroPalette.trim.contains { $0.id == "black" }, "black trim is missing")
+        XCTAssertEqual(EmblemStyle.allCases.count, 6)
+        XCTAssertTrue(WingStyle.allCases.contains(.angel) && WingStyle.allCases.contains(.demon))
+    }
+
+    func testEveryPricedColourIsARealColour() {
+        // A typo in a price table would quietly make a colour free.
+        XCTAssertEqual(HeroUnlocks.cloakColours.filter { !HeroUnlocks.isFree($0) }.count, 11)
+        XCTAssertEqual(HeroUnlocks.trimColours.filter { !HeroUnlocks.isFree($0) }.count, 9)
+        XCTAssertEqual(HeroUnlocks.eyeColours.filter { !HeroUnlocks.isFree($0) }.count, 7)
+    }
+
+    func testAnOldHeroSaveWithoutExtrasStillLoadsPlain() throws {
+        let old = #"{"build": "broad", "cloak": "pilgrim", "head": "cowl", "cloakColor": "violet"}"#
+        let look = try JSONDecoder().decode(HeroAppearance.self, from: Data(old.utf8))
+        XCTAssertEqual(look.build, .broad)
+        XCTAssertEqual(look.emblem, .plain)
+        XCTAssertEqual(look.detail, .plain)
+        XCTAssertEqual(look.wings, .plain)
+    }
+
+    func testExtrasAreCutBackToWhatIsOwned() {
+        var look = HeroAppearance()
+        look.wings = .demon
+        look.emblem = .dragon
+        look.detail = .warPlate
+        let restricted = look.restricted(to: { HeroUnlocks.isFree($0) })
+        XCTAssertEqual(restricted.wings, .plain)
+        XCTAssertEqual(restricted.emblem, .plain)
+        XCTAssertEqual(restricted.detail, .plain)
+        var owned = Set([HeroOption.wings(.demon).id])
+        owned.insert(HeroOption.emblem(.dragon).id)
+        let partly = look.restricted(to: { HeroUnlocks.isFree($0) || owned.contains($0.id) })
+        XCTAssertEqual(partly.wings, .demon)
+        XCTAssertEqual(partly.emblem, .dragon)
+        XCTAssertEqual(partly.detail, .plain)
+    }
+
+    func testGrantingEchoesAddsThemAndNeverTakesAny() {
+        var profile = LegacyProfile()
+        profile.grant(echoes: 500)
+        profile.grant(echoes: 1_000)
+        profile.grant(echoes: -300)
+        XCTAssertEqual(profile.echoes, 1_500)
+        XCTAssertTrue(profile.buy(.wings(.angel)))
+        XCTAssertEqual(profile.echoes, 1_000)
+    }
+
     func testOptionIDsAreUnique() {
-        let all = HeroUnlocks.builds + HeroUnlocks.cloaks + HeroUnlocks.heads + HeroUnlocks.cloakColours
-            + HeroUnlocks.trimColours + HeroUnlocks.eyeColours
+        let all = HeroUnlocks.all
         XCTAssertEqual(Set(all.map(\.id)).count, all.count, "two options share a save key")
     }
 

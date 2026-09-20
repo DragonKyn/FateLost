@@ -27,7 +27,7 @@ struct DeveloperPanelView: View {
     @ViewBuilder
     private var content: some View {
         #if FATELOST_DEVTOOLS
-        DeveloperOptionsForm(developer: services.developer)
+        DeveloperOptionsForm(developer: services.developer, services: services)
         #else
         Text("Developer tools are not included in this build.")
             .foregroundStyle(FLTheme.Palette.parchmentDim)
@@ -38,9 +38,20 @@ struct DeveloperPanelView: View {
 #if FATELOST_DEVTOOLS
 private struct DeveloperOptionsForm: View {
     @Bindable var developer: DeveloperOptions
+    let services: AppServices
 
     var body: some View {
         Form {
+            Section {
+                ForEach([100, 500, 1_000], id: \.self) { amount in
+                    Button("+\(amount.formatted()) Echoes") { services.grantEchoes(amount) }
+                }
+            } header: {
+                Text("Echoes")
+            } footer: {
+                Text("You have \(services.profile.echoes.formatted()). For trying the Legacy board, the Armoury "
+                     + "and the wardrobe.")
+            }
             Section("Overlays") {
                 Toggle("Performance Overlay", isOn: $developer.showPerformanceOverlay)
                 Toggle("Show Hitboxes", isOn: $developer.showHitboxes)

@@ -66,6 +66,14 @@ final class AppServices {
         developer.reset()
     }
 
+    /// Gives echoes without a run, for testing the Legacy board and the
+    /// wardrobe. Does nothing unless developer mode is on.
+    func grantEchoes(_ amount: Int) {
+        guard isDeveloperModeOn else { return }
+        profile.grant(echoes: amount)
+        saveProfile()
+    }
+
     // MARK: Sealing fate
 
     /// Erases every save: the profile and everything on it, the hero, and the

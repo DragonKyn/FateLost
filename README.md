@@ -41,7 +41,7 @@ play throughout.
 | 6 Legacy | 500 permanent upgrades, statistics, save/load, realm unlocks | **Done** |
 | 7 Multiclass | Eight orders, the Armoury and weapon mastery | **Done** |
 | 8 Spoils | Relics, chests, shrines, weapon finds and the codex | **Done** |
-| 9 Fate | A customisable hero with earned looks, fairer bosses, a locked developer mode | **Done** |
+| 9 Fate | A customisable hero (five builds, eleven cloaks, ten heads, emblems, metalwork and wings) with earned looks, fairer bosses, a locked developer mode | **Done** |
 
 ## Building
 
