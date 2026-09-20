@@ -11,6 +11,8 @@
     "test:integration": "vitest run test/integration",
     "test": "npm run typecheck && npm run test:unit && node scripts/with-dev-server.mjs npm run test:integration",
     "test:staging": "cross-env FATE_BASE_URL=https://fate-lost-multiplayer-staging.wickedstudiosca.workers.dev vitest run test/integration",
+    "smoke:staging": "cross-env FATE_BASE_URL=https://fate-lost-multiplayer-staging.wickedstudiosca.workers.dev node scripts/smoke.mjs",
+    "smoke:production": "cross-env FATE_BASE_URL=https://fate-lost-multiplayer.wickedstudiosca.workers.dev node scripts/smoke.mjs",
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy"
   },

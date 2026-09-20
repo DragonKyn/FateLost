@@ -11,6 +11,8 @@ name = "fate-lost-multiplayer"
 main = "src/index.ts"
 compatibility_date = "2025-11-01"
 workers_dev = true
+# Only the workers.dev address is served; no per-version preview URLs.
+preview_urls = false
 
 [observability]
 enabled = true
@@ -36,6 +38,7 @@ new_sqlite_classes = ["PartyRoom", "RateLimiter"]
 [env.staging]
 name = "fate-lost-multiplayer-staging"
 workers_dev = true
+preview_urls = false
 
 [env.staging.observability]
 enabled = true
