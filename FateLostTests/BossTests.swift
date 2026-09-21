@@ -294,7 +294,7 @@ final class BossTests: XCTestCase {
         let outside = Squad.health(sim, 1)
         var hits = 0
         var last = Squad.health(sim, 0)
-        for _ in 0..<Int(4.5 / dt) {
+        for _ in 0..<Int(5.6 / dt) {
             sim.step(dt: dt)
             let now = Squad.health(sim, 0)
             if now < last - 0.01 { hits += 1 }

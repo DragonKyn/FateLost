@@ -54,6 +54,9 @@ enum CombatEvent: Equatable {
     /// A shrine rose out of the ground, and one was agreed to.
     case shrineAppeared(kind: ShrineKind, position: CGPoint)
     case shrineUsed(kind: ShrineKind, position: CGPoint)
+    /// A portal to a rift opened where a champion fell, and the party stepped through one.
+    case riftOpened(kind: RiftKind, position: CGPoint)
+    case riftEntered(kind: RiftKind)
     /// A drop was picked up.
     case dropCollected(kind: DropKind, position: CGPoint)
     /// A weapon found in a run was taken up.

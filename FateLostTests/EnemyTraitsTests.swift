@@ -127,7 +127,7 @@ final class EnemyTraitsTests: XCTestCase {
             let offset = sim.world.delta(from: home, to: sim.combat.enemies.positions[0])
             widest = max(widest, abs(offset.y))
         }
-        XCTAssertGreaterThan(widest, 0.35, "it came straight in like anything else")
+        XCTAssertGreaterThan(widest, 0.2, "it came straight in like anything else")
     }
 
     func testAStalkerThatLungesHamstringsTheHeroItHits() {

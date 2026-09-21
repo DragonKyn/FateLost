@@ -113,6 +113,8 @@ enum LootTier: Int, CaseIterable, Comparable {
     case chest
     /// A champion late in a run, or a shrine's bargain.
     case hoard
+    /// The prize for winning a rift: epic at the least, and now and then legendary.
+    case rift
 
     static func < (lhs: LootTier, rhs: LootTier) -> Bool { lhs.rawValue < rhs.rawValue }
 
@@ -121,6 +123,7 @@ enum LootTier: Int, CaseIterable, Comparable {
         case .cache: return "Cache"
         case .chest: return "Chest"
         case .hoard: return "Hoard"
+        case .rift: return "Rift Reward"
         }
     }
 
@@ -139,6 +142,8 @@ enum LootTier: Int, CaseIterable, Comparable {
         case (.hoard, .rare): return 42
         case (.hoard, .epic): return 32
         case (.hoard, .legendary): return 8
+        case (.rift, .epic): return 78
+        case (.rift, .legendary): return 22
         default: return 0
         }
     }

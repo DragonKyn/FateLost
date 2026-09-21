@@ -117,6 +117,7 @@ enum WeaponRoller {
         case .cache: return 0.10
         case .chest: return 0.30
         case .hoard: return 0.45
+        case .rift: return 0.6
         }
     }
 

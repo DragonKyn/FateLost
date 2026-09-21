@@ -202,6 +202,7 @@ final class GameScene: SKScene {
     private let zoneRenderer: ZoneRenderer
     private let chargeLanes: ChargeLaneRenderer
     private let hazardRenderer: HazardRenderer
+    private let portalRenderer: PortalRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
     private let cameraController: CameraController
@@ -290,6 +291,8 @@ final class GameScene: SKScene {
                                     layer: decals)
         chargeLanes = ChargeLaneRenderer(projection: projection, layer: decals)
         hazardRenderer = HazardRenderer(projection: projection, layer: decals)
+        portalRenderer = PortalRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
+                                        layer: standing)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                       standingLayer: standing, decalLayer: decals, overlayLayer: overlays)
         self.effects = effects
@@ -524,6 +527,8 @@ final class GameScene: SKScene {
         chargeLanes.update(enemies: simulation.combat.enemies, playerRadius: tuning.combat.playerRadius,
                            frame: renderFrame, time: animationTime)
         hazardRenderer.update(hazards: simulation.allHazards, frame: renderFrame, time: animationTime)
+        portalRenderer.update(portals: simulation.allPortals, frame: renderFrame, time: animationTime)
+        feedback.riftKind = simulation.activeRiftKind
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
         dropRenderer.update(drops: simulation.combat.drops, frame: renderFrame, time: animationTime)
         shrineRenderer.update(shrines: simulation.combat.shrines, playerPosition: simulation.player.position,
@@ -709,6 +714,14 @@ final class GameScene: SKScene {
             }
             friends.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
         }
+        // A portal is rare and worth the detour: it is pointed at before anything else.
+        var portalMarks: [BeaconMark] = []
+        for portal in simulation.allPortals {
+            let there = projection.toScreen(renderFrame.unwrapped(portal.position))
+            portalMarks.append(BeaconMark(id: -3000 - portal.id, offset: (there - here) / scale,
+                                          color: portal.isReturn ? UIColor(rgb: 0xFFE9A8) : UIColor(rgb: portal.kind.tint),
+                                          label: portal.isReturn ? "Way home" : portal.kind.name))
+        }
         for drop in simulation.combat.drops {
             guard case .chest(let tier) = drop.kind else { continue }
             let there = projection.toScreen(renderFrame.unwrapped(drop.position))
@@ -720,7 +733,7 @@ final class GameScene: SKScene {
                                     color: ShrineRenderer.tint(for: shrine.kind)))
         }
         marks.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
-        hud.showBeacons(Array(fallen.prefix(3)) + Array(friends.prefix(3)) + Array(marks.prefix(4)),
+        hud.showBeacons(portalMarks + Array(fallen.prefix(3)) + Array(friends.prefix(3)) + Array(marks.prefix(4)),
                         screenSize: layout.screenSize,
                         time: animationTime)
     }
@@ -729,7 +742,7 @@ final class GameScene: SKScene {
         switch tier {
         case .cache: return ItemRarity.common.color.uiColor
         case .chest: return ItemRarity.rare.color.uiColor
-        case .hoard: return ItemRarity.legendary.color.uiColor
+        case .hoard, .rift: return ItemRarity.legendary.color.uiColor
         }
     }
 
@@ -1017,7 +1030,7 @@ final class GameScene: SKScene {
         snapshot.projectileCount = simulation.projectiles.count
         snapshot.pickupCount = simulation.combat.orbs.count
         snapshot.playerLevel = simulation.progression.level
-        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + hazardRenderer.activeCount + allyRenderer.activeCount
+        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + hazardRenderer.activeCount + portalRenderer.activeCount + allyRenderer.activeCount
         snapshot.spawnRate = simulation.currentSpawnRate
         snapshot.network = partyDriver?.movementSummary
         if simulationFrames > 0 {

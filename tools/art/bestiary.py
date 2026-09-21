@@ -1307,8 +1307,28 @@ def warlords():
     ]
 
 
+def rift_bosses():
+    """The four things that wait on the far side of a rift.
+
+    Drawn at the size of any champion and shown at more than twice the scale (see `drawScale` in the
+    catalogue), so each fills a good part of the screen."""
+    return [
+        hulk("riftForge", 0x2A1E22, EMBER_HOT, 0xFFE07A,
+             "Ignarok, the World-Forge: a furnace that stood up, still pouring.",
+             arms="fists", crown="horns", core=EMBER_HOT, build="stone", width=92, height=100),
+        arachnid("riftMatriarch", 0x1E3A44, 0x6AE0C8, 0xC8FFF0,
+                 "Nerezza, the Brine Matriarch, older than the sea that drowned her.", width=92, height=64),
+        quadruped("riftSovereign", 0xDCE8F0, 0xF4FAFF, FROST,
+                  "Auroch, the White Sovereign, crowned in ice that has never once thawed.",
+                  antlers=True, mane=FROST, width=98, height=80),
+        floater("riftUnblinking", 0x1E1E3A, 0xFF6A8A,
+                "The Unblinking: an eye the size of a house, and everything it has ever seen.",
+                shape="orb", width=72, height=86),
+    ]
+
+
 def all_sprites():
-    return rank_and_file() + champions() + warlords()
+    return rank_and_file() + champions() + warlords() + rift_bosses()
 
 
 HEADER = '''import UIKit

@@ -27,6 +27,8 @@ struct SimulationTuning {
     var timestep: TimeInterval = 1.0 / 60.0
     /// Upper bound on catch-up steps after a hitch.
     var maxStepsPerFrame: Int = 5
+    /// Chance a fallen champion opens a portal to a rift (see `RiftKind`).
+    var riftChance: Double = RiftTuning.chance
 }
 
 struct PlayerTuning {

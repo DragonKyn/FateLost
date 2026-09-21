@@ -53,6 +53,16 @@ struct WaveSystem {
     /// Seconds left before the announced champion lands.
     private var graceRemaining: Double = 0
     private var pendingBoss: EnemyKindID?
+    /// Where the champion last stood, and where the last one fell (once, until asked for).
+    private var lastBossPosition: CGPoint?
+    private var fallenBossSpot: CGPoint?
+
+    /// Where a champion has just fallen, if one has since this was last asked.
+    /// A realm's last champion does not count: that ends the run.
+    mutating func takeFallenBossSpot() -> CGPoint? {
+        defer { fallenBossSpot = nil }
+        return fallenBossSpot
+    }
 
     /// A party stops the horde for a breather after every this-many waves (0: never).
     var restEvery = 0
@@ -220,6 +230,7 @@ struct WaveSystem {
         }
         state.bossHealth = combat.enemies.health[index]
         state.bossMaxHealth = combat.enemies.maxHealth[index]
+        lastBossPosition = combat.enemies.positions[index]
     }
 
     private mutating func finishBossWave(_ combat: inout CombatState) {
@@ -234,6 +245,7 @@ struct WaveSystem {
             combat.events.append(.realmConquered)
             return
         }
+        fallenBossSpot = lastBossPosition
         state.phase = .fighting
         state.timeInWave = 0
         if restFollows(wave: state.index) { beginClearing(then: .resume, combat) }

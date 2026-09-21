@@ -313,6 +313,83 @@ final class EffectsRenderer {
         motes(at: position, count: 26, color: gold, spread: radius * 0.6, lifetime: 1.3)
     }
 
+    // MARK: - Flair
+
+    /// What a style adds on top of a plain burst, so fire looks like fire and
+    /// frost like frost: embers that rise, shards that scatter, spores that
+    /// drift, rings that ripple out, a column of light.
+    ///
+    /// Made only of the pieces above, and sized by the burst, so a small spell
+    /// gets a small flourish and a large one a large one.
+    func flare(_ visual: VisualStyle, at position: CGPoint, radius: CGFloat) {
+        let color = visual.color
+        let spread = max(0.4, radius * 0.6)
+        let count = min(20, 5 + Int(radius * 4))
+        let pale = UIColor.white.blended(with: color, 0.35)
+        switch visual {
+        case .fire:
+            motes(at: position, count: count, color: UIColor(rgb: 0xFFB040), spread: spread, lifetime: 1.1)
+            motes(at: position, count: count / 2, color: color, spread: spread * 0.5, lifetime: 0.8)
+            pillar(at: position, color: UIColor(rgb: 0xFF9A3A), width: min(1.8, 0.5 + radius * 0.25), height: 0.7,
+                   lifetime: 0.3)
+        case .frost:
+            motes(at: position, count: count, color: pale, spread: spread * 1.1, lifetime: 0.8)
+            ring(at: position, radius: radius * 1.15, color: pale, lifetime: 0.5, delay: 0.06)
+            spark(at: position, isCritical: true, color: pale)
+        case .lightning:
+            pillar(at: position, color: color, width: 0.6, height: 1.5, lifetime: 0.22)
+            motes(at: position, count: count / 2, color: .white, spread: spread, lifetime: 0.4)
+            ring(at: position, radius: radius * 0.8, color: .white, lifetime: 0.25)
+        case .arcane:
+            ring(at: position, radius: radius * 1.2, color: color, lifetime: 0.55, delay: 0.08)
+            ring(at: position, radius: radius * 0.7, color: pale, lifetime: 0.4, delay: 0.18)
+            motes(at: position, count: count, color: color, spread: spread, lifetime: 0.9)
+        case .holy, .fate:
+            pillar(at: position, color: color, width: min(2.4, 0.7 + radius * 0.3), height: 1.6, lifetime: 0.5)
+            ring(at: position, radius: radius * 1.2, color: pale, lifetime: 0.6, delay: 0.1)
+            motes(at: position, count: count, color: color, spread: spread * 0.8, lifetime: 1.2)
+        case .shadow:
+            motes(at: position, count: count, color: UIColor(rgb: 0x4A2A6A), spread: spread, lifetime: 1.0)
+            motes(at: position, count: count / 2, color: color, spread: spread * 0.6, lifetime: 0.7)
+            ring(at: position, radius: radius * 0.9, color: UIColor(rgb: 0x2A1A3A), lifetime: 0.6)
+        case .nature, .poison:
+            motes(at: position, count: count + 4, color: color, spread: spread * 1.3, lifetime: 1.4)
+            ring(at: position, radius: radius * 1.05, color: color, lifetime: 0.6, delay: 0.05)
+        case .sonic:
+            for step in 0..<3 {
+                ring(at: position, radius: radius * (0.7 + 0.3 * CGFloat(step)), color: color, lifetime: 0.4,
+                     delay: 0.08 * CGFloat(step))
+            }
+        case .blood:
+            splat(at: position, color: UIColor(rgb: 0x5A0A10))
+            motes(at: position, count: count / 2, color: color, spread: spread, lifetime: 0.6)
+        case .physical:
+            motes(at: position, count: count / 2, color: UIColor(rgb: 0xFFF0D0), spread: spread, lifetime: 0.5)
+            ring(at: position, radius: radius * 0.9, color: UIColor(rgb: 0xE8E2D6), lifetime: 0.3)
+        }
+    }
+
+    /// The end of something that was worth fighting: a small puff for the
+    /// ordinary, and a great deal more for elites and champions.
+    func grandDeath(at position: CGPoint, rank: EnemyRank, color: UIColor) {
+        switch rank {
+        case .minion, .soldier:
+            return
+        case .elite:
+            ring(at: position, radius: 2.2, color: color, lifetime: 0.5)
+            motes(at: position, count: 12, color: color, spread: 0.9, lifetime: 0.9)
+        case .boss:
+            let gold = VisualStyle.fate.color
+            burst(at: position, radius: 5, color: gold)
+            ring(at: position, radius: 6, color: gold, lifetime: 0.8)
+            ring(at: position, radius: 4, color: .white, lifetime: 0.6, delay: 0.15)
+            ring(at: position, radius: 7.5, color: color, lifetime: 1.0, delay: 0.3)
+            pillar(at: position, color: gold, width: 3, height: 2.2, lifetime: 1.0)
+            motes(at: position, count: 30, color: gold, spread: 3, lifetime: 1.6)
+            motes(at: position, count: 20, color: color, spread: 2.2, lifetime: 1.2)
+        }
+    }
+
     /// Clears everything, e.g. when a run restarts.
     func removeAll() {
         for effect in effects {
@@ -541,5 +618,17 @@ final class EffectsRenderer {
         child.blendMode = .add
         container.addChild(child)
         return container
+    }
+}
+
+private extension UIColor {
+    /// This colour moved `amount` of the way toward `other`.
+    func blended(with other: UIColor, _ amount: CGFloat) -> UIColor {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0, alpha: CGFloat = 0
+        var otherRed: CGFloat = 0, otherGreen: CGFloat = 0, otherBlue: CGFloat = 0, otherAlpha: CGFloat = 0
+        getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        other.getRed(&otherRed, green: &otherGreen, blue: &otherBlue, alpha: &otherAlpha)
+        return UIColor(red: red + (otherRed - red) * amount, green: green + (otherGreen - green) * amount,
+                       blue: blue + (otherBlue - blue) * amount, alpha: 1)
     }
 }

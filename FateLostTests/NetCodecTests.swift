@@ -294,6 +294,7 @@ final class NetEventCodecTests: XCTestCase {
             .relicGained(id: "relic.whetstone", rank: 2), .levelUp(level: 12, position: p), .playerDefeated,
             .heroFell(hero: 2, position: p), .reviveStarted(hero: 2, reviver: 0), .reviveInterrupted(hero: 2),
             .heroRevived(hero: 2, position: p),
+            .riftOpened(kind: .tides, position: p), .riftEntered(kind: .void),
         ]
     }
 
@@ -304,7 +305,7 @@ final class NetEventCodecTests: XCTestCase {
 
     func testEveryKindOfEventRoundTrips() throws {
         let events = everyEvent
-        XCTAssertEqual(events.count, 41)
+        XCTAssertEqual(events.count, 43)
         for event in events {
             let bytes = NetEventCodec.encode([event], slotOf: { UInt8($0) })
             let decoded = try XCTUnwrap(NetEventCodec.decode(bytes), "\(event)")

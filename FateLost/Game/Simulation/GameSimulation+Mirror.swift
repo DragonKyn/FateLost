@@ -29,6 +29,9 @@ struct MirrorWorld {
     var mySlot: UInt8
     var zones: [Zone] = []
     var hazards: [Hazard] = []
+    /// Portals, and the rift the party is in, as the host last said.
+    var portals: [Portal] = []
+    var rift: RiftKind?
     var allies: [Ally] = []
     var projectiles: [Projectile] = []
     var cooldowns: [AbilityID: HeroSelfState.Cooldown] = [:]
@@ -141,6 +144,13 @@ extension GameSimulation {
                         tickTimer: 0, isAura: zone.isAura, depth: 0, radius: CGFloat(zone.radius), age: age)
         }
         world.zoneAges = ages
+
+        world.portals = snapshot.portals.compactMap { net in
+            RiftKind(rawValue: Int(net.kind)).map {
+                Portal(id: Int(net.id), kind: $0, position: net.position, isReturn: net.isReturn)
+            }
+        }
+        world.rift = snapshot.rift == NetSnapshot.noRift ? nil : RiftKind(rawValue: Int(snapshot.rift))
 
         // Marked ground: its age comes from the host, and runs on here between snapshots.
         world.hazards = snapshot.hazards.compactMap { net in

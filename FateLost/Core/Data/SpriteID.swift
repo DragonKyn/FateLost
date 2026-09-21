@@ -98,6 +98,10 @@ extension SpriteID {
     static let enemyBossSiegeTitan: SpriteID = "enemy.bossSiegeTitan"
     static let enemyBossBellkeeper: SpriteID = "enemy.bossBellkeeper"
     static let enemyBossGildedRegent: SpriteID = "enemy.bossGildedRegent"
+    static let enemyRiftForge: SpriteID = "enemy.riftForge"
+    static let enemyRiftMatriarch: SpriteID = "enemy.riftMatriarch"
+    static let enemyRiftSovereign: SpriteID = "enemy.riftSovereign"
+    static let enemyRiftUnblinking: SpriteID = "enemy.riftUnblinking"
 
     // Allies and forms
     static let allySkeleton: SpriteID = "ally.skeleton"

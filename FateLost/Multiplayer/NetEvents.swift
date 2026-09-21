@@ -17,7 +17,7 @@ enum NetEventCodec {
         case playerHit, playerDodged, playerHealed, barrierGained, stealthStarted, formChanged, cheatedDeath
         case waveBegan, bossArrived, bossDefeated, realmConquered, experienceCollected, shrineAppeared, shrineUsed
         case dropCollected, weaponWielded, relicGained, levelUp, playerDefeated, heroFell, reviveStarted
-        case reviveInterrupted, heroRevived
+        case reviveInterrupted, heroRevived, riftOpened, riftEntered
     }
 
     /// A packet's worth of events, most important first if there are too many.
@@ -119,6 +119,10 @@ enum NetEventCodec {
             w.u8(Tag.shrineAppeared.rawValue); w.u8(NetTables.shrineIndex(kind)); w.point(position)
         case let .shrineUsed(kind, position):
             w.u8(Tag.shrineUsed.rawValue); w.u8(NetTables.shrineIndex(kind)); w.point(position)
+        case let .riftOpened(kind, position):
+            w.u8(Tag.riftOpened.rawValue); w.u8(UInt8(kind.rawValue)); w.point(position)
+        case .riftEntered(let kind):
+            w.u8(Tag.riftEntered.rawValue); w.u8(UInt8(kind.rawValue))
         case let .dropCollected(kind, position):
             w.u8(Tag.dropCollected.rawValue); w.u8(NetTables.dropCode(kind)); w.point(position)
         case let .weaponWielded(title, rarity):
@@ -201,6 +205,10 @@ enum NetEventCodec {
         case .experienceCollected: return .experienceCollected(amount: Int(r.u32()))
         case .shrineAppeared: return .shrineAppeared(kind: NetTables.shrine(r.u8()), position: r.point())
         case .shrineUsed: return .shrineUsed(kind: NetTables.shrine(r.u8()), position: r.point())
+        case .riftOpened:
+            let kind = RiftKind(rawValue: Int(r.u8())) ?? .cinders
+            return .riftOpened(kind: kind, position: r.point())
+        case .riftEntered: return .riftEntered(kind: RiftKind(rawValue: Int(r.u8())) ?? .cinders)
         case .dropCollected: return .dropCollected(kind: NetTables.drop(r.u8()), position: r.point())
         case .weaponWielded:
             return .weaponWielded(title: r.string(), rarity: ItemRarity(rawValue: Int(r.u8())) ?? .common)

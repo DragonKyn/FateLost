@@ -35,6 +35,16 @@ final class CombatFeedback {
     private let haptics: HapticsProviding
     private let damageFlash: SKSpriteNode
     private let fateFlash: SKSpriteNode
+    /// A wash of the rift's colour over everything while the party is in one.
+    private let riftTint: SKSpriteNode
+    private var riftLevel: CGFloat = 0
+    /// The rift the party is in, if any: set every frame by the scene.
+    var riftKind: RiftKind? {
+        didSet {
+            guard let kind = riftKind, kind != oldValue else { return }
+            riftTint.color = UIColor(rgb: kind.tint)
+        }
+    }
 
     private var lastCriticalHaptic: TimeInterval = 0
     private var lastHurtHaptic: TimeInterval = 0
@@ -78,6 +88,12 @@ final class CombatFeedback {
         fateFlash.alpha = 0
         camera.camera.addChild(fateFlash)
 
+        riftTint = SKSpriteNode(texture: SKTexture(image: PlaceholderArt.vignette(color: RGBA(hex: 0xFFFFFF))))
+        riftTint.zPosition = DepthSorting.Band.overlays + 4
+        riftTint.colorBlendFactor = 1
+        riftTint.alpha = 0
+        camera.camera.addChild(riftTint)
+
         audio.preload([.swordSwing, .hit, .criticalHit, .goblinDeath, .bowShot, .arcaneCast, .arcaneBurst,
                        .playerHurt, .playerDeath, .levelUp, .abilityImpact, .abilityFire, .abilityFrost,
                        .abilityLightning, .abilityHoly, .abilityShadow, .abilityNature, .abilitySonic, .abilityBuff,
@@ -88,6 +104,7 @@ final class CombatFeedback {
         let size = CGSize(width: screenSize.width * 1.05, height: screenSize.height * 1.05)
         damageFlash.size = size
         fateFlash.size = size
+        riftTint.size = size
     }
 
     func consumeHitStop() -> TimeInterval {
@@ -112,10 +129,14 @@ final class CombatFeedback {
     ///   faint pulse on the damage vignette.
     func present(_ events: [CombatEvent], lowHealth: Bool, frame: WrappedRenderFrame, dt: CGFloat) {
         var hits = 0
+        var critFlares = 0
         for event in events {
             switch event {
             case let .meleeSwing(origin, direction, range, _):
                 effects.slash(at: origin, direction: direction, range: range)
+                // Sparks off the edge of the blade at the end of its sweep.
+                effects.motes(at: origin + direction * (range * 0.85), count: range >= CombatFeedback.heavySwingRange ? 6 : 3,
+                              color: UIColor(rgb: 0xFFF0D0), spread: 0.35, lifetime: 0.35)
                 if isOwn(origin) {
                     player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
                     // A long, heavy blade (the claymore) is felt in the camera.
@@ -161,6 +182,12 @@ final class CombatFeedback {
                 let tint: UIColor? = type == .physical ? nil : type.numberColor
                 effects.spark(at: position, isCritical: isCritical, color: isCritical ? nil : tint)
                 effects.damageNumber(amount, at: position, isCritical: isCritical, color: tint)
+                if isCritical, critFlares < 3 {
+                    // A ring and a second spark: a critical is seen as well as read.
+                    critFlares += 1
+                    effects.ring(at: position, radius: 0.9, color: UIColor(rgb: 0xFFC24A), lifetime: 0.3)
+                    effects.spark(at: position, isCritical: true, color: UIColor(rgb: 0xFFE9A8))
+                }
                 if isCritical {
                     audio.play(.criticalHit)
                     camera.addTrauma(tuning.criticalTrauma)
@@ -177,6 +204,11 @@ final class CombatFeedback {
                 effects.corpse(at: position, spriteID: spriteID, facing: fall, tint: UIColor(rgb: 0x1C1A14),
                                scale: look?.scale ?? 1)
                 effects.splat(at: position, color: UIColor(rgb: 0x2A3316))
+                if let definition = EnemyCatalog.definition(for: kind), definition.rank >= .elite {
+                    effects.grandDeath(at: position, rank: definition.rank,
+                                       color: VisualStyle.matching(definition.damageType).color)
+                    if definition.rank == .elite { camera.addTrauma(0.15) }
+                }
                 audio.play(.goblinDeath)
 
             case .enemyWindup:
@@ -184,18 +216,13 @@ final class CombatFeedback {
 
             case let .burst(position, radius, visual):
                 effects.burst(at: position, radius: radius, color: visual.color, glows: visual.glows)
-                switch visual {
-                case .holy, .fate, .lightning:
-                    effects.pillar(at: position, color: visual.color, width: min(2.2, 0.6 + radius * 0.35),
-                                   height: 0.8, lifetime: 0.35)
-                default:
-                    break
-                }
+                effects.flare(visual, at: position, radius: radius)
                 audio.play(visual.sound)
                 camera.addTrauma(tuning.burstTrauma * min(1.5, radius / 2))
 
             case let .cone(origin, direction, range, arcDegrees, visual):
                 effects.cone(at: origin, direction: direction, range: range, arcDegrees: arcDegrees, color: visual.color)
+                effects.flare(visual, at: origin + direction * (range * 0.7), radius: range * 0.5)
                 player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
                 audio.play(visual.sound)
                 camera.addTrauma(tuning.burstTrauma)
@@ -210,6 +237,7 @@ final class CombatFeedback {
             case let .bolt(position, visual):
                 effects.pillar(at: position, color: visual.color, width: 0.45, height: 1.2, lifetime: 0.22)
                 effects.spark(at: position, isCritical: true, color: visual.color)
+                effects.flare(visual, at: position, radius: 1.1)
                 audio.play(visual.sound)
 
             case let .dash(from, to, visual):
@@ -218,7 +246,9 @@ final class CombatFeedback {
                 audio.play(.dash)
 
             case let .abilityCast(_, visual):
-                effects.motes(at: playerPosition, count: 6, color: visual.color, spread: 0.4, lifetime: 0.6)
+                effects.motes(at: playerPosition, count: 8, color: visual.color, spread: 0.5, lifetime: 0.7)
+                // A ring at the caster's feet: the cast is visible even when its effect is elsewhere.
+                effects.ring(at: playerPosition, radius: 1.3, color: visual.color, lifetime: 0.35)
                 audio.play(visual.sound)
                 haptics.play(.uiTap)
 
@@ -307,6 +337,21 @@ final class CombatFeedback {
                 effects.floatingText("A shrine stirs", at: playerPosition, color: ShrineRenderer.tint(for: kind),
                                      size: 15, lifetime: 1.6)
                 audio.play(.abilityShadow)
+
+            case let .riftOpened(kind, position):
+                let tint = UIColor(rgb: kind.tint)
+                effects.ring(at: position, radius: 3, color: tint, lifetime: 1.2)
+                effects.motes(at: position, count: 18, color: tint, spread: 1.6)
+                effects.floatingText("A rift opens", at: playerPosition, color: tint, size: 17, lifetime: 2.2)
+                camera.addTrauma(0.35)
+                audio.play(.abilityShadow)
+
+            case let .riftEntered(kind):
+                effects.floatingText(kind.name, at: playerPosition, color: UIColor(rgb: kind.tint), size: 20,
+                                     lifetime: 2.4)
+                camera.addTrauma(1.0)
+                haptics.play(.criticalHit)
+                audio.play(.abilityImpact)
 
             case let .shrineUsed(kind, position):
                 let tint = ShrineRenderer.tint(for: kind)
@@ -397,6 +442,9 @@ final class CombatFeedback {
             audio.play(.hit)
         }
 
+        riftLevel += ((riftKind == nil ? 0 : 1) - riftLevel) * min(1, dt * 2)
+        riftTint.alpha = riftLevel * 0.5
+
         // The edge flash fades quickly, but never below a faint pulse when
         // health is low.
         hurtFlash = max(0, hurtFlash - dt * 2.4)
@@ -410,7 +458,7 @@ final class CombatFeedback {
         switch tier {
         case .cache: return ItemRarity.common.color.uiColor
         case .chest: return ItemRarity.rare.color.uiColor
-        case .hoard: return ItemRarity.legendary.color.uiColor
+        case .hoard, .rift: return ItemRarity.legendary.color.uiColor
         }
     }
 

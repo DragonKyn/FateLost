@@ -601,6 +601,45 @@ enum EnemyCatalog {
         kit: BossKit(moves: [.sweep, .cleave, .meteors, .lanes, .slam, .blink], intensity: 9, tempo: 3.9,
                      signature: .sweep))
 
+    // MARK: - Rifts
+
+    /// What waits behind a portal: far bigger than a champion, alone with the party, with a kit that
+    /// has almost everything in it.
+    private static func riftBoss(id: String, name: String, epithet: String, family: EnemyFamily, type: DamageType,
+                                 behavior: EnemyBehavior, sprite: SpriteID, kit: BossKit) -> EnemyDefinition {
+        champion(id: id, name: name, epithet: epithet, family: family, health: 14_000, speed: 1.7, radius: 1.9,
+                 damage: 60, reach: 1.2, windup: 1.0, cooldown: 2.4, type: type, behavior: behavior, sprite: sprite,
+                 scale: 2.6, experience: 300, kit: kit)
+    }
+
+    static let riftForge = riftBoss(
+        id: "boss.rift.forge", name: "Ignarok", epithet: "the World-Forge", family: .elemental, type: .fire,
+        behavior: .melee, sprite: .enemyRiftForge,
+        kit: BossKit(moves: [.slam, .meteors, .pools, .sweep, .cleave, .lanes, .hunt, .summon], intensity: 9,
+                     tempo: 3.6, adds: "enemy.emberHound", signature: .pools))
+
+    static let riftMatriarch = riftBoss(
+        id: "boss.rift.matriarch", name: "Nerezza", epithet: "the Brine Matriarch", family: .beast, type: .cold,
+        behavior: .ranged(range: 9, projectileSpeed: 8, sprite: .projectileShard), sprite: .enemyRiftMatriarch,
+        kit: BossKit(moves: [.pools, .hunt, .ring, .summon, .lanes, .blink, .spiral, .sweep], intensity: 9,
+                     tempo: 3.6, adds: "enemy.giantSpider", signature: .hunt))
+
+    static let riftSovereign = riftBoss(
+        id: "boss.rift.sovereign", name: "Auroch", epithet: "the White Sovereign", family: .beast, type: .cold,
+        behavior: .charger(range: 10, speed: 18, distance: 10), sprite: .enemyRiftSovereign,
+        kit: BossKit(moves: [.blink, .lanes, .cleave, .fan, .sweep, .pools, .meteors, .hunt], intensity: 9,
+                     tempo: 3.6, adds: "enemy.direWolf", signature: .blink))
+
+    static let riftUnblinking = riftBoss(
+        id: "boss.rift.unblinking", name: "The Unblinking", epithet: "Everything It Has Seen", family: .aberration,
+        type: .arcane, behavior: .ranged(range: 10, projectileSpeed: 10, sprite: .projectileArcaneBolt),
+        sprite: .enemyRiftUnblinking,
+        kit: BossKit(moves: [.sweep, .spiral, .hunt, .ring, .meteors, .blink, .summon, .lanes], intensity: 9,
+                     tempo: 3.6, adds: "enemy.voidling", signature: .sweep))
+
+    /// The great ones behind the portals. Not part of any realm's list of champions.
+    static let riftBosses: [EnemyDefinition] = [riftForge, riftMatriarch, riftSovereign, riftUnblinking]
+
     // MARK: - Lookup
 
     static let goblinWarband: [EnemyDefinition] = [
@@ -633,7 +672,7 @@ enum EnemyCatalog {
     ]
 
     static let all: [EnemyDefinition] = goblinWarband + undeadHost + wildBeasts + demonLegion
-        + citadelConstructs + aberrations + cultists + elementals + nightHunters + champions
+        + citadelConstructs + aberrations + cultists + elementals + nightHunters + champions + riftBosses
 
     static func definition(for id: EnemyKindID) -> EnemyDefinition? {
         all.first { $0.id == id }

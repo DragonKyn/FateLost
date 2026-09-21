@@ -101,6 +101,10 @@ struct CombatState {
     var hazards: [Hazard] = []
     /// What each champion on the field is up to, by enemy id.
     var bossBrains: [Int: BossBrain] = [:]
+    /// Portals standing in the world.
+    var portals: [Portal] = []
+    /// The fight the whole party is in on the far side of a rift, if any.
+    var rift: RiftFight?
     var reviveMarkers: [ReviveMarker] = []
     /// Which hero's state is live in the per-hero fields.
     var activeHero = 0
@@ -225,7 +229,7 @@ extension CombatState {
     static let sharedFieldNames: [String] = [
         "world", "tuning", "enemies", "orbs", "drops", "shrines", "curseRemaining", "grid", "lootRandom", "nearby",
         "nearbySecondary", "nextEntityID", "enemyHealthScale", "enemyDamageScale", "hostileProjectiles",
-        "worldAnchors", "incidents", "partyEffects", "hazards", "bossBrains", "reviveMarkers", "activeHero", "isParty",
+        "worldAnchors", "incidents", "partyEffects", "hazards", "bossBrains", "portals", "rift", "reviveMarkers", "activeHero", "isParty",
     ]
 
     /// Swaps this hero's fields with `other`'s. Moves references and copies

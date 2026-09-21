@@ -98,7 +98,7 @@ final class DropRenderer {
             switch tier {
             case .cache: return .dropChestCache
             case .chest: return .dropChestChest
-            case .hoard: return .dropChestHoard
+            case .hoard, .rift: return .dropChestHoard
             }
         }
     }
@@ -107,7 +107,7 @@ final class DropRenderer {
         switch tier {
         case .cache: return ItemRarity.common.color
         case .chest: return ItemRarity.rare.color
-        case .hoard: return ItemRarity.legendary.color
+        case .hoard, .rift: return ItemRarity.legendary.color
         }
     }
 
@@ -115,7 +115,7 @@ final class DropRenderer {
         switch tier {
         case .cache: return 0.9
         case .chest: return 1.3
-        case .hoard: return 1.8
+        case .hoard, .rift: return 1.8
         }
     }
 }

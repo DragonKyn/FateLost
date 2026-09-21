@@ -128,6 +128,14 @@ struct NetHazard: Equatable {
     static let guide: UInt8 = 1 << 0
 }
 
+/// A portal, into a rift or back out of one.
+struct NetPortal: Equatable {
+    var id: UInt32
+    var kind: UInt8
+    var isReturn: Bool
+    var position: CGPoint
+}
+
 struct NetWave: Equatable {
     var index: Int
     var phase: UInt8
@@ -161,6 +169,7 @@ struct NetSnapshot: Equatable {
         static let drops = 40
         static let shrines = 6
         static let hazards = 24
+        static let portals = 4
         static let markers = 4
     }
 
@@ -178,6 +187,11 @@ struct NetSnapshot: Equatable {
     var drops: [NetDrop] = []
     var shrines: [NetShrine] = []
     var hazards: [NetHazard] = []
+    var portals: [NetPortal] = []
+    /// The rift the party is in (`RiftKind` raw value), or `noRift`.
+    var rift: UInt8 = NetSnapshot.noRift
+
+    static let noRift: UInt8 = 0xFF
 
     // MARK: Encoding
 
@@ -318,6 +332,16 @@ struct NetSnapshot: Equatable {
             writer.u8(UInt8(max(0, min(255, (hazard.linger * 10).rounded()))))
             writer.u8(hazard.flags)
         }
+
+        let portalList = portals.prefix(Limit.portals)
+        writer.u8(UInt8(portalList.count))
+        for portal in portalList {
+            writer.u32(portal.id)
+            writer.u8(portal.kind)
+            writer.bool(portal.isReturn)
+            writer.point(portal.position)
+        }
+        writer.u8(rift)
         return writer.data
     }
 
@@ -468,6 +492,14 @@ struct NetSnapshot: Equatable {
                                               size: size, width: width, warning: warning, age: age,
                                               visual: visual, linger: linger, flags: flags))
         }
+
+        let portalCount = Int(reader.u8())
+        guard portalCount <= Limit.portals else { return nil }
+        for _ in 0..<portalCount {
+            snapshot.portals.append(NetPortal(id: reader.u32(), kind: reader.u8(), isReturn: reader.bool(),
+                                              position: reader.point()))
+        }
+        snapshot.rift = reader.u8()
 
         guard !reader.failed else { return nil }
         return snapshot
@@ -636,6 +668,11 @@ extension GameSimulation {
                 warning: hazard.warning, age: hazard.age, visual: NetTables.visualIndex(hazard.visual),
                 linger: hazard.linger, flags: hazard.isGuide ? NetHazard.guide : 0))
         }
+        for portal in combat.portals.prefix(NetSnapshot.Limit.portals) {
+            snapshot.portals.append(NetPortal(id: UInt32(truncatingIfNeeded: portal.id), kind: UInt8(portal.kind.rawValue),
+                                              isReturn: portal.isReturn, position: portal.position))
+        }
+        snapshot.rift = combat.rift.map { UInt8($0.kind.rawValue) } ?? NetSnapshot.noRift
         for shrine in combat.shrines.prefix(NetSnapshot.Limit.shrines) {
             snapshot.shrines.append(NetShrine(id: UInt32(truncatingIfNeeded: shrine.id), position: shrine.position,
                                               kind: NetTables.shrineIndex(shrine.kind)))

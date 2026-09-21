@@ -99,6 +99,7 @@ struct RelicOfferView: View {
         case .cache: return "A CACHE"
         case .chest: return "A CHEST"
         case .hoard: return "A HOARD"
+        case .rift: return "A RIFT'S REWARD"
         }
     }
 
@@ -106,7 +107,7 @@ struct RelicOfferView: View {
         switch offer.tier {
         case .cache: return ItemRarity.common.color.color
         case .chest: return ItemRarity.rare.color.color
-        case .hoard: return ItemRarity.legendary.color.color
+        case .hoard, .rift: return ItemRarity.legendary.color.color
         }
     }
 }

@@ -290,10 +290,13 @@ struct GameSimulation {
         // The world: the wave clock, new arrivals and the horde, once.
         activate(0)
         collectSpawnFocuses(anyAlive: anyAlive)
-        if anyAlive {
+        if anyAlive && combat.rift == nil {
             advanceWaves(dt)
         }
-        spawner.isEnabled = anyAlive && cheats.spawningEnabled
+        if anyAlive {
+            stepRifts(dt: dt)
+        }
+        spawner.isEnabled = anyAlive && cheats.spawningEnabled && combat.rift == nil
         spawner.step(&combat, focuses: spawnFocusScratch, elapsed: elapsed, dt: dt,
                      hardCap: tuning.enemyAI.hardCap, speedVariance: tuning.enemyAI.speedVariance)
 
