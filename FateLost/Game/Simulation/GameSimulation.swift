@@ -386,8 +386,9 @@ struct GameSimulation {
         let due = waves.step(&combat, dt: dt)
         if waves.state.index != shrineWave {
             shrineWave = waves.state.index
+            let anchor = randomStandingPlayer()
             ShrineSystem.waveBegan(shrineWave, isBossWave: realm.waves.isBossWave(shrineWave), &combat,
-                                   player: referencePlayer())
+                                   player: anchor)
         }
         spawner.wave = waves.state.index
         spawner.rateMultiplier = waves.pressure * waves.spawnShare * partySpawnFactor()

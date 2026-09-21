@@ -297,6 +297,16 @@ extension GameSimulation {
         return playerState(of: 0)
     }
 
+    /// A standing hero picked at random, so what appears "near the party" (a
+    /// shrine) is not always near the host. A lone hero is always the one chosen,
+    /// and takes nothing from the random stream.
+    mutating func randomStandingPlayer() -> PlayerState {
+        let standing = (0..<heroCount).filter { members[$0].stepAlive }
+        guard standing.count > 1 else { return referencePlayer() }
+        let pick = standing[Int(combat.lootRandom.unit() * Double(standing.count)) % standing.count]
+        return playerState(of: pick)
+    }
+
     /// The heroes whose word counts when the party votes to end a breather:
     /// everyone still in the party and still connected.
     func restElectorate() -> Set<Int> {

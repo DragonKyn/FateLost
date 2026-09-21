@@ -77,6 +77,39 @@ final class OrbClaimTests: XCTestCase {
         XCTAssertEqual(c.orbs.first?.claimedBy ?? 1, 1)
     }
 
+    // MARK: Shrines
+
+    private func party(_ count: Int) -> GameSimulation {
+        let run = RunConfiguration(realmID: .ashenWilds, starterWeaponID: StarterWeapons.sword.id, seed: 11)
+        let heroes = (0..<count).map { index in
+            PartyHeroConfig(id: "o\(index)", name: "Hero \(index)", slot: index, weaponID: StarterWeapons.sword.id,
+                            legacy: [])
+        }
+        return GameSimulation(run: run, tuning: .standard, party: heroes)
+    }
+
+    func testAShrineIsRaisedNearAnyStandingHeroNotAlwaysTheHost() {
+        var sim = party(2)
+        let home = sim.arena.playerSpawn
+        sim.perform(as: 0) { $0.player.position = home; $0.combat.playerPosition = home }
+        let far = sim.world.wrap(home + CGPoint(x: 50, y: 0))
+        sim.perform(as: 1) { $0.player.position = far; $0.combat.playerPosition = far }
+        var chosen = Set<Int>()
+        for _ in 0..<40 {
+            let anchor = sim.randomStandingPlayer()
+            chosen.insert(sim.world.distance(anchor.position, home) < 5 ? 0 : 1)
+        }
+        XCTAssertEqual(chosen, [0, 1], "shrines should appear near either player")
+    }
+
+    func testALoneHeroIsAlwaysTheAnchorAndUsesNoRandomness() {
+        var sim = party(1)
+        let before = sim.combat.lootRandom.unit()
+        var again = party(1)
+        _ = again.randomStandingPlayer()
+        XCTAssertEqual(again.combat.lootRandom.unit(), before, "picking the only hero must not disturb the loot stream")
+    }
+
     func testAMagnetSendsEveryOrbToWhoeverTookIt() {
         var c = combat()
         c.orbs.append(ExperienceOrb(id: 1, position: CGPoint(x: 50, y: 64), value: 3))
