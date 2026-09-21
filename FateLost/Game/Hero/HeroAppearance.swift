@@ -34,6 +34,18 @@ enum BodyBuild: String, Codable, CaseIterable, Identifiable {
         }
     }
 
+    /// How high the shoulders are above the feet, in the hero's canvas points:
+    /// where the cloak hangs from, and so what it swings about.
+    var shoulderHeight: CGFloat {
+        switch self {
+        case .lithe: return 35
+        case .standard: return 32
+        case .broad: return 31
+        case .stout: return 26
+        case .towering: return 39
+        }
+    }
+
     /// Where the weapon is held, from the feet up.
     var hand: CGPoint {
         switch self {

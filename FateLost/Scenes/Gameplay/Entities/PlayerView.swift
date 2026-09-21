@@ -17,8 +17,11 @@ final class PlayerView: SKNode {
     /// How freely this cloak hangs (see `CloakStyle.clothiness`).
     private let cloth: CGFloat
     private var swayClock: Double = 0
-    /// The sway the cloak was last bent by, so a still cloak is not re-bent every frame.
-    private var drawnSway = CGPoint(x: 99, y: 99)
+    /// How high the shoulders are above the feet in the sprite's own units:
+    /// the cloak swings about that point.
+    private let shoulderHeight: CGFloat
+    /// The angle the cloak was last turned to, so a still cloak is not turned every frame.
+    private var drawnAngle: CGFloat = 99
 
     private enum Style {
         static let bobHeight: CGFloat = 2.6
@@ -62,7 +65,7 @@ final class PlayerView: SKNode {
     private var weaponSprite: SpriteID
 
     init(catalog: SpriteCatalog, weaponSprite: SpriteID, hand: CGPoint = BodyBuild.standard.hand,
-         cloth: CGFloat = 1) {
+         cloth: CGFloat = 1, shoulders: CGFloat = BodyBuild.standard.shoulderHeight) {
         self.catalog = catalog
         self.cloth = cloth
         shadowSprite = catalog.makeSprite(.shadow)
@@ -71,6 +74,7 @@ final class PlayerView: SKNode {
         figureBehind = hasPieces ? catalog.makeSprite(.playerBehind) : nil
         figureCloak = hasPieces ? catalog.makeSprite(.playerCloak) : nil
         figureFront = hasPieces ? catalog.makeSprite(.playerFront) : nil
+        shoulderHeight = shoulders * catalog.size(.playerCloak).height / PlaceholderArt.heroCanvas.height
         weapon = catalog.makeSprite(weaponSprite)
         self.weaponSprite = weaponSprite
         barrierGlow = catalog.makeSprite(.fxGlow)
@@ -139,15 +143,15 @@ final class PlayerView: SKNode {
         }
     }
 
-    /// Bends the cloak by the sway, if it has changed enough to see.
-    private func bendCloak() {
+    /// Swings the cloak about the shoulders by the sway, if it has changed
+    /// enough to see. A rotation and nothing else: nothing here can skew it.
+    private func swingCloak() {
         guard let cloak = figureCloak, !cloak.isHidden else { return }
-        let offset = sway.offset
-        guard abs(offset.x - drawnSway.x) > 0.02 || abs(offset.y - drawnSway.y) > 0.02 else { return }
-        drawnSway = offset
-        let warp = sway.warp(imageSize: cloak.size, cloth: cloth)
-        cloak.warpGeometry = SKWarpGeometryGrid(columns: CapeSway.columns.count - 1, rows: CapeSway.rows.count - 1,
-                                                sourcePositions: warp.source, destinationPositions: warp.destination)
+        let angle = sway.angle(cloth: cloth)
+        guard abs(angle - drawnAngle) > 0.0005 else { return }
+        drawnAngle = angle
+        cloak.zRotation = angle
+        cloak.position = CapeSway.anchorShift(angle: angle, pivotHeight: shoulderHeight)
     }
 
     /// Swaps the figure for a form's (or back to the adventurer).
@@ -217,7 +221,7 @@ final class PlayerView: SKNode {
         // The cloak lags the way the hero is moving, in the hero's own frame.
         swayClock += Double(dt)
         sway.step(dt: dt, velocity: CGPoint(x: screenVelocity.x * facingSign, y: screenVelocity.y), time: swayClock)
-        bendCloak()
+        swingCloak()
         let phase = state.strideTime * Style.strideFrequency * 2 * .pi
         let bob = CGFloat(abs(sin(phase))) * Style.bobHeight * speedFraction
         body.position = CGPoint(x: 0, y: bob)
@@ -287,8 +291,8 @@ final class PlayerView: SKNode {
         // A fallen hero's cloak lies still.
         if sway.offset != .zero {
             sway.reset()
-            drawnSway = CGPoint(x: 99, y: 99)
-            bendCloak()
+            drawnAngle = 99
+            swingCloak()
         }
         weapon.zRotation = restAngle - eased
         shadowSprite.setScale(1 + 0.3 * eased)

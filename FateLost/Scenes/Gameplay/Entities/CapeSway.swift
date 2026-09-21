@@ -17,7 +17,7 @@ struct CapeSway {
     private var speed: CGPoint = .zero
 
     /// The furthest the hem may swing.
-    static let maxHorizontal: CGFloat = 3.0
+    static let maxHorizontal: CGFloat = 2.6
     static let maxVertical: CGFloat = 1.2
     /// How hard the cloth is pulled toward where the motion wants it, and how
     /// much it is held back. These give a damping ratio near 0.5: one soft
@@ -67,47 +67,36 @@ struct CapeSway {
         min(limit, max(-limit, value))
     }
 
-    // MARK: How the sway bends the drawing
+    // MARK: How the sway turns the drawing
 
-    /// Fractions of the cloak's height, from the hem up, at which the sway is
-    /// applied, and how much of it each carries. The shoulders (the top) never
-    /// move, which is what keeps armour worn on them, and the hood, rigid.
-    static let rows: [(height: CGFloat, share: CGFloat)] = [
-        (0, 1.0), (0.16, 0.85), (0.42, 0.25), (1, 0),
-    ]
-    /// The same across the width of the picture, from its back edge (the left
-    /// of a figure facing right) to its front. Cloth trails: the back edge is
-    /// thrown out and the front edge, the way the hero is going, hardly moves,
-    /// so the hem flares rather than sliding over as one slab.
-    static let columns: [(across: CGFloat, share: CGFloat)] = [
-        (0, 1.0), (0.3, 1.0), (0.5, 0.65), (0.7, 0.3), (1, 0.2),
-    ]
+    /// How long the hanging cloth is in the art, shoulders to hem, in canvas
+    /// points (the same units as `offset`).
+    static let hangLength: CGFloat = 23
+    /// The furthest the cloak may swing, in radians: about six degrees.
+    static let maxAngle: CGFloat = 0.11
 
-    /// The points of a warp grid of `columns.count - 1` by `rows.count - 1`
-    /// cells for the current sway, in the unit square of the cloak's own image
-    /// (y up): the source, and where each point is moved to. Row-major from the
-    /// bottom left.
+    /// The angle the cloak hangs at, in radians (counter-clockwise positive),
+    /// turned about the shoulders so its hem trails by `offset.x`.
+    ///
+    /// It is a plain rotation of the whole cloak, not a bend: a rotation this
+    /// small cannot skew it, stretch it or turn it sideways, and the shoulders,
+    /// which stay under the hood and any armour worn there, hardly move.
     /// - Parameter cloth: 0 for something rigid, 1 for free-hanging cloth.
-    func warp(imageSize: CGSize, cloth: CGFloat) -> (source: [SIMD2<Float>], destination: [SIMD2<Float>]) {
-        var source: [SIMD2<Float>] = []
-        var destination: [SIMD2<Float>] = []
-        let dx = Float(offset.x * cloth / max(imageSize.width, 1))
-        let dy = Float(offset.y * cloth / max(imageSize.height, 1))
-        for row in Self.rows {
-            for column in Self.columns {
-                let point = SIMD2<Float>(Float(column.across), Float(row.height))
-                source.append(point)
-                destination.append(SIMD2(point.x + dx * Float(row.share * column.share),
-                                         point.y + dy * Float(row.share)))
-            }
-        }
-        return (source, destination)
+    func angle(cloth: CGFloat) -> CGFloat {
+        let raw = atan2(offset.x * cloth, Self.hangLength)
+        return min(Self.maxAngle, max(-Self.maxAngle, raw))
+    }
+
+    /// Where a sprite whose origin is at the feet must sit, once turned by
+    /// `angle`, for the point `pivotHeight` above the feet to stay where it is.
+    static func anchorShift(angle: CGFloat, pivotHeight: CGFloat) -> CGPoint {
+        CGPoint(x: pivotHeight * sin(angle), y: pivotHeight * (1 - cos(angle)))
     }
 }
 
 extension CloakStyle {
     /// How freely a cloak hangs: 1 for a loose cape, less for cloth worn over
-    /// armour or cut close. The shoulders never move at all (see `CapeSway.rows`).
+    /// armour or cut close. The shoulders never move at all (the cloak turns about them; see `CapeSway.angle`).
     var clothiness: CGFloat {
         switch self {
         case .hooded, .shroud, .pilgrim, .vampire: return 1

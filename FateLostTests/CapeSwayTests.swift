@@ -69,46 +69,59 @@ final class CapeSwayTests: XCTestCase {
         XCTAssertEqual(sway.offset, .zero)
     }
 
-    func testTheBendKeepsTheShouldersStillAndFlaresTheHem() {
+    func testTheCloakTurnsAboutTheShouldersTowardWhereTheHemTrails() {
         var sway = CapeSway()
         run(&sway, seconds: 1, velocity: CGPoint(x: 120, y: 0))
-        let warp = sway.warp(imageSize: CGSize(width: 64, height: 80), cloth: 1)
-        let across = CapeSway.columns.count
-        let down = CapeSway.rows.count
-        XCTAssertEqual(warp.source.count, across * down)
-        XCTAssertEqual(warp.destination.count, across * down)
-        // Top row: the hood and shoulders do not move.
-        for column in 0..<across {
-            let index = (down - 1) * across + column
-            XCTAssertEqual(warp.destination[index], warp.source[index])
-        }
-        // Hem row: the back edge takes the whole sway; the front edge less.
-        let back = warp.destination[0].x - warp.source[0].x
-        XCTAssertEqual(back, Float(sway.offset.x / 64), accuracy: 0.0001)
-        let front = warp.destination[across - 1].x - warp.source[across - 1].x
-        XCTAssertLessThan(abs(front), abs(back), "the hem flares; it does not slide over as a slab")
-        XCTAssertEqual(front.sign, back.sign, "the whole hem trails the same way")
-        // Every row moves less than the one below it: a smooth hang, not a snap.
-        let shifts = (0..<down).map { abs(warp.destination[$0 * across].x - warp.source[$0 * across].x) }
-        XCTAssertEqual(shifts, shifts.sorted(by: >))
-        // A row is level: the hem is lifted or dropped evenly, never tilted.
-        for row in 0..<down {
-            let first = warp.destination[row * across].y - warp.source[row * across].y
-            for column in 1..<across {
-                let index = row * across + column
-                XCTAssertEqual(warp.destination[index].y - warp.source[index].y, first, accuracy: 0.0001)
-            }
-        }
-        // Sources are the unit square in order: bottom left to top right.
-        XCTAssertEqual(warp.source[0], SIMD2<Float>(0, 0))
-        XCTAssertEqual(warp.source[across * down - 1], SIMD2<Float>(1, 1))
+        // Walking the way the hero faces: the hem trails behind, so the cloak turns clockwise (negative).
+        let angle = sway.angle(cloth: 1)
+        XCTAssertLessThan(angle, -0.08)
+        XCTAssertGreaterThanOrEqual(angle, -CapeSway.maxAngle)
     }
 
-    func testRigidThingsDoNotMove() {
+    func testTheCloakNeverTurnsFurtherThanASmallAngle() {
+        var sway = CapeSway()
+        for index in 0..<600 {
+            let sign: CGFloat = index % 7 < 3 ? 1 : -1
+            sway.step(dt: frame, velocity: CGPoint(x: sign * 50_000, y: 0), time: Double(index) / 60)
+            XCTAssertLessThanOrEqual(abs(sway.angle(cloth: 1)), CapeSway.maxAngle + 0.0001)
+        }
+        XCTAssertLessThan(CapeSway.maxAngle, 0.15, "about eight degrees at the very most: it cannot turn sideways")
+    }
+
+    func testRigidThingsDoNotTurn() {
         var sway = CapeSway()
         run(&sway, seconds: 1, velocity: CGPoint(x: 120, y: 0))
-        let rigid = sway.warp(imageSize: CGSize(width: 64, height: 80), cloth: 0)
-        XCTAssertEqual(rigid.source, rigid.destination)
+        XCTAssertEqual(sway.angle(cloth: 0), 0)
+        XCTAssertLessThan(abs(sway.angle(cloth: 0.3)), abs(sway.angle(cloth: 1)) * 0.4)
+    }
+
+    func testAStillCloakHangsStraight() {
+        var sway = CapeSway()
+        run(&sway, seconds: 3, velocity: .zero)
+        XCTAssertLessThan(abs(sway.angle(cloth: 1)), 0.03)
+    }
+
+    func testTurningAboutTheShouldersKeepsThemWhereTheyAre() {
+        for angle in stride(from: -CapeSway.maxAngle, through: CapeSway.maxAngle, by: 0.02) {
+            for height in [26, 32, 39].map(CGFloat.init) {
+                let shift = CapeSway.anchorShift(angle: angle, pivotHeight: height)
+                // The point `height` above the feet, turned by `angle` about the feet and moved by `shift`.
+                let x = -height * sin(angle) + shift.x
+                let y = height * cos(angle) + shift.y
+                XCTAssertEqual(x, 0, accuracy: 0.0001)
+                XCTAssertEqual(y, height, accuracy: 0.0001)
+            }
+        }
+    }
+
+    func testEveryBuildHasShouldersWhereTheArtPutsThem() {
+        // The art tool's shoulder line: 76 (the feet) minus the build's hem rise and torso.
+        let expected: [BodyBuild: CGFloat] = [.lithe: 76 - 10 - 25, .standard: 76 - 9 - 23, .broad: 76 - 9 - 22,
+                                              .stout: 76 - 7 - 19, .towering: 76 - 12 - 27]
+        for build in BodyBuild.allCases {
+            let shoulderLine = 76 - build.shoulderHeight
+            XCTAssertEqual(shoulderLine, expected[build] ?? -1, accuracy: 0.001, "\(build)")
+        }
     }
 
     func testEveryCloakSaysHowFreelyItHangsAndArmourHangsLeast() {

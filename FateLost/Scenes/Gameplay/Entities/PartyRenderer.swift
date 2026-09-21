@@ -126,7 +126,8 @@ final class PartyRenderer {
         let catalog = SpriteCatalog(preloading: Self.spritesForAHero, hero: look)
         let weapon = state.weaponSprite ?? StarterWeapons.definition(for: roster?.weapon ?? "")?.spriteID
             ?? StarterWeapons.sword.spriteID
-        let view = PlayerView(catalog: catalog, weaponSprite: weapon, hand: look.build.hand, cloth: look.cloak.clothiness)
+        let view = PlayerView(catalog: catalog, weaponSprite: weapon, hand: look.build.hand, cloth: look.cloak.clothiness,
+                              shoulders: look.build.shoulderHeight)
         let entry = HeroEntry(view: view, name: roster?.name ?? "Ally", position: state.position)
         entry.root.addChild(view)
 
