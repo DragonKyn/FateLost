@@ -125,7 +125,9 @@ extension GameSimulation {
             place(hero, at: world.wrap(rift.origins[hero] ?? rift.lastBossPosition))
         }
         // What was left behind in the rift is gone with it.
-        combat.orbs.removeAll { world.distance($0.position, rift.centre) < 40 }
+        let arena = world
+        let centre = rift.centre
+        combat.orbs.removeAll { arena.distance($0.position, centre) < 40 }
         combat.portals.removeAll()
         waves.mirror(rift.savedWave)
         combat.rift = nil
