@@ -183,7 +183,7 @@ enum NetScale {
 /// list changes in a way an older app would misread, and a snapshot from a
 /// different version is refused rather than misdrawn.
 enum NetTables {
-    static let contentVersion: UInt8 = 3
+    static let contentVersion: UInt8 = 4
 
     static func hash16(_ text: String) -> UInt16 {
         var hash: UInt32 = 2_166_136_261

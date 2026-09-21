@@ -55,6 +55,8 @@ enum Relations {
 /// hero: each blow is resolved in the context of the hero it lands on.
 enum WorldIncident {
     case strikeHero(hero: Int, amount: Double, direction: CGPoint)
+    /// A blow that, if it lands, leaves something on the hero besides the damage.
+    case stingHero(hero: Int, amount: Double, direction: CGPoint, effect: EnemyOnHit)
     case woundAlly(hero: Int, index: Int, id: Int, amount: Double)
 }
 
@@ -212,6 +214,13 @@ enum WorldIncidents {
             case let .strikeHero(_, amount, direction):
                 guard !player.isDefeated else { continue }
                 combat.strikePlayer(&player, amount: amount, direction: direction, godMode: godMode)
+            case let .stingHero(_, amount, direction, effect):
+                guard !player.isDefeated else { continue }
+                let before = player.hitsTaken
+                combat.strikePlayer(&player, amount: amount, direction: direction, godMode: godMode)
+                if player.hitsTaken > before {
+                    player.applyBuff(id: effect.buffID, modifiers: effect.modifiers, duration: effect.duration, maxStacks: 1)
+                }
             case let .woundAlly(_, index, id, amount):
                 guard index < combat.allies.count, combat.allies[index].id == id else { continue }
                 AllySystem.wound(index, amount: amount, &combat)

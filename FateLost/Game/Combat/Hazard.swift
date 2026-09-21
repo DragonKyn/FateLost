@@ -40,9 +40,27 @@ struct Hazard: Equatable {
     var visual: VisualStyle
     var hasLanded = false
 
+    /// Seconds it stays dangerous after landing (a burning pool, a sweeping
+    /// beam), hurting `tickDamage` every `tickEvery` seconds to whoever is in it.
+    var linger: Double = 0
+    var tickDamage: Double = 0
+    var tickEvery: Double = 0.5
+    var tickTimer: Double = 0
+    /// Radians a second the strip turns while it lingers (a sweeping beam).
+    var spin: CGFloat = 0
+    /// The hero it follows until `lockTime` seconds before it lands (a hunt).
+    var follows: Int?
+    var lockTime: Double = 0
+    /// The champion that appears here as it lands (a blink).
+    var carriesBoss: Int?
+    /// Drawn to show where something will happen, and never hurts by itself.
+    var isGuide = false
+
     /// 0 as it appears, 1 as it lands.
     var progress: Double { warning > 0 ? max(0, min(1, age / warning)) : 1 }
-    var isFinished: Bool { age >= warning + Self.afterglow }
+    var isFinished: Bool { age >= warning + max(Self.afterglow, linger) }
+    /// Landed, and still hurting.
+    var isActive: Bool { hasLanded && linger > 0 && age < warning + linger }
 
     /// Whether a body of `radius` at `point` is inside the marked ground.
     func covers(_ point: CGPoint, radius: CGFloat, world: ToroidalWorld) -> Bool {

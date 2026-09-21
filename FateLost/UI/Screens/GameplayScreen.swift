@@ -141,6 +141,7 @@ private struct GameplayHUDOverlay: View {
                     .foregroundStyle(FLTheme.Palette.parchment)
                     .shadow(color: .black, radius: 2)
                     RelicStrip(relics: session.progression.relics)
+                    AfflictionStrip(afflictions: session.hud.afflictions)
                     if session.hud.curseSeconds > 0 {
                         Label("Cursed \(formatTime(session.hud.curseSeconds))", systemImage: "moon.stars.fill")
                             .font(FLTheme.Typeface.number(12))

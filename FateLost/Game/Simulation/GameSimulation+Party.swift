@@ -371,6 +371,16 @@ extension GameSimulation {
                 combat.strikePlayer(&player, amount: amount, direction: direction, godMode: cheats.godMode)
                 // What a blow sets off (a barrier, a counter) happens now.
                 flush()
+            case let .stingHero(hero, amount, direction, effect):
+                activate(hero)
+                guard !player.isDefeated else { continue }
+                let before = player.hitsTaken
+                combat.strikePlayer(&player, amount: amount, direction: direction, godMode: cheats.godMode)
+                if player.hitsTaken > before {
+                    player.applyBuff(id: effect.buffID, modifiers: effect.modifiers, duration: effect.duration,
+                                     maxStacks: 1)
+                }
+                flush()
             case let .woundAlly(hero, index, id, amount):
                 activate(hero)
                 guard index < combat.allies.count, combat.allies[index].id == id else { continue }

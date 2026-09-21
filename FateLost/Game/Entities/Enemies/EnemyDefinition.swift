@@ -25,6 +25,69 @@ enum EnemyBehavior: Equatable {
     case summoner(spawns: EnemyKindID, count: Int, interval: Double, range: CGFloat)
 }
 
+/// What a landed blow leaves on the hero besides the damage.
+///
+/// Both are timed afflictions that show under the health bar, and both are
+/// there to answer a way of playing: the bat's bite cuts regeneration so that
+/// stacking it cannot make a hero unkillable, and the stalker's cut slows.
+enum EnemyOnHit: Equatable {
+    /// Health regeneration cut to a tenth (a bat's bite).
+    case witherRegen(seconds: Double)
+    /// Movement slowed (a stalker's blade across the back of the leg).
+    case hamstring(seconds: Double, slow: Double)
+
+    var buffID: String {
+        switch self {
+        case .witherRegen: return "affliction.wither"
+        case .hamstring: return "affliction.hamstring"
+        }
+    }
+
+    var name: String {
+        switch self {
+        case .witherRegen: return "Withered"
+        case .hamstring: return "Hamstrung"
+        }
+    }
+
+    var symbol: String {
+        switch self {
+        case .witherRegen: return "heart.slash.fill"
+        case .hamstring: return "tortoise.fill"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .witherRegen: return "A bat's bite: 90% of your health regeneration is lost until it fades."
+        case .hamstring(_, let slow): return "Cut across the leg: you move \(Int((slow * 100).rounded()))% slower until it fades."
+        }
+    }
+
+    var duration: Double {
+        switch self {
+        case .witherRegen(let seconds): return seconds
+        case .hamstring(let seconds, _): return seconds
+        }
+    }
+
+    var modifiers: [StatModifier] {
+        switch self {
+        case .witherRegen: return [StatModifier(.healthRegen, .more, -0.9)]
+        case .hamstring(_, let slow): return [StatModifier(.moveSpeed, .more, -slow)]
+        }
+    }
+
+    /// The affliction a buff id stands for, if it is one.
+    static func forBuff(_ id: String) -> EnemyOnHit? {
+        switch id {
+        case "affliction.wither": return .witherRegen(seconds: 0)
+        case "affliction.hamstring": return .hamstring(seconds: 0, slow: 0.3)
+        default: return nil
+        }
+    }
+}
+
 /// Static description of an enemy type. Balance lives in `EnemyCatalog`;
 /// systems only read these numbers.
 struct EnemyDefinition: Identifiable, Equatable {
@@ -65,6 +128,12 @@ struct EnemyDefinition: Identifiable, Equatable {
     var epithet: String?
     /// What a champion does besides its ordinary attack (see `BossSystem`).
     var kit: BossKit?
+    /// What a landed blow leaves on the hero.
+    var onHit: EnemyOnHit?
+    /// Darts about while it closes in, so it is hard to pin down.
+    var flutters = false
+    /// Nearly invisible until it strikes.
+    var isShrouded = false
 
     var spriteID: SpriteID { spriteVariants.first ?? .enemyGoblin }
     var isBoss: Bool { rank == .boss }

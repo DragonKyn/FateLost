@@ -23,6 +23,8 @@ struct GameplayHUDState: Equatable {
     var bossHealthFraction: Double = 0
     /// Whole seconds left on a Shrine of Ruin's curse; zero when none.
     var curseSeconds: Int = 0
+    /// Timed afflictions on this hero (a bat's bite, a stalker's cut), soonest to fade first.
+    var afflictions: [HUDAffliction] = []
     /// The party in a multiplayer run, this hero included.
     var party: [PartyHUDMember] = []
     /// This hero has fallen and waits at a marker for a friend.
@@ -43,6 +45,12 @@ struct GameplayHUDState: Equatable {
     var restVoters = 0
     /// This player has already asked to go on.
     var votedToProceed = false
+}
+
+/// An affliction as the strip under the health bar shows it.
+struct HUDAffliction: Equatable {
+    var effect: EnemyOnHit
+    var seconds: Int
 }
 
 /// One member of the party, as the corner of the screen lists them.
@@ -597,6 +605,9 @@ final class GameScene: SKScene {
                                      bossHealthFraction: wave.bossHealthFraction,
                                      curseSeconds: Int(simulation.curseRemaining.rounded(.up)))
         var state = base
+        state.afflictions = player.buffs.compactMap { buff in
+            EnemyOnHit.forBuff(buff.id).map { HUDAffliction(effect: $0, seconds: Int(buff.remaining.rounded(.up))) }
+        }.sorted { $0.seconds < $1.seconds }
         applyPartyHUD(to: &state)
         applyRestHUD(to: &state, wave: wave)
         guard state != lastHUDState else { return }

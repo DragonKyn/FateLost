@@ -148,7 +148,8 @@ extension GameSimulation {
             return Hazard(id: Int(net.id), shape: shape, position: net.position, direction: net.direction,
                           size: CGFloat(net.size), width: CGFloat(net.width), warning: net.warning, age: net.age,
                           damage: 0, type: .physical, visual: NetTables.visual(net.visual),
-                          hasLanded: net.age >= net.warning)
+                          hasLanded: net.age >= net.warning, linger: net.linger,
+                          isGuide: net.flags & NetHazard.guide != 0)
         }
 
         var previousAllies: [Int: CGPoint] = [:]

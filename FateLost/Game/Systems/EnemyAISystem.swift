@@ -200,6 +200,13 @@ struct EnemyAISystem {
                 chase = heading * speed * 0.3
             }
 
+            if definition.flutters, chase.lengthSquared > 0.0001 {
+                // Dart from side to side while closing in.
+                let side = CGPoint(x: -heading.y, y: heading.x)
+                let wobble = CGFloat(sin(Double(tick) * 0.21 + Double(combat.enemies.ids[index] % 13)))
+                chase += side * (speed * 0.75 * wobble)
+            }
+
             let push = combat.enemies.separation[index] * tuning.separationStrength
             let knock = combat.enemies.knockback[index]
             var moved = position + (chase + push + knock) * step
@@ -371,7 +378,7 @@ struct EnemyAISystem {
         switch goal {
         case .hero(let target):
             guard distance <= landingReach, target.isAlive else { return }
-            combat.incidents.append(.strikeHero(hero: target.hero, amount: damage, direction: direction))
+            strike(target, amount: damage, direction: direction, definition: definition, combat: &combat)
         case .ally(let anchor):
             guard distance <= landingReach else { return }
             wound(anchor, amount: damage, combat: &combat)
@@ -383,6 +390,16 @@ struct EnemyAISystem {
             combat.strike(other, with: hit)
         case .flee, .wander:
             break
+        }
+    }
+
+    /// A blow on a hero, with whatever this kind leaves on them if it lands.
+    private func strike(_ target: AITarget, amount: Double, direction: CGPoint, definition: EnemyDefinition,
+                        combat: inout CombatState) {
+        if let effect = definition.onHit {
+            combat.incidents.append(.stingHero(hero: target.hero, amount: amount, direction: direction, effect: effect))
+        } else {
+            combat.incidents.append(.strikeHero(hero: target.hero, amount: amount, direction: direction))
         }
     }
 
@@ -448,7 +465,7 @@ struct EnemyAISystem {
         for target in targets where target.isAlive {
             let toTarget = combat.world.delta(from: moved, to: target.position)
             guard toTarget.length <= reach + combatTuning.playerRadius else { continue }
-            combat.incidents.append(.strikeHero(hero: target.hero, amount: damage, direction: toTarget.normalized))
+            strike(target, amount: damage, direction: toTarget.normalized, definition: definition, combat: &combat)
             combat.enemies.dash[index] = .zero
             combat.enemies.special[index] = 0
             return

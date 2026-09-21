@@ -64,11 +64,13 @@ struct PartyRunOverlay: View {
                                     }
                                 }
                                 .frame(width: 12)
-                            Text(member.name)
+                            // The name takes the room it needs and no more, so the bar sits
+                            // right beside it however short the name is.
+                            Text(Self.shortName(member.name))
                                 .font(FLTheme.Typeface.body(12))
                                 .foregroundStyle(FLTheme.Palette.parchment)
                                 .lineLimit(1)
-                                .frame(maxWidth: 78, alignment: .leading)
+                                .fixedSize(horizontal: true, vertical: false)
                             HealthBar(current: member.isDefeated ? 0 : member.healthFraction, maximum: 1)
                                 .frame(width: 54, height: 7)
                                 .overlay(alignment: .leading) {
@@ -92,6 +94,11 @@ struct PartyRunOverlay: View {
         }
         .padding(.top, 132)
         .padding(.leading, 20)
+    }
+
+    /// A name as the corner list shows it: long ones are cut so the list stays narrow.
+    static func shortName(_ name: String, limit: Int = 11) -> String {
+        name.count > limit ? String(name.prefix(limit - 1)) + "…" : name
     }
 
     private func banner(_ text: String, icon: String) -> some View {

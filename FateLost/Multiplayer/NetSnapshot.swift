@@ -120,6 +120,12 @@ struct NetHazard: Equatable {
     var warning: Double
     var age: Double
     var visual: UInt8
+    /// Seconds it keeps hurting after it lands.
+    var linger: Double = 0
+    /// Bit 0: only a guide, never hurts.
+    var flags: UInt8 = 0
+
+    static let guide: UInt8 = 1 << 0
 }
 
 struct NetWave: Equatable {
@@ -309,6 +315,8 @@ struct NetSnapshot: Equatable {
             writer.u8(UInt8(max(0, min(255, (hazard.warning * 20).rounded()))))
             writer.u8(UInt8(max(0, min(255, (hazard.age * 50).rounded()))))
             writer.u8(hazard.visual)
+            writer.u8(UInt8(max(0, min(255, (hazard.linger * 10).rounded()))))
+            writer.u8(hazard.flags)
         }
         return writer.data
     }
@@ -453,9 +461,12 @@ struct NetSnapshot: Equatable {
             let width = Double(reader.u8()) / 64
             let warning = Double(reader.u8()) / 20
             let age = Double(reader.u8()) / 50
+            let visual = reader.u8()
+            let linger = Double(reader.u8()) / 10
+            let flags = reader.u8()
             snapshot.hazards.append(NetHazard(id: id, shape: shape, position: position, direction: direction,
                                               size: size, width: width, warning: warning, age: age,
-                                              visual: reader.u8()))
+                                              visual: visual, linger: linger, flags: flags))
         }
 
         guard !reader.failed else { return nil }
@@ -622,7 +633,8 @@ extension GameSimulation {
             snapshot.hazards.append(NetHazard(
                 id: UInt32(truncatingIfNeeded: hazard.id), shape: hazard.shape.rawValue, position: hazard.position,
                 direction: hazard.direction, size: Double(hazard.size), width: Double(hazard.width),
-                warning: hazard.warning, age: hazard.age, visual: NetTables.visualIndex(hazard.visual)))
+                warning: hazard.warning, age: hazard.age, visual: NetTables.visualIndex(hazard.visual),
+                linger: hazard.linger, flags: hazard.isGuide ? NetHazard.guide : 0))
         }
         for shrine in combat.shrines.prefix(NetSnapshot.Limit.shrines) {
             snapshot.shrines.append(NetShrine(id: UInt32(truncatingIfNeeded: shrine.id), position: shrine.position,

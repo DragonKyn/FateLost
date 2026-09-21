@@ -66,7 +66,7 @@ The host owns the fight. Marks travel in the snapshot (`NetHazard`: shape, posit
 up to 24 near the viewer, about 20 bytes each and only while a champion is casting). A guest never computes damage; it
 draws the mark, counts its age on between snapshots, and the host tells it who was hurt through the ordinary hero
 health in the snapshot. Shots are the ordinary hostile projectiles, already replicated. This changed the wire format,
-so `NetTables.contentVersion` is now 3: a phone on an older build is refused rather than misdrawn.
+so `NetTables.contentVersion` is now 4: a phone on an older build is refused rather than misdrawn.
 
 ## Passive healing
 

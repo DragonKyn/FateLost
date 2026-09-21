@@ -355,6 +355,35 @@ enum EnemyCatalog {
         spriteVariants: [.enemyIceGolem], drawScale: 1.1
     )
 
+    // MARK: - Night hunters (from the Frozen Wastes on)
+
+    /// The bite cuts health regeneration to a tenth for a few seconds, so a build
+    /// that leans on regenerating its way out of trouble has to kill bats first.
+    static let vampireBat = EnemyDefinition(
+        id: "enemy.vampireBat", name: "Vampire Bat", family: .beast, rank: .minion,
+        maxHealth: 15, moveSpeed: 3.9, radius: 0.26,
+        attackDamage: 6, attackReach: 0.3, attackWindup: 0.3, attackCooldown: 1.3,
+        knockbackResistance: 0, damageType: .physical, behavior: .melee,
+        experience: 2, spawnWeight: 0.4, earliestWave: 2,
+        spriteVariants: [.enemyVampireBat], drawScale: 0.9,
+        onHit: .witherRegen(seconds: 6), flutters: true
+    )
+
+    /// Almost invisible until it moves to strike: a short lunge from the shadows
+    /// that hamstrings (30% slower for a few seconds).
+    static let duskStalker = EnemyDefinition(
+        id: "enemy.duskStalker", name: "Dusk Stalker", family: .cultist, rank: .soldier,
+        maxHealth: 40, moveSpeed: 2.9, radius: 0.34,
+        attackDamage: 15, attackReach: 0.4, attackWindup: 0.5, attackCooldown: 2.8,
+        knockbackResistance: 0.1, damageType: .shadow,
+        behavior: .charger(range: 5, speed: 13, distance: 5),
+        experience: 4, spawnWeight: 0.3, earliestWave: 3,
+        spriteVariants: [.enemyDuskStalker],
+        onHit: .hamstring(seconds: 4, slow: 0.3), isShrouded: true
+    )
+
+    static let nightHunters: [EnemyDefinition] = [vampireBat, duskStalker]
+
     // MARK: - Champions
 
     /// A champion's numbers are deliberately blunt: a great deal of health, a
@@ -380,7 +409,7 @@ enum EnemyCatalog {
         health: 1_600, speed: 2.3, radius: 0.8, damage: 34, reach: 0.7, windup: 1.1, cooldown: 3.2,
         type: .physical, behavior: .charger(range: 8, speed: 17, distance: 8),
         sprite: .enemyBossWarchief, scale: 1.5, experience: 40,
-        kit: BossKit(moves: [.slam, .fan], intensity: 1, tempo: 5.6)
+        kit: BossKit(moves: [.slam, .fan, .summon], intensity: 1, tempo: 5.7, adds: "enemy.goblin", signature: .slam)
     )
 
     static let bossDrownedKing = champion(
@@ -388,7 +417,7 @@ enum EnemyCatalog {
         health: 2_400, speed: 1.6, radius: 0.9, damage: 40, reach: 0.8, windup: 0.85, cooldown: 2,
         type: .cold, behavior: .summoner(spawns: "enemy.skeletonWarrior", count: 5, interval: 7, range: 9),
         sprite: .enemyBossDrownedKing, scale: 1.55, experience: 55,
-        kit: BossKit(moves: [.meteors, .ring, .slam], intensity: 2, tempo: 5.4)
+        kit: BossKit(moves: [.meteors, .ring, .pools, .slam], intensity: 2, tempo: 5.5, signature: .pools)
     )
 
     static let bossHollowStag = champion(
@@ -396,7 +425,7 @@ enum EnemyCatalog {
         health: 3_100, speed: 3, radius: 0.85, damage: 44, reach: 0.8, windup: 0.9, cooldown: 2.6,
         type: .poison, behavior: .charger(range: 10, speed: 20, distance: 10),
         sprite: .enemyBossHollowStag, scale: 1.5, experience: 70,
-        kit: BossKit(moves: [.slam, .lanes, .fan], intensity: 3, tempo: 5.2)
+        kit: BossKit(moves: [.slam, .lanes, .fan, .blink], intensity: 3, tempo: 5.3, signature: .blink)
     )
 
     static let bossRimeTyrant = champion(
@@ -404,7 +433,7 @@ enum EnemyCatalog {
         health: 4_200, speed: 1.5, radius: 0.95, damage: 48, reach: 0.85, windup: 0.9, cooldown: 2.1,
         type: .cold, behavior: .ranged(range: 9, projectileSpeed: 9, sprite: .projectileShard),
         sprite: .enemyBossRimeTyrant, scale: 1.6, experience: 85,
-        kit: BossKit(moves: [.ring, .cleave, .lanes, .meteors], intensity: 4, tempo: 5.0)
+        kit: BossKit(moves: [.ring, .cleave, .lanes, .meteors, .sweep], intensity: 4, tempo: 5.1, signature: .sweep)
     )
 
     static let bossPlagueMonarch = champion(
@@ -412,7 +441,7 @@ enum EnemyCatalog {
         health: 5_400, speed: 1.9, radius: 0.85, damage: 52, reach: 0.75, windup: 0.7, cooldown: 1.8,
         type: .poison, behavior: .summoner(spawns: "enemy.wraith", count: 4, interval: 6.5, range: 9),
         sprite: .enemyBossPlagueMonarch, scale: 1.55, experience: 100,
-        kit: BossKit(moves: [.meteors, .ring, .cleave, .spiral], intensity: 5, tempo: 4.8)
+        kit: BossKit(moves: [.meteors, .ring, .cleave, .spiral, .summon, .hunt], intensity: 5, tempo: 4.8, adds: "enemy.wraith", signature: .hunt)
     )
 
     static let bossEmberLord = champion(
@@ -420,7 +449,7 @@ enum EnemyCatalog {
         health: 6_800, speed: 1.8, radius: 1, damage: 58, reach: 0.9, windup: 0.8, cooldown: 1.9,
         type: .fire, behavior: .melee,
         sprite: .enemyBossEmberLord, scale: 1.65, experience: 120,
-        kit: BossKit(moves: [.cleave, .meteors, .lanes, .slam], intensity: 6, tempo: 4.6)
+        kit: BossKit(moves: [.cleave, .meteors, .lanes, .slam, .pools, .sweep], intensity: 6, tempo: 4.5, signature: .meteors)
     )
 
     static let bossVoidmaw = champion(
@@ -428,7 +457,7 @@ enum EnemyCatalog {
         health: 8_200, speed: 2.1, radius: 0.9, damage: 60, reach: 0.8, windup: 0.75, cooldown: 1.7,
         type: .arcane, behavior: .ranged(range: 9.5, projectileSpeed: 11, sprite: .projectileArcaneBolt),
         sprite: .enemyBossVoidmaw, scale: 1.6, experience: 140,
-        kit: BossKit(moves: [.ring, .spiral, .meteors, .lanes], intensity: 7, tempo: 4.4)
+        kit: BossKit(moves: [.ring, .spiral, .meteors, .lanes, .sweep, .hunt], intensity: 8, tempo: 4.2, signature: .spiral)
     )
 
     static let bossIronSaint = champion(
@@ -436,7 +465,7 @@ enum EnemyCatalog {
         health: 10_500, speed: 1.6, radius: 1, damage: 66, reach: 0.95, windup: 1.0, cooldown: 2.8,
         type: .holy, behavior: .charger(range: 9, speed: 18, distance: 9),
         sprite: .enemyBossIronSaint, scale: 1.6, experience: 165,
-        kit: BossKit(moves: [.lanes, .cleave, .slam, .fan, .spiral], intensity: 8, tempo: 4.2)
+        kit: BossKit(moves: [.lanes, .cleave, .slam, .fan, .spiral, .sweep], intensity: 10, tempo: 3.9, signature: .lanes)
     )
 
     static let bossGraveWarden = champion(
@@ -444,7 +473,7 @@ enum EnemyCatalog {
         health: 14_000, speed: 1.8, radius: 1.1, damage: 74, reach: 1, windup: 0.85, cooldown: 2,
         type: .shadow, behavior: .summoner(spawns: "enemy.wraith", count: 5, interval: 6, range: 10),
         sprite: .enemyBossGraveWarden, scale: 1.75, experience: 200,
-        kit: BossKit(moves: [.meteors, .spiral, .lanes, .ring, .slam], intensity: 9, tempo: 4.0)
+        kit: BossKit(moves: [.meteors, .spiral, .lanes, .ring, .slam, .summon, .hunt], intensity: 10, tempo: 3.8, adds: "enemy.wraith", signature: .hunt)
     )
 
     static let bossAbyssalEcho = champion(
@@ -452,8 +481,125 @@ enum EnemyCatalog {
         health: 18_000, speed: 2.4, radius: 1, damage: 80, reach: 0.9, windup: 0.7, cooldown: 1.6,
         type: .shadow, behavior: .melee,
         sprite: .enemyBossAbyssalEcho, scale: 1.6, experience: 240,
-        kit: BossKit(moves: [.spiral, .lanes, .meteors, .cleave, .ring, .slam], intensity: 10, tempo: 3.7)
+        kit: BossKit(moves: [.spiral, .lanes, .meteors, .cleave, .ring, .slam, .blink, .sweep, .hunt], intensity: 10, tempo: 3.6, signature: .blink)
     )
+
+    /// A champion between the realm's great ones. Its numbers follow its tier (1 is the
+    /// first champion anyone meets, 27 the last), so a realm's list rises steadily.
+    private static func warlord(id: String, name: String, epithet: String, family: EnemyFamily, tier: Int,
+                                speed: CGFloat, radius: CGFloat, type: DamageType, behavior: EnemyBehavior,
+                                sprite: SpriteID, scale: CGFloat, kit: BossKit) -> EnemyDefinition {
+        let step = Double(tier - 1)
+        return champion(id: id, name: name, epithet: epithet, family: family,
+                        health: (1400 * pow(1.1, step)).rounded(), speed: speed, radius: radius,
+                        damage: (30 + 1.75 * step).rounded(), reach: 0.7 + 0.01 * CGFloat(tier),
+                        windup: max(0.95, 1.15 - 0.01 * step), cooldown: max(1.6, 3.2 - 0.06 * step),
+                        type: type, behavior: behavior, sprite: sprite, scale: scale,
+                        experience: 40 + tier * 8, kit: kit)
+    }
+
+    static let bossPitBrute = warlord(
+        id: "boss.pitBrute", name: "Rukh", epithet: "the Pit-Brute", family: .goblinoid, tier: 1,
+        speed: 2.2, radius: 0.85, type: .physical, behavior: .melee, sprite: .enemyBossPitBrute, scale: 1.4,
+        kit: BossKit(moves: [.slam, .fan], intensity: 1, tempo: 5.8, signature: .slam))
+
+    static let bossBogmother = warlord(
+        id: "boss.bogmother", name: "Vesk", epithet: "the Bogmother", family: .beast, tier: 3,
+        speed: 1.8, radius: 1.0, type: .poison,
+        behavior: .ranged(range: 8, projectileSpeed: 8, sprite: .projectileBolt),
+        sprite: .enemyBossBogmother, scale: 1.5,
+        kit: BossKit(moves: [.pools, .fan, .summon], intensity: 2, tempo: 5.6, adds: "enemy.giantSpider",
+                     signature: .pools))
+
+    static let bossThornmaw = warlord(
+        id: "boss.thornmaw", name: "Old Thornmaw", epithet: "the Root-King", family: .beast, tier: 5,
+        speed: 1.5, radius: 1.0, type: .poison, behavior: .melee, sprite: .enemyBossThornmaw, scale: 1.5,
+        kit: BossKit(moves: [.lanes, .slam, .pools, .hunt], intensity: 2, tempo: 5.4, signature: .lanes))
+
+    static let bossFrostfang = warlord(
+        id: "boss.frostfang", name: "Frostfang", epithet: "Alpha of the Long Winter", family: .beast, tier: 7,
+        speed: 3.2, radius: 0.9, type: .cold, behavior: .charger(range: 9, speed: 18, distance: 9),
+        sprite: .enemyBossFrostfang, scale: 1.3,
+        kit: BossKit(moves: [.blink, .cleave, .fan, .lanes], intensity: 3, tempo: 5.2, signature: .blink))
+
+    static let bossRimewitch = warlord(
+        id: "boss.rimewitch", name: "Yrsa", epithet: "the Rimewitch", family: .cultist, tier: 8,
+        speed: 1.7, radius: 0.8, type: .cold,
+        behavior: .ranged(range: 9, projectileSpeed: 9, sprite: .projectileShard),
+        sprite: .enemyBossRimewitch, scale: 1.5,
+        kit: BossKit(moves: [.ring, .meteors, .pools, .sweep], intensity: 3, tempo: 5.1, signature: .pools))
+
+    static let bossPlagueKnight = warlord(
+        id: "boss.plagueKnight", name: "Sir Rotgrave", epithet: "Oathbound to the Rot", family: .undead, tier: 10,
+        speed: 2.0, radius: 0.9, type: .poison, behavior: .melee, sprite: .enemyBossPlagueKnight, scale: 1.5,
+        kit: BossKit(moves: [.cleave, .slam, .pools, .hunt], intensity: 4, tempo: 4.9, signature: .cleave))
+
+    static let bossBloated = warlord(
+        id: "boss.bloated", name: "The Bloated One", epithet: "What the Graves Left", family: .undead, tier: 11,
+        speed: 1.4, radius: 1.2, type: .poison, behavior: .melee, sprite: .enemyBossBloated, scale: 1.6,
+        kit: BossKit(moves: [.pools, .slam, .summon, .ring], intensity: 5, tempo: 4.8,
+                     adds: "enemy.skeletonWarrior", signature: .pools))
+
+    static let bossCinderjaw = warlord(
+        id: "boss.cinderjaw", name: "Cinderjaw", epithet: "Oldest Hound of the Depths", family: .demon, tier: 13,
+        speed: 3.1, radius: 1.0, type: .fire, behavior: .charger(range: 10, speed: 19, distance: 10),
+        sprite: .enemyBossCinderjaw, scale: 1.4,
+        kit: BossKit(moves: [.blink, .fan, .cleave, .pools], intensity: 5, tempo: 4.7, signature: .blink))
+
+    static let bossMagma = warlord(
+        id: "boss.magma", name: "The Magma Colossus", epithet: "Cooling from the Outside", family: .elemental, tier: 14,
+        speed: 1.3, radius: 1.3, type: .fire, behavior: .melee, sprite: .enemyBossMagma, scale: 1.7,
+        kit: BossKit(moves: [.slam, .meteors, .pools, .sweep], intensity: 6, tempo: 4.6, signature: .pools))
+
+    static let bossPitDuke = warlord(
+        id: "boss.pitDuke", name: "Azreth", epithet: "Duke of the Pit", family: .demon, tier: 15,
+        speed: 2.2, radius: 1.0, type: .fire, behavior: .melee, sprite: .enemyBossPitDuke, scale: 1.55,
+        kit: BossKit(moves: [.cleave, .blink, .hunt, .meteors], intensity: 6, tempo: 4.5, signature: .hunt))
+
+    static let bossFracturedEye = warlord(
+        id: "boss.fracturedEye", name: "The Fractured Eye", epithet: "Looking from Every Piece", family: .aberration,
+        tier: 17, speed: 1.8, radius: 1.0, type: .arcane,
+        behavior: .ranged(range: 9.5, projectileSpeed: 10, sprite: .projectileArcaneBolt),
+        sprite: .enemyBossFracturedEye, scale: 1.5,
+        kit: BossKit(moves: [.sweep, .ring, .hunt, .spiral], intensity: 7, tempo: 4.4, signature: .sweep))
+
+    static let bossRiftweaver = warlord(
+        id: "boss.riftweaver", name: "The Riftweaver", epithet: "Who Stitches the Sky Shut", family: .aberration,
+        tier: 18, speed: 1.8, radius: 0.9, type: .arcane,
+        behavior: .ranged(range: 9, projectileSpeed: 10, sprite: .projectileArcaneBolt),
+        sprite: .enemyBossRiftweaver, scale: 1.5,
+        kit: BossKit(moves: [.blink, .meteors, .hunt, .lanes, .summon], intensity: 7, tempo: 4.3,
+                     adds: "enemy.voidling", signature: .blink))
+
+    static let bossWarpedKnight = warlord(
+        id: "boss.warpedKnight", name: "The Warped Knight", epithet: "Folded and Unfolded Wrong", family: .aberration,
+        tier: 19, speed: 2.6, radius: 0.95, type: .arcane, behavior: .charger(range: 9, speed: 17, distance: 9),
+        sprite: .enemyBossWarpedKnight, scale: 1.5,
+        kit: BossKit(moves: [.blink, .cleave, .lanes, .slam], intensity: 8, tempo: 4.2, signature: .cleave))
+
+    static let bossOathbreaker = warlord(
+        id: "boss.oathbreaker", name: "The Oathbreaker", epithet: "Who Opened the Gate", family: .construct, tier: 21,
+        speed: 2.1, radius: 1.0, type: .physical, behavior: .melee, sprite: .enemyBossOathbreaker, scale: 1.55,
+        kit: BossKit(moves: [.cleave, .lanes, .blink, .slam, .hunt], intensity: 8, tempo: 4.1, signature: .lanes))
+
+    static let bossSiegeTitan = warlord(
+        id: "boss.siegeTitan", name: "The Siege Titan", epithet: "A Wall Told to Advance", family: .construct, tier: 22,
+        speed: 1.4, radius: 1.3, type: .physical, behavior: .melee, sprite: .enemyBossSiegeTitan, scale: 1.7,
+        kit: BossKit(moves: [.slam, .meteors, .sweep, .lanes, .pools], intensity: 9, tempo: 4.0, signature: .slam))
+
+    static let bossBellkeeper = warlord(
+        id: "boss.bellkeeper", name: "The Bellkeeper", epithet: "Who Rings for the Dead", family: .cultist, tier: 23,
+        speed: 1.7, radius: 0.85, type: .holy,
+        behavior: .ranged(range: 9, projectileSpeed: 9, sprite: .projectileBolt),
+        sprite: .enemyBossBellkeeper, scale: 1.55,
+        kit: BossKit(moves: [.ring, .meteors, .summon, .hunt, .spiral], intensity: 9, tempo: 3.95,
+                     adds: "enemy.flagellant", signature: .ring))
+
+    static let bossGildedRegent = warlord(
+        id: "boss.gildedRegent", name: "The Gilded Regent", epithet: "Answering to No One", family: .construct, tier: 24,
+        speed: 1.9, radius: 1.2, type: .holy, behavior: .melee, sprite: .enemyBossGildedRegent, scale: 1.7,
+        kit: BossKit(moves: [.sweep, .cleave, .meteors, .lanes, .slam, .blink], intensity: 9, tempo: 3.9,
+                     signature: .sweep))
 
     // MARK: - Lookup
 
@@ -477,13 +623,17 @@ enum EnemyCatalog {
 
     static let elementals: [EnemyDefinition] = [emberWisp, frostShard, iceGolem]
 
+    /// Every champion, easiest first.
     static let champions: [EnemyDefinition] = [
-        bossWarchief, bossDrownedKing, bossHollowStag, bossRimeTyrant, bossPlagueMonarch,
-        bossEmberLord, bossVoidmaw, bossIronSaint, bossGraveWarden, bossAbyssalEcho,
+        bossPitBrute, bossWarchief, bossBogmother, bossDrownedKing, bossThornmaw, bossHollowStag, bossFrostfang,
+        bossRimewitch, bossRimeTyrant, bossPlagueKnight, bossBloated, bossPlagueMonarch, bossCinderjaw, bossMagma,
+        bossPitDuke, bossEmberLord, bossFracturedEye, bossRiftweaver, bossWarpedKnight, bossVoidmaw,
+        bossOathbreaker, bossSiegeTitan, bossBellkeeper, bossGildedRegent, bossIronSaint, bossGraveWarden,
+        bossAbyssalEcho,
     ]
 
     static let all: [EnemyDefinition] = goblinWarband + undeadHost + wildBeasts + demonLegion
-        + citadelConstructs + aberrations + cultists + elementals + champions
+        + citadelConstructs + aberrations + cultists + elementals + nightHunters + champions
 
     static func definition(for id: EnemyKindID) -> EnemyDefinition? {
         all.first { $0.id == id }
@@ -503,33 +653,38 @@ enum EnemyCatalog {
         case .hollowForest:
             return wildBeasts + [goblin, skulker, goblinArcher, goblinShaman, wraith]
         case .frozenWastes:
-            return elementals + [direWolf, animatedArmour, skeletonWarrior, boneHound]
+            return elementals + [direWolf, animatedArmour, skeletonWarrior, boneHound] + nightHunters
         case .blightedKingdom:
-            return cultists + undeadHost
+            return cultists + undeadHost + nightHunters
         case .burningDepths:
-            return demonLegion + [emberWisp, cultist, flagellant]
+            return demonLegion + [emberWisp, cultist, flagellant] + nightHunters
         case .shatteredRealm:
-            return aberrations + [voidling, wraith, runeSentinel, impling, frostShard]
+            return aberrations + [voidling, wraith, runeSentinel, impling, frostShard] + nightHunters
         case .fallenCitadel:
-            return citadelConstructs + cultists + [skeletonWarrior, skeletonArcher, hobgoblin]
+            return citadelConstructs + cultists + [skeletonWarrior, skeletonArcher, hobgoblin] + nightHunters
         case .gateOfRuin, .abyss:
             return all.filter { $0.rank != .boss }
         }
     }
 
-    /// The champions a realm sends, in order.
+    /// The champions a realm sends, in order: one for each boss wave, none twice, each a step up from the
+    /// last, and the realm's own great champion at the end. (The Abyss has no end and sends them all.)
     static func bosses(for realm: RealmID) -> [EnemyKindID] {
+        let list: [EnemyDefinition]
         switch realm {
-        case .ashenWilds: return [bossWarchief.id]
-        case .drownedFen: return [bossWarchief.id, bossDrownedKing.id]
-        case .hollowForest: return [bossDrownedKing.id, bossHollowStag.id]
-        case .frozenWastes: return [bossHollowStag.id, bossRimeTyrant.id]
-        case .blightedKingdom: return [bossRimeTyrant.id, bossPlagueMonarch.id]
-        case .burningDepths: return [bossPlagueMonarch.id, bossEmberLord.id]
-        case .shatteredRealm: return [bossEmberLord.id, bossVoidmaw.id]
-        case .fallenCitadel: return [bossVoidmaw.id, bossIronSaint.id]
-        case .gateOfRuin: return [bossIronSaint.id, bossGraveWarden.id]
-        case .abyss: return champions.map(\.id)
+        case .ashenWilds: list = [bossPitBrute, bossWarchief]
+        case .drownedFen: list = [bossWarchief, bossBogmother, bossDrownedKing]
+        case .hollowForest: list = [bossDrownedKing, bossThornmaw, bossHollowStag]
+        case .frozenWastes: list = [bossHollowStag, bossFrostfang, bossRimewitch, bossRimeTyrant]
+        case .blightedKingdom: list = [bossRimeTyrant, bossPlagueKnight, bossBloated, bossPlagueMonarch]
+        case .burningDepths: list = [bossPlagueMonarch, bossCinderjaw, bossMagma, bossPitDuke, bossEmberLord]
+        case .shatteredRealm: list = [bossEmberLord, bossFracturedEye, bossRiftweaver, bossWarpedKnight, bossVoidmaw]
+        case .fallenCitadel:
+            list = [bossVoidmaw, bossOathbreaker, bossSiegeTitan, bossBellkeeper, bossGildedRegent, bossIronSaint]
+        case .gateOfRuin:
+            list = [bossRimeTyrant, bossPlagueMonarch, bossEmberLord, bossVoidmaw, bossIronSaint, bossGraveWarden]
+        case .abyss: list = champions
         }
+        return list.map(\.id)
     }
 }

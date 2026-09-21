@@ -16,6 +16,8 @@ final class EnemyView: SKNode {
     /// Colour wash from this creature's strain, and how strongly it shows.
     fileprivate var strainTint: UIColor?
     fileprivate var strainStrength: CGFloat = 0
+    /// How visible a shrouded creature is right now (1 when it is not one).
+    fileprivate var veil: CGFloat = 1
 
     init(catalog: SpriteCatalog) {
         shadowSprite = catalog.makeSprite(.shadow)
@@ -85,6 +87,9 @@ final class EnemyRenderer {
             view.strainStrength = 0
             view.body.colorBlendFactor = 0
             view.alpha = 1
+            view.veil = 1
+            view.body.alpha = 1
+            view.shadowSprite.alpha = 1
         })
     }
 
@@ -168,6 +173,15 @@ final class EnemyRenderer {
                 view.body.colorBlendFactor = view.strainStrength
             } else {
                 view.body.colorBlendFactor = 0
+            }
+
+            if definition.isShrouded {
+                // Nearly gone in the gloom; it shows itself the instant it moves to strike.
+                let revealed = windingUp || enemies.dash[index] != .zero || view.flash > 0
+                let target: CGFloat = revealed ? 1 : 0.2 + 0.05 * sin(seconds * 3 + view.phase)
+                view.veil += (target - view.veil) * min(1, dt * (revealed ? 24 : 3.5))
+                view.body.alpha = view.veil
+                view.shadowSprite.alpha = view.veil
             }
 
             view.hitbox.isHidden = !showHitboxes

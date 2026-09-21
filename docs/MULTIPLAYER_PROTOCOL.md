@@ -91,9 +91,9 @@ All numbers little-endian. Coordinates are `Int16` in 1/16 tile. Angles one byte
 `u8 contentVersion · u32 tickMs · wave{u16 index,u8 phase,u8 bossFraction,u8 curseSeconds,string bossTitle,u8 restSeconds,u8 restVotes,u8 restVoters} ·
 u8 heroes[slot,flags,x,y,i8 vx,i8 vy (×8),angle,u16 health,u16 max,u16 barrier,u8 level,u16 weaponSpriteHash,(string form)] ·
 u8 markers[slot,x,y,u8 progress,u8 reviver] · u16 enemies[u32 id,u16 kindHash,u8 strain,x,y,u8 health,angle,u16 statusMask,u8 windup,angle,bool charging] ·
-u16 projectiles[u32 id,x,y,i8 vx,i8 vy,u16 spriteHash,u8 visual,u8 radius×64,bool hostile] · u8 zones[…] · u8 allies[…] · u16 orbs[…] · u8 drops[…] · u8 shrines[…] · u8 hazards[u32 id,u8 shape,x,y,angle,u8 size×8,u8 width×64,u8 warning×20,u8 age×50,u8 visual]`
+u16 projectiles[u32 id,x,y,i8 vx,i8 vy,u16 spriteHash,u8 visual,u8 radius×64,bool hostile] · u8 zones[…] · u8 allies[…] · u16 orbs[…] · u8 drops[…] · u8 shrines[…] · u8 hazards[u32 id,u8 shape,x,y,angle,u8 size×8,u8 width×64,u8 warning×20,u8 age×50,u8 visual,u8 linger×10,u8 flags]`
 
-Caps per snapshot: 450 enemies, 200 projectiles, 40 zones, 100 summons, 150 orbs, 40 drops, 6 shrines, 24 hazards (marked ground from a champion; see [BOSSES.md](BOSSES.md)). `contentVersion` is 3. Hashes are
+Caps per snapshot: 450 enemies, 200 projectiles, 40 zones, 100 summons, 150 orbs, 40 drops, 6 shrines, 24 hazards (marked ground from a champion; see [BOSSES.md](BOSSES.md)). `contentVersion` is 4. Hashes are
 FNV-1a folded to 16 bits of the sprite/enemy name; a test asserts they are collision-free. A reader never traps: short or
 inconsistent data returns nothing.
 

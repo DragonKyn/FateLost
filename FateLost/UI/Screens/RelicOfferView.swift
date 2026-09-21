@@ -281,27 +281,131 @@ private struct WeaponFindCard: View {
 // MARK: - The strip
 
 /// The relics a run carries, as a row of small sigils under the stats.
+///
+/// Tapping one shows what it does, in a small card under the row; tapping it
+/// again (or waiting a few seconds) puts the card away.
 struct RelicStrip: View {
     let relics: RelicInventory
 
     private let limit = 10
+    @State private var selected: RelicID?
 
     var body: some View {
         let held = relics.held
         if !held.isEmpty {
-            HStack(spacing: 3) {
-                ForEach(Array(held.prefix(limit)), id: \.relic.id) { entry in
-                    RelicSigil(relic: entry.relic, rank: entry.rank)
+            VStack(alignment: .leading, spacing: 5) {
+                HStack(spacing: 3) {
+                    ForEach(Array(held.prefix(limit)), id: \.relic.id) { entry in
+                        Button {
+                            selected = selected == entry.relic.id ? nil : entry.relic.id
+                        } label: {
+                            RelicSigil(relic: entry.relic, rank: entry.rank)
+                                .padding(2)
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(entry.relic.title(atRank: entry.rank))
+                        .accessibilityHint("Shows what it does")
+                    }
+                    if held.count > limit {
+                        Text("+\(held.count - limit)")
+                            .font(FLTheme.Typeface.number(11))
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    }
                 }
-                if held.count > limit {
-                    Text("+\(held.count - limit)")
-                        .font(FLTheme.Typeface.number(11))
-                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                if let id = selected, let entry = held.first(where: { $0.relic.id == id }) {
+                    RelicInfoCard(relic: entry.relic, rank: entry.rank)
+                        .onTapGesture { selected = nil }
+                        .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(held.count) relics carried")
+            .animation(.easeOut(duration: 0.15), value: selected)
+            .task(id: selected) {
+                guard selected != nil else { return }
+                try? await Task.sleep(nanoseconds: 7_000_000_000)
+                if !Task.isCancelled { selected = nil }
+            }
         }
+    }
+}
+
+/// What is wrong with the hero right now, as small red chips with the time
+/// left. Tap one to read what it does.
+struct AfflictionStrip: View {
+    let afflictions: [HUDAffliction]
+    @State private var selected: String?
+
+    var body: some View {
+        if !afflictions.isEmpty {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 4) {
+                    ForEach(afflictions, id: \.effect.buffID) { item in
+                        Button {
+                            selected = selected == item.effect.buffID ? nil : item.effect.buffID
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: item.effect.symbol).font(.system(size: 10, weight: .bold))
+                                Text("\(item.seconds)")
+                                    .font(FLTheme.Typeface.number(11))
+                            }
+                            .foregroundStyle(Color(red: 1, green: 0.55, blue: 0.5))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 3)
+                            .background(Capsule().fill(Color(red: 0.4, green: 0.05, blue: 0.05).opacity(0.75)))
+                            .overlay(Capsule().strokeBorder(Color(red: 1, green: 0.4, blue: 0.35).opacity(0.7), lineWidth: 1))
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel("\(item.effect.name), \(item.seconds) seconds left")
+                    }
+                }
+                if let id = selected, let item = afflictions.first(where: { $0.effect.buffID == id }) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(item.effect.name).font(FLTheme.Typeface.label(13))
+                            .foregroundStyle(Color(red: 1, green: 0.55, blue: 0.5))
+                        Text(item.effect.blurb).font(FLTheme.Typeface.body(12))
+                            .foregroundStyle(FLTheme.Palette.parchment)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 7)
+                    .frame(width: 230, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.78)))
+                    .onTapGesture { selected = nil }
+                }
+            }
+            .animation(.easeOut(duration: 0.15), value: selected)
+        }
+    }
+}
+
+/// What a carried relic does, in a card small enough to sit over the fight.
+struct RelicInfoCard: View {
+    let relic: RelicDefinition
+    let rank: Int
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
+                Text(relic.title(atRank: rank))
+                    .font(FLTheme.Typeface.label(13))
+                    .foregroundStyle(relic.rarity.color.color)
+                Text(relic.rarity.displayName.uppercased())
+                    .font(.system(size: 8, weight: .heavy))
+                    .tracking(1)
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            }
+            Text(relic.description(atRank: rank))
+                .font(FLTheme.Typeface.body(12))
+                .foregroundStyle(FLTheme.Palette.parchment)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(width: 230, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.black.opacity(0.78)))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+            .strokeBorder(relic.rarity.color.color.opacity(0.7), lineWidth: 1))
+        .accessibilityElement(children: .combine)
     }
 }
 

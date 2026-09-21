@@ -1010,6 +1010,97 @@ def arachnid(name, body_color, marking, eye, doc, width=62, height=46):
 # The roster
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# A bat and a stalker: two creatures with silhouettes of their own
+# ---------------------------------------------------------------------------
+
+def bat(name, fur, membrane, eye, doc, width=56, height=46):
+    """A vampire bat: broad scalloped wings, big ears, a wrinkled snout and fangs."""
+    s = Sprite(name, width, height, anchor=(0.5, -0.18), doc=doc)
+    s.push(dy=5)
+    mid = width / 2
+    bone = _shade(fur, 0.55)
+    # Far wing, folded back and up.
+    s.blob([(mid - 3, 16), (mid - 8, 6), (mid - 19, 3), (mid - 22, 10), (mid - 17, 12), (mid - 20, 17),
+            (mid - 13, 18), (mid - 12, 23), (mid - 6, 21)], _shade(membrane, 0.4), outline=INK, width=0.8)
+    for tx, ty in ((-19, 4), (-21.5, 10), (-19.5, 17), (-12, 22)):
+        s.curve([(mid - 3.5, 16), (mid + tx * 0.6, (16 + ty) / 2 - 1), (mid + tx, ty)], _shade(bone, 0.6), 0.6)
+    # Near wing, spread wide toward the viewer, its edge scalloped between the finger bones.
+    tips = [(mid + 22, 2), (mid + 25, 11), (mid + 21, 19), (mid + 14, 24), (mid + 6, 22)]
+    edge = [(mid + 2, 14)]
+    for i, tip in enumerate(tips):
+        edge.append(tip)
+        if i < len(tips) - 1:
+            nxt = tips[i + 1]
+            edge.append(((tip[0] + nxt[0]) / 2 - 2.2, (tip[1] + nxt[1]) / 2 - 1.6))
+    s.blob(edge, membrane, outline=INK, width=0.9)
+    s.blob([(mid + 3, 15), (mid + 21, 5), (mid + 24, 12), (mid + 12, 21)], _shade(membrane, 0.25), None)
+    for tx, ty in tips:
+        s.taper([(mid + 2.5, 14.5), ((mid + tx) / 2 + 1, (14.5 + ty) / 2 - 2), (tx, ty)], bone, 1.5, 0.4)
+    s.dot(mid + 3, 14, 1.6, bone)
+    # A small furry body, hanging.
+    s.blob([(mid - 5, 15), (mid - 3, 10), (mid + 3, 10), (mid + 6, 15), (mid + 5, 23), (mid, 27), (mid - 4, 23)], fur,
+           outline=INK, width=0.9)
+    s.blob([(mid - 4, 16), (mid - 2, 11), (mid, 11), (mid - 1, 24)], _shade(fur, 0.45))
+    for fy in (15, 18, 21):
+        s.curve([(mid - 3, fy), (mid, fy + 1), (mid + 3.5, fy)], _light(fur, 0.12), 0.5)
+    # Feet: little hooked claws.
+    for lx in (mid - 2, mid + 2.5):
+        s.taper([(lx, 24), (lx + 0.8, 28.5)], fur, 2.0, 1.0, outline=INK, width=0.4)
+        s.taper([(lx + 0.8, 28.5), (lx + 2.2, 31)], BONE, 0.8, 0.1)
+    # Head: round, with a wrinkled snout and tall pointed ears.
+    for ex, ey, tip in ((mid - 1.5, 6, (mid - 4.5, -3)), (mid + 5, 5.5, (mid + 8.5, -3.5))):
+        s.poly([(ex - 2.2, ey + 1), (tip[0], tip[1]), (ex + 2.4, ey + 1.2)], fur, outline=INK, width=0.7)
+        s.poly([(ex - 1, ey + 0.4), ((tip[0] + ex) / 2, (tip[1] + ey) / 2 + 1), (ex + 1.2, ey + 0.6)],
+               _mix(membrane, 0xE8A0B0, 0.5))
+    s.blob([(mid - 3, 10), (mid - 3.5, 5), (mid, 2.5), (mid + 5, 3), (mid + 8.5, 6.5), (mid + 8.8, 10),
+            (mid + 4, 12.5), (mid - 0.5, 12.5)], fur, outline=INK, width=0.9)
+    s.blob([(mid + 5.5, 6), (mid + 9.6, 6.6), (mid + 10.2, 9.6), (mid + 6.8, 10.8)], _light(fur, 0.1),
+           outline=INK, width=0.6)
+    s.poly([(mid + 9.4, 7), (mid + 11.6, 7.8), (mid + 10.2, 9.2)], 0xE8A0B0, outline=INK, width=0.4)
+    gaze(s, mid + 4.4, 6.4, eye, size=0.9, spacing=3.0)
+    # Fangs, bared.
+    s.poly([(mid + 6.4, 10.2), (mid + 9.4, 9.8), (mid + 9, 11.4), (mid + 6.8, 11.6)], HOLLOW, outline=INK, width=0.4)
+    for fx in (6.9, 8.6):
+        s.taper([(mid + fx, 10.4), (mid + fx + 0.1, 13.4)], BONE, 1.0, 0.1)
+    s.pop()
+    return s
+
+
+def stalker(name, cloak, skin, eye, doc, blade=STEEL, width=62, height=56):
+    """A crouched assassin in a torn cloak, blade held low, leaning to strike."""
+    s = Sprite(name, width, height, foot=height - 3, doc=doc)
+    mid = width / 2
+    hem = height - 5
+    dark = _shade(cloak, 0.4)
+    # The cloak: a long, tattered lean, heavier at the back.
+    body = [(mid + 2, 15), (mid - 6, 19), (mid - 13, 34), (mid - 15, hem), (mid + 12, hem), (mid + 12, 34), (mid + 9, 21)]
+    s.blob(body, cloak, outline=INK, width=1.0)
+    s.blob([(mid - 3, 20), (mid - 10, 34), (mid - 12, hem - 2), (mid - 3, hem - 2)], dark)
+    s.curve([(mid + 1, 22), (mid - 2, 33), (mid - 3, hem - 4)], _shade(cloak, 0.55), 0.7)
+    rags(s, [(mid - 13 + i * 5, hem - 1) for i in range(6)], cloak, length=6.5, width=2.6)
+    # A belt and pouch.
+    s.poly([(mid - 9, 34), (mid + 11, 34.5), (mid + 11, 37), (mid - 9.5, 36.6)], LEATHER, outline=INK, width=0.5)
+    s.poly([(mid + 2, 36), (mid + 6, 36.2), (mid + 6, 40), (mid + 2, 39.8)], _shade(LEATHER, 0.7), outline=INK,
+           width=0.4)
+    # The far arm, tucked under the cloak.
+    s.taper([(mid - 3, 24), (mid - 6, 32), (mid - 2, 37)], dark, 3.4, 2.2, outline=INK, width=0.5)
+    # The near arm, forward, the blade low and ready.
+    s.taper([(mid + 6, 22), (mid + 13, 28), (mid + 17.5, 33)], cloak, 4.4, 2.8, outline=INK, width=0.6)
+    s.dot(mid + 18, 33.4, 2.1, skin)
+    s.taper([(mid + 17.5, 33), (mid + 24.5, 40), (mid + 30.5, 44.5)], blade, 3.0, 0.3, outline=INK, width=0.5)
+    s.line((mid + 18.5, 33.5), (mid + 29, 43.5), _light(blade, 0.4), 0.5)
+    s.line((mid + 15.5, 35.4), (mid + 20, 31.2), GOLD_DARK, 1.2)
+    # The hood, low over the face, and the two lights inside it.
+    s.blob([(mid - 4, 15), (mid - 5, 8), (mid, 3), (mid + 7, 4), (mid + 12, 10), (mid + 11, 17), (mid + 5, 19)], cloak,
+           outline=INK, width=1.0)
+    s.blob([(mid + 1, 15), (mid + 0, 9), (mid + 4, 6), (mid + 9.5, 9.5), (mid + 9, 16), (mid + 4, 17.5)], HOLLOW,
+           outline=INK, width=0.5)
+    gaze(s, mid + 6.6, 11.6, eye, size=0.95, spacing=3.0)
+    s.curve([(mid - 3, 12), (mid - 0.5, 5.5), (mid + 5, 3.4)], _light(cloak, 0.22), 0.6)
+    return s
+
+
 def rank_and_file():
     """Everything that fills a wave."""
     return [
@@ -1100,6 +1191,12 @@ def rank_and_file():
               "A cult leader with a gilded stave, calling the faithful forward.",
               staff="skull", trim=GOLD, sigil=GOLD, hood=True, height=60),
 
+        # -- Introduced in the Frozen Wastes -------------------------------
+        bat("vampireBat", 0x2E2530, 0x6A2A44, 0xFF4A4A,
+            "A vampire bat: leathery, quick, and only ever after what it can drink."),
+        stalker("duskStalker", 0x1B1824, 0x8A8094, 0xC79BFF,
+                "A dusk stalker: cloth the colour of the gloom, a hood, and a blade held low."),
+
         # -- Elemental -----------------------------------------------------
         floater("frostShard", FROST_DEEP, FROST,
                 "A shard of living ice, turning slowly on nothing.",
@@ -1152,8 +1249,66 @@ def champions():
     ]
 
 
+def warlords():
+    """The champions in between: one or more for every realm, so no realm sends the same one twice.
+
+    Each is drawn from the same archetypes as the ten above with a silhouette and a palette of its own."""
+    return [
+        hulk("bossPitBrute", 0x5E7A3A, RUST, 0xE8A02A,
+             "Rukh the Pit-Brute, who won the warband its fights with his hands.",
+             arms="fists", crown="horns", build="flesh", width=80, height=76),
+        arachnid("bossBogmother", 0x2E3A2E, 0x8AC05A, 0xC8E04A,
+                 "Vesk the Bogmother: a spider the fen fed on its own dead.", width=92, height=64),
+        hulk("bossThornmaw", 0x3E5A2A, 0x7CCB58, 0xB8F060,
+             "Old Thornmaw, the Root-King, a tree that learned to walk toward things.",
+             arms="claws", crown="spikes", build="flesh", width=74, height=84),
+        quadruped("bossFrostfang", 0xC8DCE8, 0xEEF6FA, FROST,
+                  "Frostfang, alpha of the long winter, white as the snow it hunts in.",
+                  mane=FROST, width=98, height=80),
+        robed("bossRimewitch", 0x2A4A6A, 0xC8DCE8, FROST,
+              "Yrsa the Rimewitch, who freezes the breath in your chest and takes her time.",
+              staff="lantern", trim=FROST, sigil=FROST, hood=True, width=58, height=76),
+        armoured("bossPlagueKnight", ROT, 0x4A5A3A, 0xC8E04A, 0xC8E04A,
+                 "Sir Rotgrave, still in his oath-plate, and the plague inside it.",
+                 arm="axe", helm="great", bulk=1.4, cape=0x3A4A2A, width=62, height=76),
+        hulk("bossBloated", 0x8A9A5A, 0x4A5A2A, 0xE0F060,
+             "The Bloated One: what is left when a kingdom stops burying its dead.",
+             arms="fists", crown=None, build="flesh", width=88, height=80),
+        quadruped("bossCinderjaw", 0x4A1E14, 0x8A3A22, EMBER_HOT,
+                  "Cinderjaw, the Depths' oldest hound, its jaws still glowing from the last thing it ate.",
+                  mane=EMBER, tail="flame", width=108, height=76),
+        hulk("bossMagma", 0x3A2A26, EMBER, EMBER_HOT,
+             "The Magma Colossus, cooling on the outside and nowhere else.",
+             arms="fists", crown="spikes", core=EMBER_HOT, build="stone", width=90, height=96),
+        armoured("bossPitDuke", 0xA03A2A, 0x3A1A18, EMBER, EMBER_HOT,
+                 "Azreth, Duke of the Pit, in armour that was never forged, only grown.",
+                 arm="axe", helm="horned", bulk=1.5, cape=BLOOD, width=66, height=82),
+        floater("bossFracturedEye", 0x4A3A6E, 0x7FE0FF,
+                "The Fractured Eye: a gaze that broke, and now looks from every piece at once.",
+                shape="shard", width=88, height=96),
+        robed("bossRiftweaver", 0x2A1E4A, 0xB0A8D0, VOID_HOT,
+              "The Riftweaver, stitching the sky shut behind you so you cannot leave.",
+              staff="skull", trim=VOID_HOT, sigil=VOID_HOT, hood=True, width=60, height=78),
+        armoured("bossWarpedKnight", 0x6A4A8A, 0x2A2038, VOID_HOT, VOID_HOT,
+                 "A knight the Shattered Realm folded in half and then unfolded wrong.",
+                 arm="sword", helm="great", bulk=1.45, cape=0x3A2A5A, width=64, height=78),
+        armoured("bossOathbreaker", 0x8A7A5A, 0x5A5A62, GOLD, 0xFF6A4A,
+                 "The Oathbreaker, who swore to hold the wall and opened the gate.",
+                 arm="sword", helm="great", bulk=1.5, cape=0x6A2A2A, width=64, height=80),
+        hulk("bossSiegeTitan", 0x5A5650, IRON_LIGHT, 0xFFB24A,
+             "The Siege Titan: a wall that was told to advance.",
+             arms="fists", crown=None, core=0xFFB24A, build="stone", width=94, height=100),
+        robed("bossBellkeeper", 0x4A3A28, 0xC2B49A, GOLD,
+              "The Bellkeeper, who rings for the dead, and rings, and rings.",
+              staff="lantern", trim=GOLD, sigil=GOLD, hood=True, width=60, height=80),
+        hulk("bossGildedRegent", 0x8A7A3A, GOLD, 0xFFF0A0,
+             "The Gilded Regent, crowned in the Citadel's last gold and answering to no one.",
+             arms="blades", crown="crown", core=GOLD, build="stone", width=84, height=98),
+    ]
+
+
 def all_sprites():
-    return rank_and_file() + champions()
+    return rank_and_file() + champions() + warlords()
 
 
 HEADER = '''import UIKit

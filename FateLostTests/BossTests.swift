@@ -80,23 +80,46 @@ final class BossTests: XCTestCase {
 
     func testEveryChampionHasAKitAndTheKitsGrow() {
         let champions = EnemyCatalog.champions
-        XCTAssertEqual(champions.count, 10)
+        XCTAssertEqual(champions.count, 27)
+        XCTAssertEqual(Set(champions.map(\.id)).count, champions.count, "two champions share an id")
         var previousIntensity = 0
-        var previousMoves = 0
         var previousTempo = Double.greatestFiniteMagnitude
         for champion in champions {
             guard let kit = champion.kit else { return XCTFail("\(champion.name) has no repertoire") }
-            XCTAssertGreaterThan(kit.intensity, previousIntensity, "\(champion.name) is no harder than the last")
-            XCTAssertGreaterThanOrEqual(kit.moves.count, previousMoves, "\(champion.name) knows fewer moves than the last")
-            XCTAssertLessThan(kit.tempo, previousTempo, "\(champion.name) is no quicker than the last")
+            XCTAssertGreaterThanOrEqual(kit.intensity, previousIntensity, "\(champion.name) is easier than the last")
+            XCTAssertLessThanOrEqual(kit.tempo, previousTempo, "\(champion.name) is slower than the last")
             XCTAssertEqual(Set(kit.moves).count, kit.moves.count, "\(champion.name) repeats a move")
-            XCTAssertLessThanOrEqual(kit.intensity, 10)
+            XCTAssertGreaterThanOrEqual(kit.moves.count, 2)
+            XCTAssertTrue(kit.intensity >= 1 && kit.intensity <= 10)
+            if kit.moves.contains(.summon) {
+                XCTAssertNotNil(kit.adds.flatMap { EnemyCatalog.definition(for: $0) },
+                                "\(champion.name) summons but calls nothing that exists")
+            }
+            if let signature = kit.signature {
+                XCTAssertTrue(kit.moves.contains(signature), "\(champion.name) favours a move it does not have")
+            }
             previousIntensity = kit.intensity
-            previousMoves = kit.moves.count
             previousTempo = kit.tempo
         }
-        XCTAssertGreaterThanOrEqual(champions.last?.kit?.moves.count ?? 0, 5)
+        XCTAssertGreaterThanOrEqual(champions.last?.kit?.moves.count ?? 0, 8, "the last champion should have everything")
         XCTAssertTrue(EnemyCatalog.goblin.kit == nil, "ordinary enemies have no repertoire")
+    }
+
+    func testNoRealmSendsTheSameChampionTwice() {
+        for realm in RealmCatalog.all {
+            let bosses = EnemyCatalog.bosses(for: realm.id)
+            XCTAssertEqual(Set(bosses).count, bosses.count, "\(realm.name) repeats a champion")
+            if let conquest = realm.conquestWave {
+                XCTAssertGreaterThanOrEqual(bosses.count, conquest / realm.waves.bossEvery,
+                                            "\(realm.name) runs out of champions before it is conquered")
+                // Every boss wave up to the conquest meets a different one.
+                var met = Set<EnemyKindID>()
+                for wave in stride(from: realm.waves.bossEvery, through: conquest, by: realm.waves.bossEvery) {
+                    guard let id = realm.waves.boss(forWave: wave) else { return XCTFail("no champion on wave \(wave)") }
+                    XCTAssertTrue(met.insert(id).inserted, "\(realm.name) meets \(id) twice")
+                }
+            }
+        }
     }
 
     func testMovesOpenUpAsTheFightGoes() {
@@ -105,8 +128,11 @@ final class BossTests: XCTestCase {
         XCTAssertEqual(BossSystem.phase(healthFraction: 0.6), 1)
         XCTAssertEqual(BossSystem.phase(healthFraction: 0.2), 2)
         XCTAssertEqual(BossSystem.availableMoves(kit, phase: 0), [.slam, .fan])
-        XCTAssertEqual(BossSystem.availableMoves(kit, phase: 1), [.slam, .fan, .ring])
-        XCTAssertEqual(BossSystem.availableMoves(kit, phase: 2), [.slam, .fan, .ring, .lanes])
+        XCTAssertEqual(BossSystem.availableMoves(kit, phase: 1), [.slam, .fan, .ring, .lanes])
+        XCTAssertEqual(BossSystem.availableMoves(kit, phase: 2), [.slam, .fan, .ring, .lanes, .spiral])
+        let three = BossKit(moves: [.slam, .fan, .ring], intensity: 1, tempo: 5)
+        XCTAssertEqual(BossSystem.availableMoves(three, phase: 0), [.slam, .fan])
+        XCTAssertEqual(BossSystem.availableMoves(three, phase: 1), [.slam, .fan, .ring])
         let short = BossKit(moves: [.slam], intensity: 1, tempo: 5)
         XCTAssertEqual(BossSystem.availableMoves(short, phase: 2), [.slam])
     }
@@ -159,7 +185,7 @@ final class BossTests: XCTestCase {
             var madeAny = false
             for _ in 0..<Int(70 / dt) {
                 sim.step(dt: dt)
-                let marks = sim.combat.hazards
+                let marks = sim.combat.hazards.filter { !$0.isGuide }
                 for mark in marks where !seen.contains(mark.id) {
                     seen.insert(mark.id)
                     madeAny = true
@@ -244,19 +270,153 @@ final class BossTests: XCTestCase {
         XCTAssertTrue(sim.combat.bossBrains.isEmpty)
     }
 
+    // MARK: The newer moves
+
+    private func mark(at point: CGPoint, sim: inout GameSimulation, size: CGFloat = 2, warning: Double = 1,
+                      damage: Double = 20, tune: (inout Hazard) -> Void = { _ in }) {
+        var hazard = Hazard(id: sim.combat.makeEntityID(), shape: .circle, position: point,
+                            direction: CGPoint(x: 1, y: 0), size: size, width: 0, warning: warning, damage: damage,
+                            type: .physical, visual: .physical)
+        tune(&hazard)
+        sim.combat.hazards.append(hazard)
+    }
+
+    func testAPoolKeepsHurtingAfterItLandsAndOnlyThoseInIt() {
+        var sim = Squad.make(2)
+        let home = sim.arena.playerSpawn
+        Squad.place(&sim, hero: 0, at: home)
+        Squad.place(&sim, hero: 1, at: sim.world.wrap(home + CGPoint(x: 12, y: 0)))
+        mark(at: home, sim: &sim, damage: 0) { pool in
+            pool.linger = 4
+            pool.tickDamage = 6
+            pool.tickEvery = 0.5
+        }
+        let outside = Squad.health(sim, 1)
+        var hits = 0
+        var last = Squad.health(sim, 0)
+        for _ in 0..<Int(4.5 / dt) {
+            sim.step(dt: dt)
+            let now = Squad.health(sim, 0)
+            if now < last - 0.01 { hits += 1 }
+            last = now
+        }
+        XCTAssertGreaterThanOrEqual(hits, 2, "a pool hurts more than once")
+        XCTAssertEqual(Squad.health(sim, 1), outside, accuracy: 0.001, "and never whoever is outside it")
+        XCTAssertTrue(sim.combat.hazards.isEmpty, "and burns out")
+    }
+
+    func testABeamSweepsAcrossItsWedgeAndHurtsOnlyWhatItPasses() {
+        var sim = Squad.make(2)
+        let home = sim.arena.playerSpawn
+        Squad.place(&sim, hero: 0, at: sim.world.wrap(home + CGPoint(x: 5, y: 0)))     // on the beam's path
+        Squad.place(&sim, hero: 1, at: sim.world.wrap(home + CGPoint(x: -5, y: 0)))    // behind the boss
+        var beam = Hazard(id: sim.combat.makeEntityID(), shape: .lane, position: home,
+                          direction: CGPoint(x: 0, y: 1), size: 9, width: 0.7, warning: 0.8, damage: 0,
+                          type: .physical, visual: .physical)
+        beam.linger = 3
+        beam.tickDamage = 8
+        beam.tickEvery = 0.25
+        beam.spin = -0.8     // clockwise, from straight up toward the hero on the right
+        sim.combat.hazards.append(beam)
+        let before = Squad.health(sim, 0)
+        let behind = Squad.health(sim, 1)
+        var turned = false
+        for _ in 0..<Int(3.5 / dt) {
+            sim.step(dt: dt)
+            if let now = sim.combat.hazards.first, now.direction.x > 0.5 { turned = true }
+        }
+        XCTAssertTrue(turned, "the beam never turned")
+        XCTAssertLessThan(Squad.health(sim, 0), before, "the beam swept over the hero in its path")
+        XCTAssertEqual(Squad.health(sim, 1), behind, accuracy: 0.001, "and missed the one behind")
+    }
+
+    func testAHuntFollowsItsHeroThenLocksSoTheyCanStepOut() {
+        var sim = Squad.make(1)
+        let home = sim.arena.playerSpawn
+        Squad.place(&sim, hero: 0, at: home)
+        mark(at: home, sim: &sim, size: 1.5, warning: 2, damage: 30) { hunt in
+            hunt.follows = 0
+            hunt.lockTime = 0.7
+        }
+        // Walking away drags the mark along...
+        Squad.place(&sim, hero: 0, at: sim.world.wrap(home + CGPoint(x: 6, y: 0)))
+        Squad.run(&sim, seconds: 0.1)
+        let following = sim.combat.hazards[0].position
+        XCTAssertEqual(sim.world.distance(following, sim.world.wrap(home + CGPoint(x: 6, y: 0))), 0, accuracy: 0.05)
+        // ...until the last 0.7 s, when it holds still, and a step away is enough.
+        Squad.run(&sim, seconds: 1.3)
+        let locked = sim.combat.hazards[0].position
+        Squad.place(&sim, hero: 0, at: sim.world.wrap(locked + CGPoint(x: 4, y: 0)))
+        let before = Squad.health(sim, 0)
+        Squad.run(&sim, seconds: 1.2)
+        XCTAssertEqual(sim.world.distance(sim.combat.hazards.first?.position ?? locked, locked), 0, accuracy: 0.05,
+                       "it kept following after it locked")
+        XCTAssertEqual(Squad.health(sim, 0), before, accuracy: 0.001, "the hero who stepped out was hit")
+    }
+
+    func testABlinkPutsTheChampionWhereItsSlamLands() {
+        var (sim, boss) = fight(EnemyCatalog.bossWarchief, healthFraction: 1, distance: 8)
+        sim.combat.bossBrains.removeAll()
+        let id = sim.combat.enemies.ids[boss]
+        let destination = sim.world.wrap(sim.arena.playerSpawn + CGPoint(x: 3, y: 3))
+        mark(at: destination, sim: &sim, size: 2.6, warning: 1.2, damage: 10) { blink in blink.carriesBoss = id }
+        Squad.run(&sim, seconds: 0.6)
+        XCTAssertGreaterThan(sim.world.distance(sim.combat.enemies.positions[sim.combat.index(ofEnemy: id) ?? 0],
+                                                destination), 1, "it moved before the slam landed")
+        Squad.run(&sim, seconds: 0.8)
+        guard let index = sim.combat.index(ofEnemy: id) else { return XCTFail("the champion vanished") }
+        XCTAssertLessThan(sim.world.distance(sim.combat.enemies.positions[index], destination), 1.5,
+                          "it did not arrive where the slam landed")
+    }
+
+    func testEachNewPhaseIsAnEventThatHappensOncePerPhase() {
+        var (sim, boss) = fight(EnemyCatalog.bossGraveWarden, healthFraction: 1, distance: 6)
+        let id = sim.combat.enemies.ids[boss]
+        Squad.run(&sim, seconds: 2)
+        XCTAssertEqual(sim.combat.bossBrains[id]?.phase, 0)
+        // Two thirds of its health gone: the phase changes once, with a marked slam and its own kind called in.
+        let crowd = sim.combat.enemies.count
+        if let index = sim.combat.index(ofEnemy: id) {
+            sim.combat.enemies.health[index] = sim.combat.enemies.maxHealth[index] * 0.6
+        }
+        Squad.run(&sim, seconds: 0.5)
+        XCTAssertEqual(sim.combat.bossBrains[id]?.phase, 1)
+        XCTAssertGreaterThan(sim.combat.enemies.count, crowd, "it should have called reinforcements")
+        Squad.run(&sim, seconds: 20)
+        XCTAssertEqual(sim.combat.bossBrains[id]?.phase, 1, "the same phase must not shift twice")
+    }
+
+    func testTheGuideNeverHurtsAndTheRestDoes() {
+        var sim = Squad.make(1)
+        let home = sim.arena.playerSpawn
+        Squad.place(&sim, hero: 0, at: home)
+        mark(at: home, sim: &sim, size: 3, warning: 0.8, damage: 50) { $0.isGuide = true }
+        let before = Squad.health(sim, 0)
+        Squad.run(&sim, seconds: 1.5)
+        XCTAssertEqual(Squad.health(sim, 0), before, accuracy: 0.001)
+    }
+
     // MARK: Across the wire
 
     func testMarkedGroundTravelsToGuestsAndIsDrawnThere() {
         var host = Squad.make(2)
         let home = host.arena.playerSpawn
-        host.combat.hazards.append(Hazard(id: 77, shape: .lane, position: home, direction: CGPoint(x: 1, y: 0),
-                                          size: 16, width: 0.75, warning: 1.4, age: 0.5, damage: 30,
-                                          type: .fire, visual: .fire))
+        var beam = Hazard(id: 77, shape: .lane, position: home, direction: CGPoint(x: 1, y: 0),
+                          size: 16, width: 0.75, warning: 1.4, age: 0.5, damage: 30, type: .fire, visual: .fire)
+        beam.linger = 2.5
+        host.combat.hazards.append(beam)
+        var guide = Hazard(id: 78, shape: .cone, position: home, direction: CGPoint(x: 0, y: 1),
+                           size: 9, width: 0.95, warning: 3, age: 0.5, damage: 0, type: .fire, visual: .fire)
+        guide.isGuide = true
+        host.combat.hazards.append(guide)
         let snapshot = host.snapshot(forViewer: 1, radius: 40)
-        XCTAssertEqual(snapshot.hazards.count, 1)
+        XCTAssertEqual(snapshot.hazards.count, 2)
 
         guard let decoded = NetSnapshot.decode(snapshot.encoded()) else { return XCTFail("did not decode") }
-        XCTAssertEqual(decoded.hazards.count, 1)
+        XCTAssertEqual(decoded.hazards.count, 2)
+        XCTAssertEqual(decoded.hazards[0].linger, 2.5, accuracy: 0.06)
+        XCTAssertEqual(decoded.hazards[0].flags, 0)
+        XCTAssertEqual(decoded.hazards[1].flags & NetHazard.guide, NetHazard.guide, "a guide stays a guide across the wire")
         let net = decoded.hazards[0]
         XCTAssertEqual(net.id, 77)
         XCTAssertEqual(net.shape, Hazard.Shape.lane.rawValue)
@@ -268,8 +428,9 @@ final class BossTests: XCTestCase {
         var guest = Squad.make(2)
         guest.beginMirroring(slot: 1)
         guest.applyMirror(decoded)
-        XCTAssertEqual(guest.allHazards.count, 1)
+        XCTAssertEqual(guest.allHazards.count, 2)
         XCTAssertEqual(guest.allHazards[0].damage, 0, "a guest only draws it; the host decides who is hurt")
+        XCTAssertTrue(guest.allHazards[1].isGuide)
         guest.advanceMirror(dt: 0.5, intent: .idle)
         XCTAssertEqual(guest.allHazards[0].age, 1.0, accuracy: 0.05, "and it keeps counting between snapshots")
     }
