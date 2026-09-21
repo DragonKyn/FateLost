@@ -385,7 +385,7 @@ could ask, and the screen should say so.
 
 ## 21. The Armoury
 
-Thirteen starters, three of them free. The rest are bought once with echoes
+Fourteen starters, three of them free. The rest are bought once with echoes
 and then have five ranks of mastery, and mastery only applies to runs
 actually started with that weapon — `AppServices.modifiers(startingWith:)`
 folds it in beside the board, so the simulation never learns there is such a
@@ -394,9 +394,19 @@ rank grants, leaning into what it already does: knockback on the hammer,
 critical chance on the daggers, its own element on each wand.
 
 The rack is deliberately flat. Damage per second sits inside a narrow band
-across all thirteen and a test holds it there, so the difference between them
+across all fourteen and a test holds it there, so the difference between them
 is how the damage arrives — one heavy blow or six light ones, in an arc, down
 a line, or thrown and caught again — rather than which one is correct.
+
+The claymore is the heaviest blade on the rack: two-handed, the longest reach and the widest ordinary
+arc of any blade, and the slowest of the swords, at about the hammer's damage per second. A thrown boomerang
+goes out as far as its target, turns (or turns early, once it has passed through all it can), homes on
+whoever threw it and is caught; within one leg no enemy is struck twice, and the pass back is part of its
+balance. In a party each hero's attacks reach every phone, and only the phone whose hero made one raises an arm.
+
+Icons on the Legacy board are drawn, not borrowed: `tools/art/legacy_icons.py` writes short path strings
+(`LegacyGlyphData`) that `LegacyGlyph` draws at any size. Upgrade text is unit-aware (`StatModifier.displayText`):
+a chance or a fraction reads as a percentage however it is stored, and no upgrade is worth nothing.
 
 `LegacyProfile` decodes field by field. A player who has been playing since
 before the Armoury existed opens the game to their echoes, their board and
