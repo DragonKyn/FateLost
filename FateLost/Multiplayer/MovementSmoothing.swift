@@ -376,7 +376,9 @@ struct RemotePlayback {
         var drawing = drawings[slot] ?? Drawing(raw: reading.position, velocity: reading.velocity, at: now)
         let elapsed = now - drawing.at
         if elapsed > 0, elapsed < 0.5 {
-            let predicted = world.wrap(drawing.raw + drawing.velocity * CGFloat(elapsed))
+            // Where the hero should be by now if they simply carried on at the
+            // speed they are at now: the difference is what is absorbed.
+            let predicted = world.wrap(drawing.raw + reading.velocity * CGFloat(elapsed))
             let jump = world.delta(from: predicted, to: reading.position)
             if jump.length > Self.absorbLimit {
                 drawing.correction = .zero

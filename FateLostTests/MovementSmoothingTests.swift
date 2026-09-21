@@ -203,9 +203,9 @@ final class MovementSmoothingTests: XCTestCase {
         let packets = stream(of: truth, seconds: 2, latency: 0.03, jitter: 0)
         let drawn = draw(packets, truth: truth, until: 8, playback: &playback)
         let last = drawn.last!
-        let lastSent = truth(2.0 - snapshotInterval)
+        let lastSent = packets.last!.position
         // However long it lasts, the hero is never carried further than the clamp allows.
-        let carried = Double(world.distance(last.position, lastSent.position))
+        let carried = Double(world.distance(last.position, lastSent))
         XCTAssertLessThan(carried, 4.2 * (RemoteTrack.maxExtrapolation + 0.05))
         XCTAssertEqual(last.kind, .held)
         XCTAssertGreaterThan(playback.stats.heldFrames, 100)

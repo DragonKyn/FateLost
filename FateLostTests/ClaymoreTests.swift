@@ -142,7 +142,7 @@ final class ClaymoreTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(reach, 2.3, "the swing reaches farther than the hammer")
         XCTAssertLessThan(sim.combat.enemies.health[far], sim.combat.enemies.maxHealth[far], "reach did not land")
         XCTAssertEqual(sim.combat.enemies.health[behind], sim.combat.enemies.maxHealth[behind],
-                       "a 150 degree swing must not hit what is behind the hero")
+                       "a 170 degree swing must not hit what is directly behind the hero")
     }
 
     func testEveryHeroInAPartyCanSwingIt() {

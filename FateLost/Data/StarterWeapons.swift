@@ -174,7 +174,7 @@ enum StarterWeapons {
         range: 2.4,
         damageType: .physical,
         tags: [.melee, .weapon, .physical, .twoHanded],
-        delivery: .meleeArc(arcDegrees: 150),
+        delivery: .meleeArc(arcDegrees: 170),
         targeting: .nearest,
         rarity: .epic,
         spriteID: .weaponClaymore

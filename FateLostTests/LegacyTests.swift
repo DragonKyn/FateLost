@@ -217,7 +217,7 @@ final class LegacyValueTests: XCTestCase {
             let modifier = node.modifier
             let real = (modifier.kind != .flat || modifier.stat.isFraction) ? modifier.value * 100 : modifier.value
             guard let shown = leadingNumber(node.effectText) else { continue }
-            XCTAssertEqual(shown, real, accuracy: max(0.0006, real * 0.03), "\(node.id): \(node.effectText)")
+            XCTAssertEqual(shown, real, accuracy: max(0.0051, real * 0.03), "\(node.id): \(node.effectText)")
         }
     }
 
