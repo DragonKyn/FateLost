@@ -7,6 +7,7 @@ import SpriteKit
 /// away, and a way home has to be told apart from a way in.
 @MainActor
 final class PortalRenderer {
+    @MainActor
     private final class Entry {
         let root = SKNode()
         let glow: SKSpriteNode
