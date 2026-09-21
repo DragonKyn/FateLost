@@ -28,6 +28,7 @@ struct MirrorWorld {
     /// The local player's seat.
     var mySlot: UInt8
     var zones: [Zone] = []
+    var hazards: [Hazard] = []
     var allies: [Ally] = []
     var projectiles: [Projectile] = []
     var cooldowns: [AbilityID: HeroSelfState.Cooldown] = [:]
@@ -140,6 +141,15 @@ extension GameSimulation {
                         tickTimer: 0, isAura: zone.isAura, depth: 0, radius: CGFloat(zone.radius), age: age)
         }
         world.zoneAges = ages
+
+        // Marked ground: its age comes from the host, and runs on here between snapshots.
+        world.hazards = snapshot.hazards.compactMap { net in
+            guard let shape = Hazard.Shape(rawValue: net.shape) else { return nil }
+            return Hazard(id: Int(net.id), shape: shape, position: net.position, direction: net.direction,
+                          size: CGFloat(net.size), width: CGFloat(net.width), warning: net.warning, age: net.age,
+                          damage: 0, type: .physical, visual: NetTables.visual(net.visual),
+                          hasLanded: net.age >= net.warning)
+        }
 
         var previousAllies: [Int: CGPoint] = [:]
         for ally in world.allies { previousAllies[ally.id] = ally.position }
@@ -278,6 +288,8 @@ extension GameSimulation {
             world.zoneAges[world.zones[index].id] = world.zones[index].age
             if world.zones[index].remaining.isFinite { world.zones[index].remaining -= dt }
         }
+        for index in world.hazards.indices { world.hazards[index].age += dt }
+        world.hazards.removeAll { $0.isFinished }
         for (id, cooldown) in world.cooldowns {
             world.cooldowns[id]?.remaining = max(0, cooldown.remaining - dt)
         }

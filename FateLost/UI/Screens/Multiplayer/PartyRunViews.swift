@@ -54,10 +54,15 @@ struct PartyRunOverlay: View {
                 VStack(alignment: .leading, spacing: 5) {
                     ForEach(hud.party.filter { !$0.isMe }, id: \.slot) { member in
                         HStack(spacing: 6) {
-                            Image(systemName: member.isDefeated ? "cross.fill" : "person.fill")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(member.isDefeated ? Color(red: 0.78, green: 0.7, blue: 0.94)
-                                                                    : FLTheme.Palette.parchmentDim)
+                            // Their colour: the same as their arrow at the edge of the screen.
+                            Image(systemName: member.isDefeated ? "cross.fill" : "circle.fill")
+                                .font(.system(size: member.isDefeated ? 10 : 9, weight: .bold))
+                                .foregroundStyle(PartyColor.color(slot: member.slot))
+                                .overlay {
+                                    if !member.isDefeated {
+                                        Circle().strokeBorder(Color.white.opacity(0.85), lineWidth: 1).frame(width: 11, height: 11)
+                                    }
+                                }
                                 .frame(width: 12)
                             Text(member.name)
                                 .font(FLTheme.Typeface.body(12))
@@ -66,6 +71,9 @@ struct PartyRunOverlay: View {
                                 .frame(maxWidth: 78, alignment: .leading)
                             HealthBar(current: member.isDefeated ? 0 : member.healthFraction, maximum: 1)
                                 .frame(width: 54, height: 7)
+                                .overlay(alignment: .leading) {
+                                    Capsule().fill(PartyColor.color(slot: member.slot)).frame(width: 3, height: 9).offset(x: -4)
+                                }
                             if !member.isConnected {
                                 Image(systemName: "wifi.slash")
                                     .font(.system(size: 10))
@@ -75,7 +83,7 @@ struct PartyRunOverlay: View {
                         .shadow(color: .black, radius: 2)
                         .opacity(member.isConnected ? 1 : 0.55)
                         .accessibilityElement(children: .combine)
-                        .accessibilityLabel("\(member.name), \(member.isDefeated ? "fallen" : "\(Int(member.healthFraction * 100)) percent health")")
+                        .accessibilityLabel("\(PartyColor.name(slot: member.slot)), \(member.name), \(member.isDefeated ? "fallen" : "\(Int(member.healthFraction * 100)) percent health")")
                     }
                 }
                 Spacer()

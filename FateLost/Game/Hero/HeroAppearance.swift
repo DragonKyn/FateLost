@@ -58,6 +58,8 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
     case samurai
     case paladin
     case vampire
+    case angelic
+    case demonic
 
     var id: String { rawValue }
 
@@ -74,6 +76,8 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
         case .samurai: return "Ronin's Kimono"
         case .paladin: return "Paladin's Tabard"
         case .vampire: return "Vampire's Cloak"
+        case .angelic: return "Seraph's Vestments"
+        case .demonic: return "Infernal Mantle"
         }
     }
 
@@ -90,6 +94,8 @@ enum CloakStyle: String, Codable, CaseIterable, Identifiable {
         case .samurai: return "Winged shoulders, and a master long gone."
         case .paladin: return "Steel under a sworn colour."
         case .vampire: return "A collar to hide behind, and a lining to be seen."
+        case .angelic: return "A mantle of white feathers, gilded at the hem."
+        case .demonic: return "Spiked at the shoulder, and burning at the hem."
         }
     }
 }
@@ -258,6 +264,7 @@ enum HeroPalette {
         HeroSwatch(id: "rose", name: "Rose", hex: 0x9B3A5A),
         HeroSwatch(id: "slate", name: "Slate", hex: 0x38404A),
         HeroSwatch(id: "sunset", name: "Sunset", hex: 0xB8501E),
+        HeroSwatch(id: "white", name: "White", hex: 0xF2F0EA),
     ]
 
     static let trim: [HeroSwatch] = [

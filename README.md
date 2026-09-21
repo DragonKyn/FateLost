@@ -57,6 +57,8 @@ the same lobby. There is no public lobby list.
   [docs/MULTIPLAYER_SKILL_AUDIT.md](docs/MULTIPLAYER_SKILL_AUDIT.md), deployment and rollback in
   [docs/MULTIPLAYER_RUNBOOK.md](docs/MULTIPLAYER_RUNBOOK.md), and how other players' movement is drawn smoothly in
   [docs/MULTIPLAYER_MOVEMENT.md](docs/MULTIPLAYER_MOVEMENT.md).
+* Champions (marked ground, move kits, the "nothing is unavoidable" rule) and the passive-healing soft cap:
+  [docs/BOSSES.md](docs/BOSSES.md).
 * The service lives in `worker/` (TypeScript, tested against a local Worker and a deployed staging Worker).
   Cloudflare credentials are never in the app or the repository.
 

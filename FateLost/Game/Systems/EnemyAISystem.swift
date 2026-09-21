@@ -87,6 +87,9 @@ struct EnemyAISystem {
             let mask = combat.enemies.statusMask[index]
             let incapacitated = mask & StatusKind.incapacitating != 0
             let rooted = mask & StatusKind.root.bit != 0
+            // A champion in the middle of one of its moves (or catching its
+            // breath after) holds still and starts nothing else.
+            let casting = definition.kit != nil && (combat.bossBrains[combat.enemies.ids[index]]?.isBusy ?? false)
 
             // A charge in progress overrides everything else it might do.
             if combat.enemies.special[index] > 0, combat.enemies.dash[index] != .zero {
@@ -141,7 +144,7 @@ struct EnemyAISystem {
             let standRange = standoffDistance(definition, contact: contactDistance)
 
             combat.enemies.attackCooldown[index] = max(0, combat.enemies.attackCooldown[index] - dt)
-            if !incapacitated {
+            if !incapacitated && !casting {
                 if combat.enemies.windup[index] > 0 {
                     combat.enemies.windup[index] -= dt
                     if combat.enemies.windup[index] <= 0 {
@@ -169,7 +172,7 @@ struct EnemyAISystem {
             if combat.enemies.windup[index] > 0 {
                 speed *= tuning.windupSpeedFactor
             }
-            if incapacitated || rooted {
+            if incapacitated || rooted || casting {
                 speed = 0
             }
 

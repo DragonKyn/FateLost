@@ -17,8 +17,8 @@ struct CapeSway {
     private var speed: CGPoint = .zero
 
     /// The furthest the hem may swing.
-    static let maxHorizontal: CGFloat = 3.8
-    static let maxVertical: CGFloat = 1.4
+    static let maxHorizontal: CGFloat = 3.0
+    static let maxVertical: CGFloat = 1.2
     /// How hard the cloth is pulled toward where the motion wants it, and how
     /// much it is held back. These give a damping ratio near 0.5: one soft
     /// overshoot, then rest.
@@ -72,25 +72,33 @@ struct CapeSway {
     /// Fractions of the cloak's height, from the hem up, at which the sway is
     /// applied, and how much of it each carries. The shoulders (the top) never
     /// move, which is what keeps armour worn on them, and the hood, rigid.
-    static let bands: [(height: CGFloat, share: CGFloat)] = [
-        (0, 1.0), (0.16, 0.85), (0.42, 0.2), (1, 0),
+    static let rows: [(height: CGFloat, share: CGFloat)] = [
+        (0, 1.0), (0.16, 0.85), (0.42, 0.25), (1, 0),
+    ]
+    /// The same across the width of the picture, from its back edge (the left
+    /// of a figure facing right) to its front. Cloth trails: the back edge is
+    /// thrown out and the front edge, the way the hero is going, hardly moves,
+    /// so the hem flares rather than sliding over as one slab.
+    static let columns: [(across: CGFloat, share: CGFloat)] = [
+        (0, 1.0), (0.3, 1.0), (0.5, 0.65), (0.7, 0.3), (1, 0.2),
     ]
 
-    /// The points of a two-column warp grid for the current sway, in the unit
-    /// square of the cloak's own image (y up): the source, and where each point
-    /// is moved to. Row-major from the bottom left.
+    /// The points of a warp grid of `columns.count - 1` by `rows.count - 1`
+    /// cells for the current sway, in the unit square of the cloak's own image
+    /// (y up): the source, and where each point is moved to. Row-major from the
+    /// bottom left.
     /// - Parameter cloth: 0 for something rigid, 1 for free-hanging cloth.
     func warp(imageSize: CGSize, cloth: CGFloat) -> (source: [SIMD2<Float>], destination: [SIMD2<Float>]) {
         var source: [SIMD2<Float>] = []
         var destination: [SIMD2<Float>] = []
         let dx = Float(offset.x * cloth / max(imageSize.width, 1))
         let dy = Float(offset.y * cloth / max(imageSize.height, 1))
-        for band in Self.bands {
-            for column in 0...1 {
-                let u = Float(column)
-                let v = Float(band.height)
-                source.append(SIMD2(u, v))
-                destination.append(SIMD2(u + dx * Float(band.share), v + dy * Float(band.share)))
+        for row in Self.rows {
+            for column in Self.columns {
+                let point = SIMD2<Float>(Float(column.across), Float(row.height))
+                source.append(point)
+                destination.append(SIMD2(point.x + dx * Float(row.share * column.share),
+                                         point.y + dy * Float(row.share)))
             }
         }
         return (source, destination)
@@ -99,11 +107,12 @@ struct CapeSway {
 
 extension CloakStyle {
     /// How freely a cloak hangs: 1 for a loose cape, less for cloth worn over
-    /// armour or cut close. The shoulders never move at all (see `CapeSway.bands`).
+    /// armour or cut close. The shoulders never move at all (see `CapeSway.rows`).
     var clothiness: CGFloat {
         switch self {
         case .hooded, .shroud, .pilgrim, .vampire: return 1
-        case .longCoat, .wizard: return 0.9
+        case .longCoat, .wizard, .angelic: return 0.9
+        case .demonic: return 0.85
         case .druid, .mantle: return 0.8
         case .ninja: return 0.6
         case .samurai: return 0.4

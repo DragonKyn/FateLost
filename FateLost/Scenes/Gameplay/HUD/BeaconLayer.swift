@@ -11,6 +11,9 @@ struct BeaconMark {
     /// Drawn as a cross, so a friend who needs reviving is never mistaken for
     /// a shrine or a chest.
     var isFallenAlly = false
+    /// A living friend: steady rather than pulsing, and ringed in white, so a
+    /// teammate is never mistaken for a chest.
+    var isParty = false
 }
 
 /// Chevrons at the edge of the screen pointing at chests and shrines that
@@ -86,16 +89,20 @@ final class BeaconLayer: SKNode {
             arrow.position = CGPoint(x: offset.x * factor, y: offset.y * factor)
             arrow.zRotation = atan2(offset.y, offset.x)
             arrow.fillColor = mark.color
-            arrow.alpha = pulse
-            arrow.strokeColor = mark.isFallenAlly ? UIColor(rgb: 0x2A2036) : UIColor(white: 0, alpha: 0.85)
-            arrow.setScale(mark.isFallenAlly ? 1.25 : 1)
+            arrow.alpha = mark.isParty ? 0.95 : pulse
+            if mark.isParty {
+                arrow.strokeColor = UIColor(white: 1, alpha: 0.9)
+            } else {
+                arrow.strokeColor = mark.isFallenAlly ? UIColor(rgb: 0x2A2036) : UIColor(white: 0, alpha: 0.85)
+            }
+            arrow.setScale(mark.isFallenAlly ? 1.25 : mark.isParty ? 1.15 : 1)
 
             let label = labels[index]
             if let text = mark.label {
                 label.isHidden = false
                 label.text = text
                 label.fontColor = mark.color
-                label.alpha = pulse
+                label.alpha = mark.isParty ? 0.95 : pulse
                 // Beside the arrow, on the side toward the middle of the screen.
                 let inward = CGPoint(x: -offset.x, y: -offset.y).normalized
                 label.position = CGPoint(x: arrow.position.x + inward.x * 34, y: arrow.position.y + inward.y * 22)

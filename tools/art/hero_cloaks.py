@@ -2,8 +2,13 @@
 and returns a layer; see herokit.py and hero.py."""
 import math
 
-from herokit import (BELT, CX, FOOT, INK, LEATHER, LEATHER_DARK, STEEL, STEEL_DARK, STEEL_LIGHT, STEEL_MID, IVORY,
-                     Geo, belt, cap, layer, leaf, rect, star)
+from herokit import (BELT, BONE_SHADE, CX, FOOT, INK, LEATHER, LEATHER_DARK, STEEL, STEEL_DARK, STEEL_LIGHT, STEEL_MID,
+                     IVORY, VOID, Geo, belt, cap, layer, leaf, rect, star)
+
+FEATHER = 0xF3F1EA
+FEATHER_SHADE = 0xC9CCD8
+FEATHER_EDGE = 0x9299AE
+GOLD = 0xD9B45A
 
 
 def hooded(g):
@@ -163,7 +168,7 @@ def wizard(g):
 
 
 def ninja(g):
-    s = layer(f"heroCloakNinja{cap(g.build)}", f"A wrapped shinobi garb with a trailing scarf on a {g.build} frame.")
+    s = layer(f"heroCloakNinja{cap(g.build)}", f"A wrapped shinobi garb with a knotted scarf on a {g.build} frame.")
     hem = g.hem - 3
     # Shin wraps over the legs.
     for x in g.legs_x:
@@ -179,14 +184,17 @@ def ninja(g):
     rect(s, CX - g.sw + 1, g.sy + 13.5, 2 * g.sw - 2, 3, "trim:0.4")
     s.dot(CX + 4, g.sy + 15, 1.4, "trim")
     star(s, CX - 5, g.sy + 15.4, 2.1, STEEL_LIGHT)
-    # The scarf, streaming behind.
-    scarf = [(CX - 2, g.sy - 3), (CX - 9, g.sy - 6), (CX - 16, g.sy - 4), (CX - 23, g.sy - 8), (CX - 26, g.sy - 6),
-             (CX - 21, g.sy - 1), (CX - 15, g.sy), (CX - 8, g.sy + 1.5), (CX - 2, g.sy + 1.5)]
-    s.blob(scarf, "trim:0.8", outline=INK, width=0.9)
-    tail = [(CX - 12, g.sy + 0.5), (CX - 17, g.sy + 5), (CX - 22, g.sy + 6), (CX - 20, g.sy + 9), (CX - 13, g.sy + 5),
-            (CX - 9, g.sy + 2.5)]
-    s.blob(tail, "trim:0.62", outline=INK, width=0.8)
-    s.curve([(CX - 4, g.sy - 3), (CX - 12, g.sy - 4.4), (CX - 21, g.sy - 6.4)], "trim:0.5", 0.5)
+    # The scarf: knotted at the neck, its two tails hanging down the back. They
+    # are cloth, so they hang; the sway (CapeSway) lifts and trails them.
+    s.blob([(CX - 2, g.sy - 3.5), (CX - 8, g.sy - 3), (CX - 9.5, g.sy + 1), (CX - 4, g.sy + 2.5), (CX - 1.5, g.sy + 0.5)],
+           "trim:0.85", outline=INK, width=0.9)
+    long_tail = [(CX - 7, g.sy + 0.5), (CX - 11.5, g.sy + 1.5), (CX - 13.5, g.sy + 12), (CX - 14.5, g.sy + 19),
+                 (CX - 11.5, g.sy + 17), (CX - 8.5, g.sy + 19), (CX - 6.5, g.sy + 8)]
+    s.blob(long_tail, "trim:0.7", outline=INK, width=0.8)
+    short_tail = [(CX - 4, g.sy + 1), (CX - 8, g.sy + 3), (CX - 9.5, g.sy + 11), (CX - 7.5, g.sy + 10.5), (CX - 5.5, g.sy + 12),
+                  (CX - 3.6, g.sy + 5)]
+    s.blob(short_tail, "trim:0.55", outline=INK, width=0.7)
+    s.curve([(CX - 8, g.sy + 3), (CX - 10.4, g.sy + 10), (CX - 11.6, g.sy + 16)], "trim:0.42", 0.5)
     return s
 
 
@@ -282,7 +290,84 @@ def paladin(g):
     return s
 
 
+def _petal(s, x, y, w, h, color, edge=INK):
+    """One rounded feather, hanging from (x, y)."""
+    s.blob([(x - w / 2, y), (x + w / 2, y), (x + w * 0.52, y + h * 0.55), (x, y + h), (x - w * 0.52, y + h * 0.55)],
+           color, outline=edge, width=0.5)
+    s.line((x, y + h * 0.18), (x, y + h * 0.78), FEATHER_EDGE, 0.35)
+
+
+def angelic(g):
+    s = layer(f"heroCloakAngelic{cap(g.build)}", f"A robe under a mantle of white feathers, gilded, on a {g.build} frame.")
+    hem = g.hem + 3
+    lo = g.hw + 1
+    body = [(CX, g.sy - 6), (CX - g.sw, g.sy), (CX - lo, hem), (CX + lo, hem), (CX + g.sw, g.sy)]
+    s.poly(body, "cloak")
+    s.poly([(CX, g.sy - 6), (CX + g.sw, g.sy), (CX + lo, hem), (CX + 1, hem)], "cloak:0.75")
+    s.outline(body, INK, 1.2)
+    # Folds falling from the sash.
+    for i in (-2, 0, 2):
+        s.line((CX + i * 3, g.sy + 16), (CX + i * 3.8, hem - 3), "cloak:0.5", 0.6)
+    # A gilded hem, and a fringe of small feathers below it.
+    rect(s, CX - lo + 1, hem - 3, 2 * lo - 2, 2.4, GOLD)
+    for i in range(6):
+        x = CX - lo + 2.4 + i * (2 * lo - 4.8) / 5
+        _petal(s, x, hem - 1.2, 4.6, 5.2, FEATHER if i % 2 == 0 else FEATHER_SHADE)
+    # The sash, tied at the side.
+    rect(s, CX - g.sw + 1, g.sy + 13, 2 * g.sw - 2, 2.4, GOLD)
+    s.line((CX + 3, g.sy + 15.4), (CX + 4.2, g.sy + 22), GOLD, 1.1)
+    s.line((CX + 5.4, g.sy + 15.4), (CX + 6.2, g.sy + 21), GOLD, 1.1)
+    # The mantle: three tiers of feathers over the shoulders, longest at the bottom.
+    span = g.sw + 3.4
+    s.poly([(CX - span, g.sy + 1.5), (CX, g.sy - 4.4), (CX + span, g.sy + 1.5), (CX + span - 0.4, g.sy + 7),
+            (CX - span + 0.4, g.sy + 7)], FEATHER_SHADE, outline=INK, width=1.0)
+    for tier, (y, w, h, count) in enumerate(((g.sy + 3.6, 5.8, 6.4, 5), (g.sy + 1.2, 5.0, 5.4, 6), (g.sy - 1.4, 4.2, 4.2, 5))):
+        for i in range(count):
+            x = CX - span + 1.6 + i * (2 * span - 3.2) / (count - 1)
+            _petal(s, x, y, w, h, FEATHER if (i + tier) % 2 == 0 else 0xFFFFFF)
+    s.line((CX - span + 0.8, g.sy + 1.2), (CX, g.sy - 3.6), GOLD, 1.0)
+    s.line((CX + span - 0.8, g.sy + 1.2), (CX, g.sy - 3.6), GOLD, 1.0)
+    # A sun-clasp at the throat.
+    s.dot(CX, g.sy + 1.6, 2.0, GOLD)
+    s.dot(CX, g.sy + 1.6, 0.8, 0xFFF3C4)
+    return s
+
+
+def demonic(g):
+    s = layer(f"heroCloakDemonic{cap(g.build)}", f"A tattered cloak with a burning hem and spiked shoulders on a {g.build} frame.")
+    hem = g.hem + 2
+    steps = 7
+    teeth = []
+    for i in range(steps + 1):
+        x = CX - g.hw - 1 + i * (2 * g.hw + 2) / steps
+        teeth.append((x, hem + (5.6 if i % 2 == 0 else -1.4)))
+    body = [(CX, g.sy - 6), (CX - g.sw, g.sy)] + teeth + [(CX + g.sw, g.sy)]
+    s.poly(body, "cloak:0.62")
+    s.poly([(CX, g.sy - 6), (CX + g.sw, g.sy), teeth[-1], teeth[steps // 2]], "cloak:0.45")
+    s.outline(body, INK, 1.2)
+    # The inside, lit from below: an open front over a dark chest with a glowing sigil.
+    s.poly([(CX - 4, g.sy), (CX + 4, g.sy), (CX + 6, hem - 2), (CX - 6, hem - 2)], VOID)
+    s.poly([(CX - 3.6, g.sy + 5.5), (CX + 3.6, g.sy + 5.5), (CX, g.sy + 13.5)], ("trim", 0.2), outline="trim:0.9", width=0.6)
+    s.dot(CX, g.sy + 7.6, 0.9, "trim")
+    # Embers running up from the torn hem: cracks in the cloth.
+    for i, dx in enumerate((-9, -4, 3, 8)):
+        x, y = teeth[[1, 3, 4, 6][i]]
+        s.curve([(x, y - 1), (x + dx * 0.08, y - 5.5), (x - dx * 0.1, y - 9.5)], "trim:0.85", 0.7)
+    for x, y in teeth[1::2]:
+        s.dot(x, y - 0.6, 0.7, "trim")
+    # Spikes rising from each shoulder, and a bone ridge along the top of the cloak.
+    for side in (-1, 1):
+        x0 = CX + side * (g.sw - 1)
+        s.taper([(x0, g.sy + 2), (x0 + side * 4.4, g.sy - 3.4), (x0 + side * 5.6, g.sy - 11.5)], 0x2C1B1F, 4.4, 0.2,
+                outline=INK, width=0.7)
+        s.line((x0 + side * 1.2, g.sy - 0.6), (x0 + side * 4.4, g.sy - 8.2), "trim:0.85", 0.6)
+        s.taper([(x0 - side * 3, g.sy + 3.4), (x0 + side * 0.6, g.sy - 0.4), (x0 + side * 1.6, g.sy - 5.8)], 0x3A252A, 3.0,
+                0.2, outline=INK, width=0.6)
+        s.dot(x0 + side * 1.2, g.sy + 6.4, 1.0, BONE_SHADE)
+    return s
+
+
 BUILDERS = {
     "hooded": hooded, "mantle": mantle, "longCoat": long_coat, "shroud": shroud, "pilgrim": pilgrim,
-    "vampire": vampire, "wizard": wizard, "ninja": ninja, "samurai": samurai, "druid": druid, "paladin": paladin,
+    "vampire": vampire, "angelic": angelic, "demonic": demonic, "wizard": wizard, "ninja": ninja, "samurai": samurai, "druid": druid, "paladin": paladin,
 }

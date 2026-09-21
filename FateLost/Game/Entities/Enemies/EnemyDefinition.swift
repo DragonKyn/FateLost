@@ -63,6 +63,8 @@ struct EnemyDefinition: Identifiable, Equatable {
     var drawScale: CGFloat = 1
     /// Shown on the banner when this creature holds a wave open.
     var epithet: String?
+    /// What a champion does besides its ordinary attack (see `BossSystem`).
+    var kit: BossKit?
 
     var spriteID: SpriteID { spriteVariants.first ?? .enemyGoblin }
     var isBoss: Bool { rank == .boss }

@@ -301,6 +301,7 @@ struct GameSimulation {
         gatherWorldAnchors()
         collectTargets()
         enemyAI.step(&combat, targets: targetScratch, godMode: cheats.godMode, dt: dt)
+        BossSystem.step(&combat, targets: targetScratch, dt: dt)
         projectileSystem.stepHostile(&combat, targets: targetScratch, dt: dt)
         carryOutIncidents()
         registerFallenHeroes()
@@ -598,7 +599,18 @@ struct GameSimulation {
         combat.pendingHealing = 0
         let regeneration = combat.sheet[.healthRegen]
         if regeneration > 0 {
-            amount += regeneration * dt * received
+            // Timed auras and songs are skills with a cooldown and are paid for
+            // in full; the regeneration that is simply always there is what
+            // stacks, so that is what is soft-capped.
+            var timed = 0.0
+            for buff in player.buffs {
+                for modifier in buff.modifiers where modifier.stat == .healthRegen && modifier.kind == .flat {
+                    timed += modifier.value * Double(buff.stacks)
+                }
+            }
+            timed = min(max(0, timed), regeneration)
+            let passive = tuning.player.effectiveRegeneration((regeneration - timed) * received, maxHealth: player.maxHealth)
+            amount += (passive + timed * received) * dt
         } else if regeneration < 0 {
             // Forbidden power drains, but never kills.
             player.health = max(1, player.health + regeneration * dt)

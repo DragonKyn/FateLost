@@ -199,7 +199,7 @@ final class HeroTests: XCTestCase {
     }
 
     func testEveryStyleAndColourThePlayerAskedForExists() {
-        let cloaks: Set<CloakStyle> = [.vampire, .wizard, .ninja, .samurai, .druid, .paladin]
+        let cloaks: Set<CloakStyle> = [.vampire, .wizard, .ninja, .samurai, .druid, .paladin, .angelic, .demonic]
         XCTAssertTrue(cloaks.isSubset(of: Set(CloakStyle.allCases)))
         XCTAssertTrue(HeadStyle.allCases.contains(.eyeless), "the eyeless hood is missing")
         XCTAssertGreaterThanOrEqual(BodyBuild.allCases.count, 5)
@@ -210,7 +210,8 @@ final class HeroTests: XCTestCase {
 
     func testEveryPricedColourIsARealColour() {
         // A typo in a price table would quietly make a colour free.
-        XCTAssertEqual(HeroUnlocks.cloakColours.filter { !HeroUnlocks.isFree($0) }.count, 11)
+        XCTAssertEqual(HeroUnlocks.cloakColours.filter { !HeroUnlocks.isFree($0) }.count, 12)
+        XCTAssertTrue(HeroPalette.cloak.contains { $0.id == "white" }, "a white cloak colour is missing")
         XCTAssertEqual(HeroUnlocks.trimColours.filter { !HeroUnlocks.isFree($0) }.count, 9)
         XCTAssertEqual(HeroUnlocks.eyeColours.filter { !HeroUnlocks.isFree($0) }.count, 7)
     }

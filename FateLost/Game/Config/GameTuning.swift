@@ -40,6 +40,27 @@ struct PlayerTuning {
     var baseMaxHealth: Double = 100
     /// Exponential decay rate of knockback on the player, per second.
     var knockbackDecay: CGFloat = 11
+    /// Passive regeneration (what the build, the Legacy board and gear give,
+    /// not a timed aura) counts in full up to this share of max health a
+    /// second. Past it each further point counts for less and less, so a
+    /// second regeneration source still helps, but stacking every one cannot
+    /// make a hero unkillable.
+    var regenKneeFraction: Double = 0.03
+    /// The most passive regeneration can ever reach, as a share of max health
+    /// a second: what any pile of sources approaches and never passes.
+    var regenCeilingFraction: Double = 0.06
+
+    /// What `raw` health per second of passive regeneration is worth to a hero
+    /// with `maxHealth`: the same up to the knee, then an ever slower climb
+    /// toward the ceiling.
+    func effectiveRegeneration(_ raw: Double, maxHealth: Double) -> Double {
+        guard raw > 0, maxHealth > 0 else { return max(0, raw) }
+        let knee = maxHealth * regenKneeFraction
+        guard raw > knee else { return raw }
+        let room = maxHealth * (regenCeilingFraction - regenKneeFraction)
+        guard room > 0 else { return knee }
+        return knee + room * (1 - exp(-(raw - knee) / room))
+    }
 }
 
 struct CombatTuning {

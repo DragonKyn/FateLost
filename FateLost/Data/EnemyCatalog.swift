@@ -364,14 +364,14 @@ enum EnemyCatalog {
                                  health: Double, speed: CGFloat, radius: CGFloat, damage: Double,
                                  reach: CGFloat, windup: Double, cooldown: Double, type: DamageType,
                                  behavior: EnemyBehavior, sprite: SpriteID, scale: CGFloat,
-                                 experience: Int) -> EnemyDefinition {
+                                 experience: Int, kit: BossKit) -> EnemyDefinition {
         EnemyDefinition(
             id: id, name: name, family: family, rank: .boss,
             maxHealth: health, moveSpeed: speed, radius: radius,
             attackDamage: damage, attackReach: reach, attackWindup: windup, attackCooldown: cooldown,
             knockbackResistance: 1, damageType: type, behavior: behavior,
             experience: experience, spawnWeight: 0, earliestWave: 1,
-            spriteVariants: [sprite], drawScale: scale, epithet: epithet
+            spriteVariants: [sprite], drawScale: scale, epithet: epithet, kit: kit
         )
     }
 
@@ -379,70 +379,80 @@ enum EnemyCatalog {
         id: "boss.warchief", name: "Grask", epithet: "the Warchief", family: .goblinoid,
         health: 1_600, speed: 2.3, radius: 0.8, damage: 34, reach: 0.7, windup: 1.1, cooldown: 3.2,
         type: .physical, behavior: .charger(range: 8, speed: 17, distance: 8),
-        sprite: .enemyBossWarchief, scale: 1.5, experience: 40
+        sprite: .enemyBossWarchief, scale: 1.5, experience: 40,
+        kit: BossKit(moves: [.slam, .fan], intensity: 1, tempo: 5.6)
     )
 
     static let bossDrownedKing = champion(
         id: "boss.drownedKing", name: "The Drowned King", epithet: "Crowned in Silt", family: .undead,
         health: 2_400, speed: 1.6, radius: 0.9, damage: 40, reach: 0.8, windup: 0.85, cooldown: 2,
         type: .cold, behavior: .summoner(spawns: "enemy.skeletonWarrior", count: 5, interval: 7, range: 9),
-        sprite: .enemyBossDrownedKing, scale: 1.55, experience: 55
+        sprite: .enemyBossDrownedKing, scale: 1.55, experience: 55,
+        kit: BossKit(moves: [.meteors, .ring, .slam], intensity: 2, tempo: 5.4)
     )
 
     static let bossHollowStag = champion(
         id: "boss.hollowStag", name: "The Hollow Stag", epithet: "Antlered Rot", family: .beast,
         health: 3_100, speed: 3, radius: 0.85, damage: 44, reach: 0.8, windup: 0.9, cooldown: 2.6,
         type: .poison, behavior: .charger(range: 10, speed: 20, distance: 10),
-        sprite: .enemyBossHollowStag, scale: 1.5, experience: 70
+        sprite: .enemyBossHollowStag, scale: 1.5, experience: 70,
+        kit: BossKit(moves: [.slam, .lanes, .fan], intensity: 3, tempo: 5.2)
     )
 
     static let bossRimeTyrant = champion(
         id: "boss.rimeTyrant", name: "The Rime Tyrant", epithet: "Stiller of Hearts", family: .elemental,
         health: 4_200, speed: 1.5, radius: 0.95, damage: 48, reach: 0.85, windup: 0.9, cooldown: 2.1,
         type: .cold, behavior: .ranged(range: 9, projectileSpeed: 9, sprite: .projectileShard),
-        sprite: .enemyBossRimeTyrant, scale: 1.6, experience: 85
+        sprite: .enemyBossRimeTyrant, scale: 1.6, experience: 85,
+        kit: BossKit(moves: [.ring, .cleave, .lanes, .meteors], intensity: 4, tempo: 5.0)
     )
 
     static let bossPlagueMonarch = champion(
         id: "boss.plagueMonarch", name: "The Plague Monarch", epithet: "Court of the Buried", family: .undead,
         health: 5_400, speed: 1.9, radius: 0.85, damage: 52, reach: 0.75, windup: 0.7, cooldown: 1.8,
         type: .poison, behavior: .summoner(spawns: "enemy.wraith", count: 4, interval: 6.5, range: 9),
-        sprite: .enemyBossPlagueMonarch, scale: 1.55, experience: 100
+        sprite: .enemyBossPlagueMonarch, scale: 1.55, experience: 100,
+        kit: BossKit(moves: [.meteors, .ring, .cleave, .spiral], intensity: 5, tempo: 4.8)
     )
 
     static let bossEmberLord = champion(
         id: "boss.emberLord", name: "Vaskar", epithet: "the Ember Lord", family: .demon,
         health: 6_800, speed: 1.8, radius: 1, damage: 58, reach: 0.9, windup: 0.8, cooldown: 1.9,
         type: .fire, behavior: .melee,
-        sprite: .enemyBossEmberLord, scale: 1.65, experience: 120
+        sprite: .enemyBossEmberLord, scale: 1.65, experience: 120,
+        kit: BossKit(moves: [.cleave, .meteors, .lanes, .slam], intensity: 6, tempo: 4.6)
     )
 
     static let bossVoidmaw = champion(
         id: "boss.voidmaw", name: "Voidmaw", epithet: "That Which Looks Back", family: .aberration,
         health: 8_200, speed: 2.1, radius: 0.9, damage: 60, reach: 0.8, windup: 0.75, cooldown: 1.7,
         type: .arcane, behavior: .ranged(range: 9.5, projectileSpeed: 11, sprite: .projectileArcaneBolt),
-        sprite: .enemyBossVoidmaw, scale: 1.6, experience: 140
+        sprite: .enemyBossVoidmaw, scale: 1.6, experience: 140,
+        kit: BossKit(moves: [.ring, .spiral, .meteors, .lanes], intensity: 7, tempo: 4.4)
     )
 
     static let bossIronSaint = champion(
         id: "boss.ironSaint", name: "The Iron Saint", epithet: "Keeper of a Broken Vow", family: .construct,
         health: 10_500, speed: 1.6, radius: 1, damage: 66, reach: 0.95, windup: 1.0, cooldown: 2.8,
         type: .holy, behavior: .charger(range: 9, speed: 18, distance: 9),
-        sprite: .enemyBossIronSaint, scale: 1.6, experience: 165
+        sprite: .enemyBossIronSaint, scale: 1.6, experience: 165,
+        kit: BossKit(moves: [.lanes, .cleave, .slam, .fan, .spiral], intensity: 8, tempo: 4.2)
     )
 
     static let bossGraveWarden = champion(
         id: "boss.graveWarden", name: "The Grave Warden", epithet: "Who Keeps the Gate", family: .undead,
         health: 14_000, speed: 1.8, radius: 1.1, damage: 74, reach: 1, windup: 0.85, cooldown: 2,
         type: .shadow, behavior: .summoner(spawns: "enemy.wraith", count: 5, interval: 6, range: 10),
-        sprite: .enemyBossGraveWarden, scale: 1.75, experience: 200
+        sprite: .enemyBossGraveWarden, scale: 1.75, experience: 200,
+        kit: BossKit(moves: [.meteors, .spiral, .lanes, .ring, .slam], intensity: 9, tempo: 4.0)
     )
 
     static let bossAbyssalEcho = champion(
         id: "boss.abyssalEcho", name: "The Abyssal Echo", epithet: "Wearing Your Shape", family: .aberration,
         health: 18_000, speed: 2.4, radius: 1, damage: 80, reach: 0.9, windup: 0.7, cooldown: 1.6,
         type: .shadow, behavior: .melee,
-        sprite: .enemyBossAbyssalEcho, scale: 1.6, experience: 240
+        sprite: .enemyBossAbyssalEcho, scale: 1.6, experience: 240,
+        kit: BossKit(moves: [.spiral, .lanes, .meteors, .cleave, .ring, .slam], intensity: 10, tempo: 3.7)
     )
 
     // MARK: - Lookup

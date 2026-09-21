@@ -146,7 +146,7 @@ final class PlayerView: SKNode {
         guard abs(offset.x - drawnSway.x) > 0.02 || abs(offset.y - drawnSway.y) > 0.02 else { return }
         drawnSway = offset
         let warp = sway.warp(imageSize: cloak.size, cloth: cloth)
-        cloak.warpGeometry = SKWarpGeometryGrid(columns: 1, rows: CapeSway.bands.count - 1,
+        cloak.warpGeometry = SKWarpGeometryGrid(columns: CapeSway.columns.count - 1, rows: CapeSway.rows.count - 1,
                                                 sourcePositions: warp.source, destinationPositions: warp.destination)
     }
 

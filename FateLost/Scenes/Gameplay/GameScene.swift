@@ -193,6 +193,7 @@ final class GameScene: SKScene {
     private let shrineRenderer: ShrineRenderer
     private let zoneRenderer: ZoneRenderer
     private let chargeLanes: ChargeLaneRenderer
+    private let hazardRenderer: HazardRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
     private let cameraController: CameraController
@@ -279,6 +280,7 @@ final class GameScene: SKScene {
         zoneRenderer = ZoneRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                     layer: decals)
         chargeLanes = ChargeLaneRenderer(projection: projection, layer: decals)
+        hazardRenderer = HazardRenderer(projection: projection, layer: decals)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                       standingLayer: standing, decalLayer: decals, overlayLayer: overlays)
         self.effects = effects
@@ -512,6 +514,7 @@ final class GameScene: SKScene {
         zoneRenderer.update(zones: simulation.allZones, frame: renderFrame, time: animationTime)
         chargeLanes.update(enemies: simulation.combat.enemies, playerRadius: tuning.combat.playerRadius,
                            frame: renderFrame, time: animationTime)
+        hazardRenderer.update(hazards: simulation.allHazards, frame: renderFrame, time: animationTime)
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
         dropRenderer.update(drops: simulation.combat.drops, frame: renderFrame, time: animationTime)
         shrineRenderer.update(shrines: simulation.combat.shrines, playerPosition: simulation.player.position,
@@ -674,14 +677,25 @@ final class GameScene: SKScene {
         // in the same arrows that lead to chests and shrines, drawn as crosses
         // and named.
         var fallen: [BeaconMark] = []
+        var friends: [BeaconMark] = []
         if let driver = partyDriver {
             for marker in currentPresentation.markers where marker.slot != driver.mySlot {
                 let there = projection.toScreen(renderFrame.unwrapped(marker.position))
+                let name = driver.roster[marker.slot]?.name ?? "Ally"
                 fallen.append(BeaconMark(id: -1000 - marker.slot, offset: (there - here) / scale,
-                                         color: UIColor(rgb: 0xC8B4F0), label: driver.roster[marker.slot]?.name,
+                                         color: PartyColor.uiColor(slot: marker.slot), label: "\(name) (down)",
                                          isFallenAlly: true))
             }
             fallen.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
+            // Everyone else still standing, in their own colour, so the way to
+            // the party is never a guess.
+            for hero in currentPresentation.heroes where hero.slot != driver.mySlot && !hero.isDefeated && hero.isConnected {
+                let there = projection.toScreen(renderFrame.unwrapped(hero.position))
+                friends.append(BeaconMark(id: -2000 - hero.slot, offset: (there - here) / scale,
+                                          color: PartyColor.uiColor(slot: hero.slot),
+                                          label: driver.roster[hero.slot]?.name, isParty: true))
+            }
+            friends.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
         }
         for drop in simulation.combat.drops {
             guard case .chest(let tier) = drop.kind else { continue }
@@ -694,7 +708,8 @@ final class GameScene: SKScene {
                                     color: ShrineRenderer.tint(for: shrine.kind)))
         }
         marks.sort { $0.offset.lengthSquared < $1.offset.lengthSquared }
-        hud.showBeacons(Array(fallen.prefix(3)) + Array(marks.prefix(4)), screenSize: layout.screenSize,
+        hud.showBeacons(Array(fallen.prefix(3)) + Array(friends.prefix(3)) + Array(marks.prefix(4)),
+                        screenSize: layout.screenSize,
                         time: animationTime)
     }
 
@@ -990,7 +1005,7 @@ final class GameScene: SKScene {
         snapshot.projectileCount = simulation.projectiles.count
         snapshot.pickupCount = simulation.combat.orbs.count
         snapshot.playerLevel = simulation.progression.level
-        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + allyRenderer.activeCount
+        snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + hazardRenderer.activeCount + allyRenderer.activeCount
         snapshot.spawnRate = simulation.currentSpawnRate
         snapshot.network = partyDriver?.movementSummary
         if simulationFrames > 0 {

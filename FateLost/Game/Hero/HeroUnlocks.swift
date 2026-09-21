@@ -105,6 +105,7 @@ enum HeroUnlocks {
             case .samurai: return 260
             case .paladin: return 300
             case .vampire: return 350
+            case .angelic, .demonic: return 450
             }
         case .head(let style):
             switch style {
@@ -121,7 +122,7 @@ enum HeroUnlocks {
         case .cloakColor(let id):
             return [
                 "ivory": 30, "slate": 30, "ochre": 40, "teal": 40, "rust": 40, "sunset": 40, "royal": 50,
-                "emerald": 50, "rose": 60, "violet": 70, "black": 70,
+                "emerald": 50, "rose": 60, "violet": 70, "black": 70, "white": 80,
             ][id] ?? 0
         case .trimColor(let id):
             return [

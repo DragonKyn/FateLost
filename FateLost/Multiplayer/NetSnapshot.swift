@@ -108,6 +108,20 @@ struct NetShrine: Equatable {
     var kind: UInt8
 }
 
+/// Ground a champion has marked (see `Hazard`). Enough to draw it and to read
+/// how long is left; the damage is the host's business.
+struct NetHazard: Equatable {
+    var id: UInt32
+    var shape: UInt8
+    var position: CGPoint
+    var direction: CGPoint
+    var size: Double
+    var width: Double
+    var warning: Double
+    var age: Double
+    var visual: UInt8
+}
+
 struct NetWave: Equatable {
     var index: Int
     var phase: UInt8
@@ -140,6 +154,7 @@ struct NetSnapshot: Equatable {
         static let orbs = 150
         static let drops = 40
         static let shrines = 6
+        static let hazards = 24
         static let markers = 4
     }
 
@@ -156,6 +171,7 @@ struct NetSnapshot: Equatable {
     var orbs: [NetOrb] = []
     var drops: [NetDrop] = []
     var shrines: [NetShrine] = []
+    var hazards: [NetHazard] = []
 
     // MARK: Encoding
 
@@ -279,6 +295,20 @@ struct NetSnapshot: Equatable {
             writer.u32(shrine.id)
             writer.point(shrine.position)
             writer.u8(shrine.kind)
+        }
+
+        let hazardList = hazards.prefix(Limit.hazards)
+        writer.u8(UInt8(hazardList.count))
+        for hazard in hazardList {
+            writer.u32(hazard.id)
+            writer.u8(hazard.shape)
+            writer.point(hazard.position)
+            writer.direction(hazard.direction)
+            writer.u8(UInt8(max(0, min(255, (hazard.size * 8).rounded()))))
+            writer.u8(UInt8(max(0, min(255, (hazard.width * 64).rounded()))))
+            writer.u8(UInt8(max(0, min(255, (hazard.warning * 20).rounded()))))
+            writer.u8(UInt8(max(0, min(255, (hazard.age * 50).rounded()))))
+            writer.u8(hazard.visual)
         }
         return writer.data
     }
@@ -412,6 +442,22 @@ struct NetSnapshot: Equatable {
             snapshot.shrines.append(NetShrine(id: reader.u32(), position: reader.point(), kind: reader.u8()))
         }
 
+        let hazardCount = Int(reader.u8())
+        guard hazardCount <= Limit.hazards else { return nil }
+        for _ in 0..<hazardCount {
+            let id = reader.u32()
+            let shape = reader.u8()
+            let position = reader.point()
+            let direction = reader.direction()
+            let size = Double(reader.u8()) / 8
+            let width = Double(reader.u8()) / 64
+            let warning = Double(reader.u8()) / 20
+            let age = Double(reader.u8()) / 50
+            snapshot.hazards.append(NetHazard(id: id, shape: shape, position: position, direction: direction,
+                                              size: size, width: width, warning: warning, age: age,
+                                              visual: reader.u8()))
+        }
+
         guard !reader.failed else { return nil }
         return snapshot
     }
@@ -430,6 +476,9 @@ extension GameSimulation {
         }
         return all
     }
+
+    /// Marked ground, for drawing.
+    var allHazards: [Hazard] { mirror?.hazards ?? combat.hazards }
 
     /// Every summon any hero has out, for drawing.
     var allAllies: [Ally] {
@@ -567,6 +616,13 @@ extension GameSimulation {
             if snapshot.drops.count >= NetSnapshot.Limit.drops { break }
             snapshot.drops.append(NetDrop(id: UInt32(truncatingIfNeeded: drop.id), position: drop.position,
                                           code: NetTables.dropCode(drop.kind), attracted: drop.attracted))
+        }
+        for hazard in combat.hazards where near(hazard.position) || world.distance(center, hazard.position) <= radius + hazard.size {
+            if snapshot.hazards.count >= NetSnapshot.Limit.hazards { break }
+            snapshot.hazards.append(NetHazard(
+                id: UInt32(truncatingIfNeeded: hazard.id), shape: hazard.shape.rawValue, position: hazard.position,
+                direction: hazard.direction, size: Double(hazard.size), width: Double(hazard.width),
+                warning: hazard.warning, age: hazard.age, visual: NetTables.visualIndex(hazard.visual)))
         }
         for shrine in combat.shrines.prefix(NetSnapshot.Limit.shrines) {
             snapshot.shrines.append(NetShrine(id: UInt32(truncatingIfNeeded: shrine.id), position: shrine.position,

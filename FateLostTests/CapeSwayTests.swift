@@ -69,25 +69,39 @@ final class CapeSwayTests: XCTestCase {
         XCTAssertEqual(sway.offset, .zero)
     }
 
-    func testTheBendKeepsTheShouldersStillAndMovesTheHem() {
+    func testTheBendKeepsTheShouldersStillAndFlaresTheHem() {
         var sway = CapeSway()
         run(&sway, seconds: 1, velocity: CGPoint(x: 120, y: 0))
         let warp = sway.warp(imageSize: CGSize(width: 64, height: 80), cloth: 1)
-        XCTAssertEqual(warp.source.count, 8)
-        XCTAssertEqual(warp.destination.count, 8)
+        let across = CapeSway.columns.count
+        let down = CapeSway.rows.count
+        XCTAssertEqual(warp.source.count, across * down)
+        XCTAssertEqual(warp.destination.count, across * down)
         // Top row: the hood and shoulders do not move.
-        XCTAssertEqual(warp.destination[6], warp.source[6])
-        XCTAssertEqual(warp.destination[7], warp.source[7])
-        // Hem row: moved by the whole sway, both corners alike.
-        let hem = warp.destination[0].x - warp.source[0].x
-        XCTAssertEqual(hem, Float(sway.offset.x / 64), accuracy: 0.0001)
-        XCTAssertEqual(warp.destination[1].x - warp.source[1].x, hem, accuracy: 0.0001)
+        for column in 0..<across {
+            let index = (down - 1) * across + column
+            XCTAssertEqual(warp.destination[index], warp.source[index])
+        }
+        // Hem row: the back edge takes the whole sway; the front edge less.
+        let back = warp.destination[0].x - warp.source[0].x
+        XCTAssertEqual(back, Float(sway.offset.x / 64), accuracy: 0.0001)
+        let front = warp.destination[across - 1].x - warp.source[across - 1].x
+        XCTAssertLessThan(abs(front), abs(back), "the hem flares; it does not slide over as a slab")
+        XCTAssertEqual(front.sign, back.sign, "the whole hem trails the same way")
         // Every row moves less than the one below it: a smooth hang, not a snap.
-        let shifts = stride(from: 0, to: 8, by: 2).map { abs(warp.destination[$0].x - warp.source[$0].x) }
+        let shifts = (0..<down).map { abs(warp.destination[$0 * across].x - warp.source[$0 * across].x) }
         XCTAssertEqual(shifts, shifts.sorted(by: >))
+        // A row is level: the hem is lifted or dropped evenly, never tilted.
+        for row in 0..<down {
+            let first = warp.destination[row * across].y - warp.source[row * across].y
+            for column in 1..<across {
+                let index = row * across + column
+                XCTAssertEqual(warp.destination[index].y - warp.source[index].y, first, accuracy: 0.0001)
+            }
+        }
         // Sources are the unit square in order: bottom left to top right.
         XCTAssertEqual(warp.source[0], SIMD2<Float>(0, 0))
-        XCTAssertEqual(warp.source[7], SIMD2<Float>(1, 1))
+        XCTAssertEqual(warp.source[across * down - 1], SIMD2<Float>(1, 1))
     }
 
     func testRigidThingsDoNotMove() {

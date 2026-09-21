@@ -141,6 +141,13 @@ def previews(here):
                             looks[(i + 4) % 6]))
     sheet(os.path.join(here, "hero-combos.png"), every_build, columns=5)
 
+    fancy = []
+    for i, c in enumerate(("angelic", "demonic")):
+        for j, b in enumerate(BUILD_NAMES):
+            fancy.append((f"{b} {c}", dressed(b, c, ("bare", "horned")[i], wings=("angel", "demon")[i]),
+                          ("crimson", "void")[i] if j % 2 == 0 else ("midnight", "bone")[i]))
+    sheet(os.path.join(here, "hero-fancy-cloaks.png"), fancy, columns=5)
+
 
 HEADER = '''import UIKit
 
