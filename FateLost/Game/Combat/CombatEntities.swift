@@ -94,6 +94,9 @@ struct ExperienceOrb {
     /// Drawn toward the player once they come close.
     var attracted = false
     var speed: CGFloat = 0
+    /// The hero it is flying to. One hero at a time moves it, so in a party
+    /// an orb goes to whoever drew it in rather than being tugged by them all.
+    var claimedBy: Int?
 }
 
 /// What an enemy can leave behind besides experience.
@@ -116,6 +119,8 @@ struct Drop {
     /// Drawn toward the player. Only vials and magnets ever are.
     var attracted = false
     var speed: CGFloat = 0
+    /// The hero it is flying to (see `ExperienceOrb.claimedBy`).
+    var claimedBy: Int?
     /// Seconds since it landed, for the ones that do not stay forever.
     var age: Double = 0
 }

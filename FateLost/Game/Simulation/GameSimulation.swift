@@ -333,7 +333,7 @@ struct GameSimulation {
             }
             resolveDeaths()
 
-            PickupSystem.step(&combat, player: player, dt: dt)
+            PickupSystem.step(&combat, player: player, hero: hero, targets: targetScratch, dt: dt)
             ShrineSystem.step(&combat, player: player, dt: dt)
         }
 
