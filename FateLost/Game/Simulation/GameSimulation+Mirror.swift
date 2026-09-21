@@ -19,7 +19,12 @@ struct MirrorWorld {
     /// position, or moved the hero) is followed, and a big one snapped to.
     /// Pulling back on every gap slowed a guest to a crawl.
     static let followDistance: CGFloat = 2.2
-    static let snapDistance: CGFloat = 5
+    /// A gap this big is a dash, a recall or a revival: taken at once.
+    static let snapDistance: CGFloat = 3.5
+    /// A hero standing still has no lag to excuse a gap, so a small one is
+    /// eased away (a share per snapshot) instead of being left.
+    static let settleDistance: CGFloat = 0.2
+    static let settleShare: CGFloat = 0.2
     /// The local player's seat.
     var mySlot: UInt8
     var zones: [Zone] = []
@@ -226,6 +231,9 @@ extension GameSimulation {
         } else if distance > MirrorWorld.followDistance {
             // The host moved the hero (a shove, a dash): follow, gently.
             player.position = self.world.wrap(player.position + error * 0.2)
+        } else if distance > MirrorWorld.settleDistance, player.velocity.length < 0.3 {
+            // Standing still, the host and this phone should agree.
+            player.position = self.world.wrap(player.position + error * MirrorWorld.settleShare)
         }
         combat.playerPosition = player.position
         combat.playerFacing = player.facing

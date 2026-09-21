@@ -15,6 +15,8 @@ struct PerformanceSnapshot {
     /// Average milliseconds per frame spent advancing the simulation.
     var simulationMilliseconds: Double = 0
     var spawnRate: Double = 0
+    /// Aggregate movement-stream figures in a party run (see `MovementStats`).
+    var network: String?
 }
 
 /// Averages frame times over a short window so the FPS readout is stable.
@@ -74,6 +76,7 @@ final class PerformanceOverlayNode: SKNode {
         wave \(snapshot.wave)   level \(snapshot.playerLevel)   decor \(snapshot.activeDecorations)   fx \(snapshot.activeEffects)
         sim \(String(format: "%.2f", snapshot.simulationMilliseconds)) ms   spawn \(String(format: "%.1f", snapshot.spawnRate))/s
         pos \(String(format: "%.1f, %.1f", snapshot.playerPosition.x, snapshot.playerPosition.y))
+        \(snapshot.network ?? "")
         """
         let frame = label.calculateAccumulatedFrame()
         background.path = CGPath(roundedRect: CGRect(x: 0, y: -frame.height - 12,

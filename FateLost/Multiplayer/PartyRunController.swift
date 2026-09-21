@@ -71,6 +71,8 @@ protocol PartyRunDriver: AnyObject {
     func presentation(of simulation: GameSimulation) -> PartyPresentation
     /// Host: the run is over. Everyone is told.
     func hostFinished(outcome: RunSummary.Outcome, simulation: inout GameSimulation)
+    /// A line of aggregate movement-stream figures for the developer overlay.
+    var movementSummary: String? { get }
 }
 
 /// The end of a run, for the results screen.
@@ -130,6 +132,15 @@ final class PartyRunController: PartyRunDriver {
     @ObservationIgnored private var closing = false
     @ObservationIgnored private var resyncSlots: Set<Int> = []
 
+    // Movement smoothing (visual only; see MovementSmoothing.swift).
+    /// A guest's view of the stream of snapshots, for drawing other heroes.
+    @ObservationIgnored private var playback = RemotePlayback()
+    /// What the host draws for its guests.
+    @ObservationIgnored private var guestVisuals = GuestVisuals()
+    @ObservationIgnored private var lastPresented: Double?
+    /// The clock movement is measured against; replaceable for tests.
+    @ObservationIgnored var timeSource: () -> Double = { ProcessInfo.processInfo.systemUptime }
+
     // Client state.
     @ObservationIgnored private var latestSnapshot: NetSnapshot?
     @ObservationIgnored private var pendingClientEvents: [CombatEvent] = []
@@ -185,11 +196,29 @@ final class PartyRunController: PartyRunDriver {
         if role == .client {
             // The host sends a fresh picture; until then, wait.
             latestSnapshot = nil
+            playback.reset()
         }
     }
 
+    /// What has been measured of the stream of movement so far: how many
+    /// snapshots, how they were spaced, and how often a remote hero had to be
+    /// guessed at. Aggregate counters only.
+    var movementStats: MovementStats { playback.stats }
+
+    var movementSummary: String? {
+        guard role == .client else { return nil }
+        let stats = playback.stats
+        return String(format: "net %d snaps  gap %.0f ms (max %.0f)  delay %.0f ms  jitter %.0f ms  guessed %.1f%%  stale %d  jumps %d",
+                      stats.snapshots, stats.meanGap * 1000, stats.longestGap * 1000, playback.clock.delay * 1000,
+                      playback.clock.jitter * 1000, stats.guessedShare * 100, stats.stale, stats.jumps)
+    }
+
+    /// The delay remote heroes are drawn behind the newest news, in seconds.
+    var interpolationDelay: Double { playback.clock.delay }
+
     private func reconnected() {
         statusNote = nil
+        if role == .client { playback.reset() }
         if role == .host {
             for slot in roster.keys where slot != mySlot { resyncSlots.insert(slot) }
         }
@@ -253,6 +282,12 @@ final class PartyRunController: PartyRunDriver {
             if commands.count < 64 { commands.append((slot, command)) }
         case (.client, .snapshot):
             if let snapshot = NetSnapshot.decode(payload) {
+                // A picture older than one already seen, or a repeat, is dropped
+                // whole; the rest also feed the movement tracks.
+                if let world = scene?.simulation.world,
+                   !playback.receive(snapshot, at: timeSource(), mySlot: UInt8(clamping: mySlot), world: world) {
+                    return
+                }
                 latestSnapshot = snapshot
             } else if payload.first != NetTables.contentVersion {
                 contentMismatch = true
@@ -461,11 +496,20 @@ final class PartyRunController: PartyRunDriver {
 
     func presentation(of simulation: GameSimulation) -> PartyPresentation {
         var result = PartyPresentation()
+        let now = timeSource()
+        let dt = CGFloat(min(max(now - (lastPresented ?? now), 0), 0.1))
+        lastPresented = now
         if role == .host {
             for index in 0..<simulation.heroCount {
                 let hero = simulation.heroSummary(index)
+                // The simulation's position is the truth. What is drawn for a
+                // guest is eased onto a steady path, because their reports nudge
+                // the simulated position a few times a second.
+                let drawn = index == 0 ? hero.position
+                    : guestVisuals.position(of: hero.slot, simulated: hero.position, velocity: hero.velocity,
+                                            isDefeated: hero.isDefeated, dt: dt, world: simulation.world)
                 result.heroes.append(PartyHeroState(
-                    slot: hero.slot, position: hero.position, velocity: hero.velocity, facing: hero.facing,
+                    slot: hero.slot, position: drawn, velocity: hero.velocity, facing: hero.facing,
                     health: hero.health, maxHealth: hero.maxHealth, barrier: hero.barrier,
                     isDefeated: hero.isDefeated, isInvulnerable: hero.isInvulnerable, isStealthed: hero.isStealthed,
                     isSheltered: hero.isSheltered, isConnected: hero.isConnected, weaponSprite: hero.weaponSprite,
@@ -480,8 +524,20 @@ final class PartyRunController: PartyRunDriver {
             }
         } else if let world = simulation.mirror {
             for hero in world.heroes {
+                // Everyone else is drawn a little behind the newest news,
+                // between the two pictures around that moment. The local hero
+                // is the one drawn from prediction, and is not touched.
+                var position = hero.position
+                var velocity = hero.velocity
+                var facing = hero.facing
+                if hero.slot != world.mySlot,
+                   let reading = playback.reading(slot: hero.slot, at: now, world: simulation.world) {
+                    position = reading.position
+                    velocity = reading.velocity
+                    facing = reading.facing
+                }
                 result.heroes.append(PartyHeroState(
-                    slot: Int(hero.slot), position: hero.position, velocity: hero.velocity, facing: hero.facing,
+                    slot: Int(hero.slot), position: position, velocity: velocity, facing: facing,
                     health: hero.health, maxHealth: hero.maxHealth, barrier: hero.barrier, isDefeated: hero.isDefeated,
                     isInvulnerable: hero.isInvulnerable, isStealthed: hero.isStealthed,
                     isSheltered: hero.isSheltered, isConnected: hero.isConnected, weaponSprite: hero.weaponSprite,

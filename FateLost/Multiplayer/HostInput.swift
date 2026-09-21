@@ -27,15 +27,25 @@ enum HostInput {
         simulation.setIntent(intent, forHero: index)
     }
 
-    /// Takes the guest's word for where they are, if it is believable.
+    /// How much of the gap to a believable report is closed by each report.
+    /// Closing all of it at once would step the hero by however far they had
+    /// got ahead, every time one arrived; closing a share of it, they are
+    /// walked into agreement over a few reports and never seen to jump.
+    static let adoptionShare: CGFloat = 0.35
+    /// Gaps smaller than this are simply agreed.
+    static let adoptionSnap: CGFloat = 0.06
+
+    /// Takes the guest's word for where they are, if it is believable, a step
+    /// at a time.
     static func adopt(hint: CGPoint, forHero index: Int, in simulation: inout GameSimulation) {
         let state = simulation.playerState(of: index)
         guard !state.isDefeated, !simulation.isSheltered(index) else { return }
-        if simulation.world.distance(state.position, hint) <= positionTrust {
-            simulation.perform(as: index) { sim in
-                sim.player.position = sim.world.wrap(hint)
-                sim.combat.playerPosition = sim.player.position
-            }
+        let gap = simulation.world.delta(from: state.position, to: hint)
+        guard gap.length <= positionTrust else { return }
+        let share = gap.length <= adoptionSnap ? 1 : adoptionShare
+        simulation.perform(as: index) { sim in
+            sim.player.position = sim.world.wrap(sim.player.position + gap * share)
+            sim.combat.playerPosition = sim.player.position
         }
     }
 

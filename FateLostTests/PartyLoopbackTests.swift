@@ -334,7 +334,13 @@ final class PartyLoopbackTests: XCTestCase {
         var small = NetInput()
         small.position = loop.host.world.wrap(honest + CGPoint(x: 1, y: 0))
         HostInput.apply(NetInput.decode(small.encoded()), presses: 0, interact: false, toHero: 1, in: &loop.host)
-        XCTAssertEqual(loop.host.world.distance(loop.host.playerState(of: 1).position, honest), 1, accuracy: 0.1)
+        // A believable report is walked toward, a share at a time: never a step.
+        let firstStep = loop.host.world.distance(loop.host.playerState(of: 1).position, honest)
+        XCTAssertEqual(firstStep, HostInput.adoptionShare, accuracy: 0.05)
+        for _ in 0..<14 {
+            HostInput.apply(NetInput.decode(small.encoded()), presses: 0, interact: false, toHero: 1, in: &loop.host)
+        }
+        XCTAssertEqual(loop.host.world.distance(loop.host.playerState(of: 1).position, honest), 1, accuracy: 0.05)
     }
 
     func testAGuestCannotMoveAFallenHeroOrRevivedHeroInstantly() {

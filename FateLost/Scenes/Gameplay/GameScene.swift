@@ -992,6 +992,7 @@ final class GameScene: SKScene {
         snapshot.playerLevel = simulation.progression.level
         snapshot.activeEffects = effects.activeCount + zoneRenderer.activeCount + chargeLanes.activeCount + allyRenderer.activeCount
         snapshot.spawnRate = simulation.currentSpawnRate
+        snapshot.network = partyDriver?.movementSummary
         if simulationFrames > 0 {
             snapshot.simulationMilliseconds = simulationTimeAccumulator / Double(simulationFrames) * 1000
         }
