@@ -17,18 +17,22 @@ final class MovementSmoothingTests: XCTestCase {
     private typealias Truth = (Double) -> (position: CGPoint, velocity: CGPoint)
 
     private func walking(speed: Double = 4.2) -> Truth {
-        { t in (CGPoint(x: 20 + speed * t, y: 30), CGPoint(x: speed, y: 0)) }
+        { (t: Double) -> (position: CGPoint, velocity: CGPoint) in
+            let x: Double = 20 + speed * t
+            return (CGPoint(x: x, y: 30), CGPoint(x: speed, y: 0))
+        }
     }
 
     /// Reverses direction every `period` seconds, at full speed.
     private func zigzag(period: Double, speed: Double = 4.2) -> Truth {
-        { t in
-            let phase = t / period
+        { (t: Double) -> (position: CGPoint, velocity: CGPoint) in
+            let phase: Double = t / period
             let whole = Int(floor(phase))
-            let within = (phase - Double(whole)) * period
+            let within: Double = (phase - Double(whole)) * period
             let forward = whole % 2 == 0
-            let x = forward ? speed * within : speed * (period - within)
-            return (CGPoint(x: 20 + x, y: 30), CGPoint(x: forward ? speed : -speed, y: 0))
+            let travelled: Double = forward ? speed * within : speed * (period - within)
+            let heading: Double = forward ? speed : -speed
+            return (CGPoint(x: 20 + travelled, y: 30), CGPoint(x: heading, y: 0))
         }
     }
 
@@ -225,10 +229,19 @@ final class MovementSmoothingTests: XCTestCase {
     func testADashIsFollowedAtItsOwnSpeed() {
         var playback = RemotePlayback()
         // A walk, then a dash of 6 tiles in 0.2 s, then a walk.
-        let truth: Truth = { t in
-            if t < 3 { return (CGPoint(x: 20 + 4.2 * t, y: 30), CGPoint(x: 4.2, y: 0)) }
-            if t < 3.2 { return (CGPoint(x: 20 + 4.2 * 3 + 30 * (t - 3), y: 30), CGPoint(x: 30, y: 0)) }
-            return (CGPoint(x: 20 + 4.2 * 3 + 6 + 4.2 * (t - 3.2), y: 30), CGPoint(x: 4.2, y: 0))
+        let walkEnd: Double = 20 + 4.2 * 3
+        let dashEnd: Double = walkEnd + 6
+        let truth: Truth = { (t: Double) -> (position: CGPoint, velocity: CGPoint) in
+            if t < 3 {
+                let x: Double = 20 + 4.2 * t
+                return (CGPoint(x: x, y: 30), CGPoint(x: 4.2, y: 0))
+            }
+            if t < 3.2 {
+                let x: Double = walkEnd + 30 * (t - 3)
+                return (CGPoint(x: x, y: 30), CGPoint(x: 30, y: 0))
+            }
+            let x: Double = dashEnd + 4.2 * (t - 3.2)
+            return (CGPoint(x: x, y: 30), CGPoint(x: 4.2, y: 0))
         }
         let packets = stream(of: truth, seconds: 6, latency: 0.05, jitter: 0.01)
         let smooth = draw(packets, truth: truth, until: 6, playback: &playback)
@@ -241,9 +254,13 @@ final class MovementSmoothingTests: XCTestCase {
 
     func testATeleportIsNeverSlidAcross() {
         var playback = RemotePlayback()
-        let truth: Truth = { t in
-            t < 3 ? (CGPoint(x: 20 + 4.2 * t, y: 30), CGPoint(x: 4.2, y: 0))
-                  : (CGPoint(x: 80 + 4.2 * (t - 3), y: 90), CGPoint(x: 4.2, y: 0))
+        let truth: Truth = { (t: Double) -> (position: CGPoint, velocity: CGPoint) in
+            if t < 3 {
+                let x: Double = 20 + 4.2 * t
+                return (CGPoint(x: x, y: 30), CGPoint(x: 4.2, y: 0))
+            }
+            let x: Double = 80 + 4.2 * (t - 3)
+            return (CGPoint(x: x, y: 90), CGPoint(x: 4.2, y: 0))
         }
         let packets = stream(of: truth, seconds: 6, latency: 0.05, jitter: 0.01)
         let smooth = draw(packets, truth: truth, until: 6, playback: &playback)
@@ -268,7 +285,11 @@ final class MovementSmoothingTests: XCTestCase {
     func testAcrossTheSeamOfTheWorldIsAsSmoothAsAnywhereElse() {
         var playback = RemotePlayback()
         // Walking over the edge where the map wraps round.
-        let truth: Truth = { t in (CGPoint(x: (120 + 4.2 * t).truncatingRemainder(dividingBy: 128), y: 30), CGPoint(x: 4.2, y: 0)) }
+        let truth: Truth = { (t: Double) -> (position: CGPoint, velocity: CGPoint) in
+            let raw: Double = 120 + 4.2 * t
+            let x: Double = raw.truncatingRemainder(dividingBy: 128)
+            return (CGPoint(x: x, y: 30), CGPoint(x: 4.2, y: 0))
+        }
         let packets = stream(of: truth, seconds: 6, latency: 0.05, jitter: 0.01)
         let smooth = draw(packets, truth: truth, until: 6, playback: &playback)
         XCTAssertLessThan(largestStep(smooth), 0.07 * 1.5, "the seam must not be a jump")
