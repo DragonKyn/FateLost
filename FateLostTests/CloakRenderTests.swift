@@ -119,6 +119,11 @@ final class CloakRenderTests: XCTestCase {
     }
 
     private func walking(_ catalog: SpriteCatalog, look: HeroAppearance, velocity: CGPoint, frames: Int) -> SKScene {
+        walkingHero(catalog, look: look, velocity: velocity, frames: frames).scene
+    }
+
+    private func walkingHero(_ catalog: SpriteCatalog, look: HeroAppearance, velocity: CGPoint,
+                             frames: Int) -> (scene: SKScene, view: PlayerView) {
         let scene = scene()
         let view = PlayerView(catalog: catalog, weaponSprite: .weaponSword, hand: look.build.hand,
                               cloth: look.cloak.clothiness, shoulders: look.build.shoulderHeight)
@@ -128,7 +133,25 @@ final class CloakRenderTests: XCTestCase {
         for _ in 0..<frames {
             view.apply(state, screenVelocity: velocity, dt: 1.0 / 60)
         }
-        return scene
+        return (scene, view)
+    }
+
+    /// The direct check: however hard it walks, the cloak is only ever turned a
+    /// few degrees, is never stretched or flipped, and has no warp on it at all.
+    func testTheCloakSpriteIsOnlyEverTurnedALittle() {
+        for look in [HeroAppearance.standard, paladin] {
+            let catalog = SpriteCatalog(preloading: [.playerAdventurer, .playerBehind, .playerCloak, .playerFront,
+                                                     .weaponSword, .shadow, .fxGlow], hero: look)
+            for velocity in [CGPoint.zero, CGPoint(x: 240, y: 0), CGPoint(x: -240, y: 90), CGPoint(x: 0, y: 500)] {
+                let hero = walkingHero(catalog, look: look, velocity: velocity, frames: 90).view
+                guard let cloak = hero.cloakSprite else { return XCTFail("the figure has no cloak piece") }
+                XCTAssertLessThanOrEqual(abs(cloak.zRotation), CapeSway.maxAngle + 0.001, "\(look.cloak) \(velocity)")
+                XCTAssertNil(cloak.warpGeometry, "no warp grid: it drew the cloak sideways")
+                XCTAssertEqual(cloak.xScale, cloak.yScale, accuracy: 0.0001, "the cloak was stretched")
+                XCTAssertGreaterThan(cloak.xScale, 0, "the cloak was flipped")
+                XCTAssertLessThan(cloak.position.length, 0.1 * cloak.size.height, "the cloak slid away from the shoulders")
+            }
+        }
     }
 
     func testAWalkingHerosCloakStaysWhereItIsAndTheRightWayUp() throws {
@@ -151,7 +174,9 @@ final class CloakRenderTests: XCTestCase {
             }
             // Most of it is exactly where it was: only the swing (and the arm) differs.
             let changed = Double(still.differences(from: running)) / Double(still.drawnPixels)
-            XCTAssertLessThan(changed, 0.15, "the walking cloak is not the same shape as the standing one (\(changed))")
+            // A loose net for gross errors only: the arm and sword move too, and a
+            // cloak drawn sideways changes far more than this.
+            XCTAssertLessThan(changed, 0.35, "the walking figure is not the standing one (\(look.cloak): \(changed))")
         }
     }
 }

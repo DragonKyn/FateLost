@@ -143,6 +143,9 @@ final class PlayerView: SKNode {
         }
     }
 
+    /// The cloak's own sprite, for the tests that look at how it is turned.
+    var cloakSprite: SKSpriteNode? { figureCloak }
+
     /// Swings the cloak about the shoulders by the sway, if it has changed
     /// enough to see. A rotation and nothing else: nothing here can skew it.
     private func swingCloak() {
