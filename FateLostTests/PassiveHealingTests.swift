@@ -14,7 +14,7 @@ final class PassiveHealingTests: XCTestCase {
     func testEachExtraPointIsWorthLessAndNothingPassesTheCeiling() {
         var previous = 0.0
         var previousGain = Double.greatestFiniteMagnitude
-        for raw in stride(from: 0.0, through: 200.0, by: 2.0) {
+        for raw in stride(from: 2.0, through: 200.0, by: 2.0) {
             let effective = tuning.effectiveRegeneration(raw, maxHealth: 200)
             XCTAssertGreaterThanOrEqual(effective, previous, "more regeneration must never heal less")
             let gain = effective - previous
