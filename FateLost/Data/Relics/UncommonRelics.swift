@@ -147,22 +147,22 @@ enum UncommonRelics: RelicContent {
     static let alchemistsSatchel = relic(
         "alchemistsSatchel", "Alchemist's Satchel", .uncommon, symbol: "flask.fill",
         text: "+{0%} chance to inflict any status effect.",
-        values: [rv(0.15, 0.1)],
-        effects: [inc(.statusChance, 0.15, 0.1)]
+        values: [rv(0.12, 0.08)],
+        effects: [inc(.statusChance, 0.12, 0.08)]
     )
 
     static let effigyOfAsh = relic(
         "effigyOfAsh", "Effigy of Ash", .uncommon, symbol: "flame.circle",
         text: "+{0%} damage from effects that hurt over time.",
-        values: [rv(0.15, 0.1)],
-        effects: [inc(.dotDamage, 0.15, 0.1)]
+        values: [rv(0.12, 0.08)],
+        effects: [inc(.dotDamage, 0.12, 0.08)]
     )
 
     static let wanderersCompass = relic(
         "wanderersCompass", "Wanderer's Compass", .uncommon, symbol: "location.north.circle.fill",
         text: "+{0%} longer buffs and afflictions.",
-        values: [rv(0.15, 0.1)],
-        effects: [inc(.effectDuration, 0.15, 0.1)]
+        values: [rv(0.12, 0.08)],
+        effects: [inc(.effectDuration, 0.12, 0.08)]
     )
 
     static let ricochetingRound = relic(

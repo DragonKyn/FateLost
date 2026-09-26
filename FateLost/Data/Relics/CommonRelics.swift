@@ -146,8 +146,8 @@ enum CommonRelics: RelicContent {
     static let warmDraught = relic(
         "warmDraught", "Warm Draught", .common, symbol: "cup.and.saucer.fill",
         text: "+{0%} healing received.",
-        values: [rv(0.12, 0.08)],
-        effects: [inc(.healingReceived, 0.12, 0.08)]
+        values: [rv(0.1, 0.06)],
+        effects: [inc(.healingReceived, 0.1, 0.06)]
     )
 
     static let grinningSkull = relic(
@@ -174,8 +174,8 @@ enum CommonRelics: RelicContent {
     static let warhammerCharm = relic(
         "warhammerCharm", "Warhammer Charm", .common, symbol: "hammer.circle.fill",
         text: "+{0%} knockback dealt.",
-        values: [rv(0.2, 0.12)],
-        effects: [inc(.knockback, 0.2, 0.12)]
+        values: [rv(0.15, 0.05)],
+        effects: [inc(.knockback, 0.15, 0.05)]
     )
 
     static let all: [RelicDefinition] = [

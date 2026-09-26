@@ -9,8 +9,10 @@ struct NetHero: Equatable {
     static let stealthed: UInt8 = 1 << 2
     static let sheltered: UInt8 = 1 << 3
     static let connected: UInt8 = 1 << 4
-    static let burning: UInt8 = 1 << 5
+    // Bit 5 is spoken for on the wire (`encoded()`/`decode(_:)` use it to mark
+    // whether a form string follows), so these two live past it.
     static let stunned: UInt8 = 1 << 6
+    static let burning: UInt8 = 1 << 7
 
     var slot: UInt8
     var flags: UInt8

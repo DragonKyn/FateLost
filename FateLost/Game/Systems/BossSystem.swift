@@ -540,11 +540,14 @@ enum BossSystem {
             if !hazard.hasLanded, hazard.age >= hazard.warning {
                 hazard.hasLanded = true
                 hazard.tickTimer = hazard.tickEvery
-                if !hazard.isGuide, hazard.damage > 0 {
-                    hurt(hazard, amount: hazard.damage, targets: targets, reach: reach, combat: &combat)
-                }
+                // Burn is queued first: the strike that follows grants a
+                // moment of invulnerability, and a burn queued after it would
+                // be refused by a guard meant for an already-invulnerable hero.
                 if !hazard.isGuide, hazard.burnTicks > 0 {
                     burn(hazard, targets: targets, reach: reach, combat: &combat)
+                }
+                if !hazard.isGuide, hazard.damage > 0 {
+                    hurt(hazard, amount: hazard.damage, targets: targets, reach: reach, combat: &combat)
                 }
                 if let boss = hazard.carriesBoss, let index = combat.index(ofEnemy: boss) {
                     combat.enemies.positions[index] = hazard.position
