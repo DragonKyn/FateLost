@@ -1,0 +1,221 @@
+=== build exit code: 0
+=== test exit code: 0
+=== xcode
+Xcode 26.3
+Build version 17C529
+=== app bundle
+total 40512
+drwxr-xr-x  51 runner  staff      1632 Sep 26 05:33 .
+drwxr-xr-x@  5 runner  staff       160 Sep 26 05:33 ..
+-rw-r--r--   1 runner  staff    973272 Sep 26 05:30 amb_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff     13283 Sep 26 05:30 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     17872 Sep 26 05:30 AppIcon76x76@2x~ipad.png
+-rw-r--r--   1 runner  staff    493160 Sep 26 05:31 Assets.car
+-rwxr-xr-x   1 runner  staff  13116376 Sep 26 05:33 FateLost
+-rw-r--r--   1 runner  staff      1597 Sep 26 05:31 Info.plist
+-rw-r--r--   1 runner  staff   1789879 Sep 26 05:30 mus_battle_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff    283691 Sep 26 05:30 mus_defeat.m4a
+-rw-r--r--   1 runner  staff   1801686 Sep 26 05:30 mus_menu_fate_lost.m4a
+-rw-r--r--   1 runner  staff         8 Sep 26 05:31 PkgInfo
+-rw-r--r--   1 runner  staff     79424 Sep 26 05:30 sfx_ab_buff.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_fire.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_frost.wav
+-rw-r--r--   1 runner  staff     88244 Sep 26 05:30 sfx_ab_holy.wav
+-rw-r--r--   1 runner  staff     44144 Sep 26 05:30 sfx_ab_impact.wav
+-rw-r--r--   1 runner  staff     48554 Sep 26 05:30 sfx_ab_lightning.wav
+-rw-r--r--   1 runner  staff     61784 Sep 26 05:30 sfx_ab_nature.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_shadow.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_sonic.wav
+-rw-r--r--   1 runner  staff     83834 Sep 26 05:30 sfx_arcane_burst.wav
+-rw-r--r--   1 runner  staff     54728 Sep 26 05:30 sfx_arcane_cast.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_bow_shot.wav
+-rw-r--r--   1 runner  staff     26504 Sep 26 05:30 sfx_dash.wav
+-rw-r--r--   1 runner  staff     19448 Sep 26 05:30 sfx_dodge.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_1.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_2.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_3.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_4.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_5.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_goblin_death_1.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_goblin_death_2.wav
+-rw-r--r--   1 runner  staff     61784 Sep 26 05:30 sfx_heal.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_1.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_2.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_3.wav
+-rw-r--r--   1 runner  staff     44144 Sep 26 05:30 sfx_hit_critical.wav
+-rw-r--r--   1 runner  staff     97064 Sep 26 05:30 sfx_keg_blast.wav
+=== bundle id / version / minimum iOS
+com.wickedstudios.fatelost
+0.1.0
+17.0
+=== orientations
+build/Build/Products/Release-iphoneos/FateLost.app/Info.plist: Could not extract value, error: No value at that key path or invalid key path: UISupportedInterfaceOrientations
+=== build errors
+=== build warnings in project sources (first 80)
+494:/Users/runner/work/FateLost/FateLost/FateLost/Core/Feedback/AudioManager.swift:298:20: warning: capture of 'raw' with non-Sendable type 'AVAudioPCMBuffer' in a '@Sendable' closure
+500:/Users/runner/work/FateLost/FateLost/FateLost/Core/Feedback/AudioManager.swift:1:1: warning: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'AVFAudio'
+504:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:9:20: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+513:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:11:23: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+522:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:12:23: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+531:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:18:25: warning: call to main actor-isolated initializer 'init(text:)' in a synchronous nonisolated context
+=== audio
+mus_menu_fate_lost            91.76s  peak   -3.6 dBFS  rms  -17.2 dB  (24.2s)
+mus_battle_ashen_wilds        89.14s  peak   -3.7 dBFS  rms  -15.3 dB  (14.8s)
+mus_defeat                    14.49s  peak   -5.5 dBFS  rms  -17.2 dB  (1.8s)
+amb_ashen_wilds               48.00s  peak   -4.7 dBFS  rms  -26.1 dB  (2.1s)
+sfx_swing_1                    0.26s  peak   -3.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_swing_2                    0.29s  peak   -3.0 dBFS  rms  -16.5 dB  (0.0s)
+sfx_swing_3                    0.32s  peak   -3.0 dBFS  rms  -13.2 dB  (0.0s)
+sfx_hit_1                      0.20s  peak   -1.5 dBFS  rms  -10.0 dB  (0.0s)
+sfx_hit_2                      0.20s  peak   -1.5 dBFS  rms  -11.3 dB  (0.0s)
+sfx_hit_3                      0.20s  peak   -1.5 dBFS  rms   -9.8 dB  (0.0s)
+sfx_hit_critical               0.50s  peak   -1.0 dBFS  rms  -15.1 dB  (0.0s)
+sfx_goblin_death_1             0.34s  peak   -3.0 dBFS  rms  -10.0 dB  (0.0s)
+sfx_goblin_death_2             0.34s  peak   -3.0 dBFS  rms   -9.9 dB  (0.0s)
+sfx_player_hurt                0.32s  peak   -1.0 dBFS  rms   -8.4 dB  (0.0s)
+sfx_player_death               1.60s  peak   -1.0 dBFS  rms   -8.3 dB  (0.0s)
+sfx_bow_shot                   0.34s  peak   -3.0 dBFS  rms  -16.2 dB  (0.0s)
+sfx_arcane_cast                0.62s  peak   -3.0 dBFS  rms  -12.2 dB  (0.0s)
+sfx_arcane_burst               0.95s  peak   -1.0 dBFS  rms  -16.3 dB  (0.1s)
+ui_confirm                     0.70s  peak   -6.0 dBFS  rms  -14.1 dB  (0.0s)
+ui_back                        0.35s  peak   -7.0 dBFS  rms  -15.8 dB  (0.0s)
+sfx_ember_1                    0.45s  peak   -8.0 dBFS  rms  -15.8 dB  (0.0s)
+sfx_ember_2                    0.45s  peak   -8.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_ember_3                    0.45s  peak   -8.0 dBFS  rms  -15.7 dB  (0.0s)
+sfx_ember_4                    0.45s  peak   -8.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_ember_5                    0.45s  peak   -8.0 dBFS  rms  -16.0 dB  (0.0s)
+sfx_level_up                   2.20s  peak   -1.0 dBFS  rms  -10.0 dB  (0.2s)
+ui_skill_learn                 0.55s  peak   -6.0 dBFS  rms  -17.9 dB  (0.0s)
+ui_tree_open                   0.80s  peak   -7.0 dBFS  rms  -18.4 dB  (0.1s)
+sfx_ab_impact                  0.50s  peak   -1.0 dBFS  rms  -10.6 dB  (0.0s)
+sfx_ab_fire                    0.80s  peak   -2.0 dBFS  rms  -16.4 dB  (0.0s)
+sfx_ab_frost                   0.80s  peak   -3.0 dBFS  rms  -16.9 dB  (0.0s)
+sfx_ab_lightning               0.55s  peak   -2.0 dBFS  rms  -18.0 dB  (0.0s)
+sfx_ab_holy                    1.00s  peak   -2.0 dBFS  rms  -13.4 dB  (0.1s)
+sfx_ab_shadow                  0.80s  peak   -2.0 dBFS  rms  -14.7 dB  (0.0s)
+sfx_ab_nature                  0.70s  peak   -3.0 dBFS  rms  -17.4 dB  (0.0s)
+sfx_ab_sonic                   0.80s  peak   -3.0 dBFS  rms  -13.6 dB  (0.1s)
+sfx_ab_buff                    0.90s  peak   -3.0 dBFS  rms  -10.0 dB  (0.0s)
+sfx_summon                     0.90s  peak   -3.0 dBFS  rms   -8.6 dB  (0.0s)
+sfx_dash                       0.30s  peak   -4.0 dBFS  rms  -14.0 dB  (0.0s)
+sfx_heal                       0.70s  peak   -7.0 dBFS  rms  -16.8 dB  (0.0s)
+sfx_dodge                      0.22s  peak   -6.0 dBFS  rms  -16.9 dB  (0.0s)
+sfx_keg_blast                  1.10s  peak   -1.0 dBFS  rms  -12.1 dB  (0.0s)
+sfx_shapeshift                 0.90s  peak   -2.0 dBFS  rms  -14.7 dB  (0.0s)
+-rw-r--r--   1 runner  staff    973272 Sep 26 05:30 amb_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff   1789879 Sep 26 05:30 mus_battle_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff    283691 Sep 26 05:30 mus_defeat.m4a
+-rw-r--r--   1 runner  staff   1801686 Sep 26 05:30 mus_menu_fate_lost.m4a
+-rw-r--r--   1 runner  staff     79424 Sep 26 05:30 sfx_ab_buff.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_fire.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_frost.wav
+-rw-r--r--   1 runner  staff     88244 Sep 26 05:30 sfx_ab_holy.wav
+-rw-r--r--   1 runner  staff     44144 Sep 26 05:30 sfx_ab_impact.wav
+-rw-r--r--   1 runner  staff     48554 Sep 26 05:30 sfx_ab_lightning.wav
+-rw-r--r--   1 runner  staff     61784 Sep 26 05:30 sfx_ab_nature.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_shadow.wav
+-rw-r--r--   1 runner  staff     70604 Sep 26 05:30 sfx_ab_sonic.wav
+-rw-r--r--   1 runner  staff     83834 Sep 26 05:30 sfx_arcane_burst.wav
+-rw-r--r--   1 runner  staff     54728 Sep 26 05:30 sfx_arcane_cast.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_bow_shot.wav
+-rw-r--r--   1 runner  staff     26504 Sep 26 05:30 sfx_dash.wav
+-rw-r--r--   1 runner  staff     19448 Sep 26 05:30 sfx_dodge.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_1.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_2.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_3.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_4.wav
+-rw-r--r--   1 runner  staff     39734 Sep 26 05:30 sfx_ember_5.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_goblin_death_1.wav
+-rw-r--r--   1 runner  staff     30032 Sep 26 05:30 sfx_goblin_death_2.wav
+-rw-r--r--   1 runner  staff     61784 Sep 26 05:30 sfx_heal.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_1.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_2.wav
+-rw-r--r--   1 runner  staff     17684 Sep 26 05:30 sfx_hit_3.wav
+-rw-r--r--   1 runner  staff     44144 Sep 26 05:30 sfx_hit_critical.wav
+-rw-r--r--   1 runner  staff     97064 Sep 26 05:30 sfx_keg_blast.wav
+-rw-r--r--   1 runner  staff    194084 Sep 26 05:30 sfx_level_up.wav
+-rw-r--r--   1 runner  staff    141164 Sep 26 05:30 sfx_player_death.wav
+-rw-r--r--   1 runner  staff     28268 Sep 26 05:30 sfx_player_hurt.wav
+-rw-r--r--   1 runner  staff     79424 Sep 26 05:30 sfx_shapeshift.wav
+-rw-r--r--   1 runner  staff     79424 Sep 26 05:30 sfx_summon.wav
+-rw-r--r--   1 runner  staff     22976 Sep 26 05:30 sfx_swing_1.wav
+-rw-r--r--   1 runner  staff     25622 Sep 26 05:30 sfx_swing_2.wav
+-rw-r--r--   1 runner  staff     28268 Sep 26 05:30 sfx_swing_3.wav
+-rw-r--r--   1 runner  staff     30914 Sep 26 05:30 ui_back.wav
+=== test results
+1833:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.128 (0.133) seconds
+1856:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.031 (4.610) seconds
+1865:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.262 (0.264) seconds
+1886:	 Executed 9 tests, with 0 failures (0 unexpected) in 5.330 (5.388) seconds
+1938:	 Executed 23 tests, with 0 failures (0 unexpected) in 279.142 (279.152) seconds
+1957:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.015 (0.021) seconds
+1991:	 Executed 15 tests, with 0 failures (0 unexpected) in 1.872 (1.876) seconds
+2010:	 Executed 8 tests, with 0 failures (0 unexpected) in 1.040 (1.042) seconds
+2027:	 Executed 7 tests, with 0 failures (0 unexpected) in 1.772 (1.774) seconds
+2046:	 Executed 3 tests, with 0 failures (0 unexpected) in 9.111 (9.112) seconds
+2059:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.023 (0.025) seconds
+2068:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.006) seconds
+2101:	 Executed 15 tests, with 0 failures (0 unexpected) in 0.083 (0.087) seconds
+2116:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.757 (0.767) seconds
+2125:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.003) seconds
+2144:	 Executed 8 tests, with 0 failures (0 unexpected) in 1.725 (1.729) seconds
+2155:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.007 (0.008) seconds
+2166:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+2173:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.009) seconds
+2184:	 Executed 4 tests, with 0 failures (0 unexpected) in 23.890 (23.893) seconds
+2197:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+2212:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.176 (0.220) seconds
+2221:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.003 (0.005) seconds
+2288:	 Executed 32 tests, with 0 failures (0 unexpected) in 2.178 (2.210) seconds
+2299:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.084 (0.086) seconds
+2312:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+2325:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.009) seconds
+2334:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.008 (0.009) seconds
+2369:	 Executed 16 tests, with 0 failures (0 unexpected) in 0.028 (0.033) seconds
+2386:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.012 (0.019) seconds
+2426:	 Executed 18 tests, with 0 failures (0 unexpected) in 0.496 (0.503) seconds
+2439:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.006) seconds
+2458:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.027 (0.030) seconds
+2473:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.015 (0.029) seconds
+2488:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.020 (0.023) seconds
+2513:	 Executed 11 tests, with 0 failures (0 unexpected) in 0.403 (0.407) seconds
+2530:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.030 (0.032) seconds
+2545:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.039 (0.041) seconds
+2564:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.107 (0.111) seconds
+2592:	 Executed 12 tests, with 0 failures (0 unexpected) in 173.746 (173.753) seconds
+2671:	 Executed 38 tests, with 0 failures (0 unexpected) in 1.018 (1.092) seconds
+2682:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.006 (0.039) seconds
+2713:	 Executed 14 tests, with 0 failures (0 unexpected) in 26.586 (26.592) seconds
+2760:	 Executed 22 tests, with 0 failures (0 unexpected) in 31.045 (31.054) seconds
+2781:	 Executed 9 tests, with 0 failures (0 unexpected) in 0.330 (0.333) seconds
+2808:	 Executed 12 tests, with 0 failures (0 unexpected) in 0.447 (0.464) seconds
+2833:	 Executed 11 tests, with 0 failures (0 unexpected) in 8.924 (8.929) seconds
+2848:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.007 (0.009) seconds
+2855:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.002) seconds
+2870:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.044 (0.048) seconds
+2881:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.470 (0.471) seconds
+2894:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.004 (0.005) seconds
+2917:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.030 (0.034) seconds
+2926:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+2933:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.001 (0.003) seconds
+2984:	 Executed 24 tests, with 0 failures (0 unexpected) in 0.314 (0.322) seconds
+3001:	 Executed 7 tests, with 0 failures (0 unexpected) in 22.692 (22.695) seconds
+3012:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.004 (0.045) seconds
+3043:	 Executed 14 tests, with 0 failures (0 unexpected) in 0.636 (0.685) seconds
+3056:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.052 (0.167) seconds
+3069:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.010) seconds
+3089:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.005 (0.016) seconds
+3114:	 Executed 11 tests, with 0 failures (0 unexpected) in 0.054 (0.074) seconds
+3123:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.051 (0.052) seconds
+3132:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.037 (0.039) seconds
+3154:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.012 (0.074) seconds
+3163:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.003 (0.004) seconds
+3176:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.004 (0.069) seconds
+3189:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.156 (0.231) seconds
+3224:	 Executed 16 tests, with 0 failures (0 unexpected) in 0.013 (0.102) seconds
+3259:	 Executed 16 tests, with 0 failures (0 unexpected) in 0.192 (0.265) seconds
+3274:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.121 (0.123) seconds
+3285:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.004) seconds
+3287:	 Executed 614 tests, with 0 failures (0 unexpected) in 602.109 (607.935) seconds
+3289:	 Executed 614 tests, with 0 failures (0 unexpected) in 602.109 (607.942) seconds
+3297:** TEST SUCCEEDED **
