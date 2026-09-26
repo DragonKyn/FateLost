@@ -75,7 +75,7 @@ numbers (`BossSystem`, the kits in `EnemyCatalog`) are meant to be tuned by play
 
 ## Rifts
 
-About one champion in twenty (`RiftTuning.chance`; not a realm's last, which ends the run) opens a **portal** where it
+About one champion in ten (`RiftTuning.chance`; not a realm's last, which ends the run) opens a **portal** where it
 falls: one of four, in the colour of what waits behind it. It stays 90 seconds, is pointed at by an arrow, and shows as
 a column of light.
 

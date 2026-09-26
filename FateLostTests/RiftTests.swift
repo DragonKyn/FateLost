@@ -88,7 +88,7 @@ final class RiftTests: XCTestCase {
             run(&sim, seconds: 0.5)
             XCTAssertEqual(!sim.combat.portals.isEmpty, expected, "chance \(chance)")
         }
-        XCTAssertEqual(RiftTuning.chance, 0.05, "about one champion in twenty")
+        XCTAssertEqual(RiftTuning.chance, 0.10, "about one champion in ten")
     }
 
     func testAPortalWaitsAndThenCloses() {

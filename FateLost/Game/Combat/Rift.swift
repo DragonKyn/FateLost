@@ -80,7 +80,7 @@ struct RiftFight: Equatable {
 
 enum RiftTuning {
     /// Chance that a fallen champion (short of a realm's last) opens a portal.
-    static let chance = 0.05
+    static let chance = 0.10
     /// Seconds an unentered portal stays open.
     static let lifetime: Double = 90
     /// How close a hero must come to step through.
