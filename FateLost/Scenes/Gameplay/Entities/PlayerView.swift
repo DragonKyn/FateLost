@@ -113,7 +113,7 @@ final class PlayerView: SKNode {
         burnGlow.blendMode = .add
         burnGlow.color = UIColor(rgb: 0xFF7A2A)
         burnGlow.colorBlendFactor = 1
-        burnGlow.size = CGSize(width: 66, height: 78)
+        burnGlow.size = CGSize(width: 84, height: 98)
         burnGlow.position = CGPoint(x: 0, y: 22)
         burnGlow.zPosition = 0.32
         burnGlow.alpha = 0
@@ -273,6 +273,11 @@ final class PlayerView: SKNode {
         } else if state.isStunned {
             // Held fast by a hook: a cold, drained cast reads as "not yours to move".
             tintFigure(UIColor(rgb: 0x9AA8C0), factor: 0.4)
+        } else if state.isBurning {
+            // The glow alone can read as ambient light; tinting the whole
+            // figure makes "you are on fire" unmistakable at a glance.
+            let scorch = 0.55 + 0.2 * (0.7 + 0.3 * sin(CGFloat(state.strideTime + Double(attackAge)) * 11))
+            tintFigure(Style.hurtColor, factor: scorch)
         } else if let formTint {
             tintFigure(formTint, factor: 0.35)
         } else {
@@ -294,7 +299,8 @@ final class PlayerView: SKNode {
         barrierGlow.alpha = state.barrier > 0.5 ? 0.35 + 0.35 * shielded * shimmer : 0
 
         let flicker = 0.7 + 0.3 * sin(CGFloat(state.strideTime + Double(attackAge)) * 11)
-        burnGlow.alpha = state.isBurning ? 0.4 + 0.3 * flicker : 0
+        burnGlow.alpha = state.isBurning ? 0.55 + 0.45 * flicker : 0
+        burnGlow.setScale(state.isBurning ? 1 + 0.12 * flicker : 1)
 
         // The shadow tightens slightly as the body rises.
         shadowSprite.setScale(1 - bob * 0.015)

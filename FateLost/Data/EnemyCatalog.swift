@@ -365,7 +365,7 @@ enum EnemyCatalog {
         maxHealth: 260, moveSpeed: 2.0, radius: 0.5,
         attackDamage: 20, attackReach: 0.5, attackWindup: 0.6, attackCooldown: 1.8,
         knockbackResistance: 0.75, damageType: .physical, behavior: .melee,
-        experience: 9, spawnWeight: 0.025, earliestWave: 6,
+        experience: 9, spawnWeight: 0.02625, earliestWave: 6,
         spriteVariants: [.enemyShieldbreaker], drawScale: 1.08,
         eliteKit: .shieldbreaker(ShieldbreakerKit(
             barrierFraction: 0.4, hookRange: 6.5, hookSpeed: 5.5, hookCooldown: 9,
@@ -381,7 +381,7 @@ enum EnemyCatalog {
         maxHealth: 190, moveSpeed: 2.7, radius: 0.42,
         attackDamage: 14, attackReach: 0.4, attackWindup: 0.4, attackCooldown: 1.4,
         knockbackResistance: 0.3, damageType: .fire, behavior: .melee,
-        experience: 8, spawnWeight: 0.03, earliestWave: 6,
+        experience: 8, spawnWeight: 0.0315, earliestWave: 6,
         spriteVariants: [.enemyExplosiveElite],
         eliteKit: .explosive(ExplosiveKit(
             bombRange: 7, bombWindup: 1.1, bombCooldown: 6, bombRadius: 1.8, bombDamage: 26,
