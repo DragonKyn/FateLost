@@ -93,9 +93,13 @@ enum EliteSystem {
 
     /// A death-fused bomb of its own: called once, when it falls.
     static func detonateOnDeath(_ kit: ExplosiveKit, at position: CGPoint, combat: inout CombatState) {
-        combat.hazards.append(Hazard(id: combat.makeEntityID(), shape: .circle, position: position, direction: .zero,
-                                     size: kit.deathRadius, width: 0, warning: kit.deathFuseSeconds,
-                                     damage: kit.deathDamage, type: .fire, visual: .fire))
+        var bomb = Hazard(id: combat.makeEntityID(), shape: .circle, position: position, direction: .zero,
+                          size: kit.deathRadius, width: 0, warning: kit.deathFuseSeconds,
+                          damage: kit.deathDamage, type: .fire, visual: .fire)
+        bomb.burnTickDamage = kit.burnTickDamage
+        bomb.burnTicks = kit.burnTicks
+        bomb.burnTickEvery = kit.burnTickEvery
+        combat.hazards.append(bomb)
     }
 
     private static func nearest(to position: CGPoint, in targets: [AITarget], world: ToroidalWorld) -> AITarget? {

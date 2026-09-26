@@ -167,6 +167,8 @@ final class EliteTests: XCTestCase {
         guard let last = sim.combat.hazards.last else { return XCTFail("no blast was left behind") }
         XCTAssertEqual(last.warning, 1.2, accuracy: 0.001, "a brief fuse, same as a thrown bomb's telegraph")
         XCTAssertEqual(last.damage, 30, accuracy: 0.001)
+        XCTAssertGreaterThan(last.burnTicks, 0, "burns like its bombs, not just a blast")
+        XCTAssertGreaterThan(last.burnTickDamage, 0)
     }
 
     // MARK: Where they walk, and never crowding
