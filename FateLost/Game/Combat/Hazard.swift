@@ -55,6 +55,12 @@ struct Hazard: Equatable {
     var carriesBoss: Int?
     /// Drawn to show where something will happen, and never hurts by itself.
     var isGuide = false
+    /// A burn left on whoever it catches when it lands (a bomb's fire),
+    /// besides its own blow: `burnTicks` hits of `burnTickDamage`,
+    /// `burnTickEvery` seconds apart. Leaving before it lands takes none of it.
+    var burnTickDamage: Double = 0
+    var burnTicks: Int = 0
+    var burnTickEvery: Double = 1
 
     /// 0 as it appears, 1 as it lands.
     var progress: Double { warning > 0 ? max(0, min(1, age / warning)) : 1 }

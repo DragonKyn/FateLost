@@ -55,6 +55,8 @@ final class PlayerView: SKNode {
     private let catalog: SpriteCatalog
     /// Shimmer around the player while a barrier is up.
     private let barrierGlow: SKSpriteNode
+    /// Licking flame while a burn is ticking.
+    private let burnGlow: SKSpriteNode
     private var currentForm: FormID?
     private var formScale: CGFloat = 1
     private var formTint: UIColor?
@@ -78,6 +80,7 @@ final class PlayerView: SKNode {
         weapon = catalog.makeSprite(weaponSprite)
         self.weaponSprite = weaponSprite
         barrierGlow = catalog.makeSprite(.fxGlow)
+        burnGlow = catalog.makeSprite(.fxGlow)
         restAngle = weaponSprite == .weaponBow ? -0.1 : Style.weaponRestAngle
         super.init()
 
@@ -106,6 +109,15 @@ final class PlayerView: SKNode {
         barrierGlow.zPosition = 0.3
         barrierGlow.alpha = 0
         addChild(barrierGlow)
+
+        burnGlow.blendMode = .add
+        burnGlow.color = UIColor(rgb: 0xFF7A2A)
+        burnGlow.colorBlendFactor = 1
+        burnGlow.size = CGSize(width: 66, height: 78)
+        burnGlow.position = CGPoint(x: 0, y: 22)
+        burnGlow.zPosition = 0.32
+        burnGlow.alpha = 0
+        addChild(burnGlow)
     }
 
     /// Puts a different weapon in the hand, as when one is found mid-run.
@@ -258,6 +270,9 @@ final class PlayerView: SKNode {
             tintFigure(Style.hurtColor, factor: 0.75 * (1 - sinceHit / Style.hurtFlashDuration))
         } else if levelUpAge < 0.7 {
             tintFigure(UIColor(rgb: 0xFFD27A), factor: 0.8 * (1 - levelUpAge / 0.7))
+        } else if state.isStunned {
+            // Held fast by a hook: a cold, drained cast reads as "not yours to move".
+            tintFigure(UIColor(rgb: 0x9AA8C0), factor: 0.4)
         } else if let formTint {
             tintFigure(formTint, factor: 0.35)
         } else {
@@ -277,6 +292,9 @@ final class PlayerView: SKNode {
         let shielded = min(1, CGFloat(state.barrier / max(state.maxHealth * 0.15, 1)))
         let shimmer = 0.75 + 0.25 * sin(CGFloat(state.strideTime + Double(attackAge)) * 4)
         barrierGlow.alpha = state.barrier > 0.5 ? 0.35 + 0.35 * shielded * shimmer : 0
+
+        let flicker = 0.7 + 0.3 * sin(CGFloat(state.strideTime + Double(attackAge)) * 11)
+        burnGlow.alpha = state.isBurning ? 0.4 + 0.3 * flicker : 0
 
         // The shadow tightens slightly as the body rises.
         shadowSprite.setScale(1 - bob * 0.015)

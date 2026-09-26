@@ -57,6 +57,12 @@ enum WorldIncident {
     case strikeHero(hero: Int, amount: Double, direction: CGPoint)
     /// A blow that, if it lands, leaves something on the hero besides the damage.
     case stingHero(hero: Int, amount: Double, direction: CGPoint, effect: EnemyOnHit)
+    /// A shieldbreaker's hook, connecting: the hero is dragged to `origin`
+    /// and held past acting for `stunSeconds`.
+    case grappleHero(hero: Int, origin: CGPoint, pullSeconds: Double, stunSeconds: Double)
+    /// Fire left by a bomb (or anything else that burns): `ticks` hits of
+    /// `tickDamage`, `tickEvery` seconds apart.
+    case burnHero(hero: Int, tickDamage: Double, ticks: Int, tickEvery: Double)
     case woundAlly(hero: Int, index: Int, id: Int, amount: Double)
 }
 
@@ -155,6 +161,8 @@ struct HeroSummary: Equatable {
     var isInvulnerable: Bool
     var isStealthed: Bool
     var isSheltered: Bool
+    var isBurning: Bool
+    var isStunned: Bool
     var isConnected: Bool
     var level: Int
     var weaponSprite: SpriteID
@@ -221,6 +229,17 @@ enum WorldIncidents {
                 if player.hitsTaken > before {
                     player.applyBuff(id: effect.buffID, modifiers: effect.modifiers, duration: effect.duration, maxStacks: 1)
                 }
+            case let .grappleHero(_, origin, pullSeconds, stunSeconds):
+                guard !player.isDefeated, !player.isInvulnerable else { continue }
+                player.pullTarget = combat.world.wrap(origin)
+                player.pullSecondsRemaining = pullSeconds
+                player.stunSecondsRemaining = max(player.stunSecondsRemaining, stunSeconds)
+                player.knockback = .zero
+                combat.events.append(.heroGrappled(hero: 0))
+            case let .burnHero(_, tickDamage, ticks, tickEvery):
+                guard !player.isDefeated, !player.isInvulnerable else { continue }
+                player.addBurn(tickDamage: tickDamage, ticks: ticks, tickEvery: tickEvery)
+                combat.events.append(.heroBurned(hero: 0))
             case let .woundAlly(_, index, id, amount):
                 guard index < combat.allies.count, combat.allies[index].id == id else { continue }
                 AllySystem.wound(index, amount: amount, &combat)

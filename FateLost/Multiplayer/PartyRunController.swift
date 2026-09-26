@@ -33,6 +33,8 @@ struct PartyHeroState: Equatable {
     var isStealthed: Bool
     var isSheltered: Bool
     var isConnected: Bool
+    var isBurning: Bool
+    var isStunned: Bool
     var weaponSprite: SpriteID?
     var form: FormID?
 }
@@ -512,8 +514,8 @@ final class PartyRunController: PartyRunDriver {
                     slot: hero.slot, position: drawn, velocity: hero.velocity, facing: hero.facing,
                     health: hero.health, maxHealth: hero.maxHealth, barrier: hero.barrier,
                     isDefeated: hero.isDefeated, isInvulnerable: hero.isInvulnerable, isStealthed: hero.isStealthed,
-                    isSheltered: hero.isSheltered, isConnected: hero.isConnected, weaponSprite: hero.weaponSprite,
-                    form: hero.form))
+                    isSheltered: hero.isSheltered, isConnected: hero.isConnected, isBurning: hero.isBurning,
+                    isStunned: hero.isStunned, weaponSprite: hero.weaponSprite, form: hero.form))
             }
             for marker in simulation.reviveMarkers where marker.hero < simulation.members.count {
                 result.markers.append(PartyMarkerState(
@@ -540,8 +542,8 @@ final class PartyRunController: PartyRunDriver {
                     slot: Int(hero.slot), position: position, velocity: velocity, facing: facing,
                     health: hero.health, maxHealth: hero.maxHealth, barrier: hero.barrier, isDefeated: hero.isDefeated,
                     isInvulnerable: hero.isInvulnerable, isStealthed: hero.isStealthed,
-                    isSheltered: hero.isSheltered, isConnected: hero.isConnected, weaponSprite: hero.weaponSprite,
-                    form: hero.form))
+                    isSheltered: hero.isSheltered, isConnected: hero.isConnected, isBurning: hero.isBurning,
+                    isStunned: hero.isStunned, weaponSprite: hero.weaponSprite, form: hero.form))
             }
             for marker in world.markers {
                 result.markers.append(PartyMarkerState(slot: Int(marker.slot), position: marker.position,

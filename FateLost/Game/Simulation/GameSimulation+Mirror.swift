@@ -123,6 +123,10 @@ extension GameSimulation {
             combat.enemies.aim[index] = enemy.windupFraction > 0 ? enemy.aim : .zero
             combat.enemies.dash[index] = enemy.isCharging ? enemy.heading : .zero
             combat.enemies.special[index] = enemy.isCharging ? 0.3 : 0
+            if case let .shieldbreaker(kit)? = definition.eliteKit {
+                combat.enemies.barrier[index] = combat.enemies.maxHealth[index] * kit.barrierFraction
+                    * enemy.barrierFraction
+            }
             world.enemyTargets[id] = enemy.position
         }
 

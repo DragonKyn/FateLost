@@ -1,5 +1,15 @@
 import CoreGraphics
 
+/// One application of a burn: ticks down on its own, independent of any
+/// other stack, so several bombs landing together hurt more but never
+/// compound into an unavoidable kill (each is bounded on its own).
+struct BurnStack: Equatable {
+    var tickDamage: Double
+    var ticksRemaining: Int
+    var tickEvery: Double
+    var tickTimer: Double = 0
+}
+
 /// A temporary stat boost on the player.
 struct ActiveBuff {
     let id: String
@@ -41,6 +51,13 @@ struct PlayerState {
     var buffs: [ActiveBuff] = []
     /// Bumped whenever buffs change, so stats know to recompute.
     var buffsVersion = 0
+    /// Where a grapple is dragging the hero, if any.
+    var pullTarget: CGPoint?
+    var pullSecondsRemaining: Double = 0
+    /// Held past moving, casting or attacking (a grapple's stun).
+    var stunSecondsRemaining: Double = 0
+    /// Independent burn stacks, oldest first; see `BurnStack`.
+    var burns: [BurnStack] = []
 
     // Timers that conditions read.
     var timeSinceHit: Double = .infinity
@@ -61,7 +78,34 @@ struct PlayerState {
     var isDefeated: Bool { health <= 0 }
     var isInvulnerable: Bool { invulnerability > 0 }
     var isStealthed: Bool { stealth > 0 }
+    var isStunned: Bool { stunSecondsRemaining > 0 }
+    var isBurning: Bool { !burns.isEmpty }
     var healthFraction: Double { maxHealth > 0 ? health / maxHealth : 0 }
+
+    /// The most independent burn stacks kept at once: enough for several
+    /// bombs to hurt more, never so many they add up to an unavoidable kill.
+    static let maxBurnStacks = 3
+
+    mutating func addBurn(tickDamage: Double, ticks: Int, tickEvery: Double) {
+        if burns.count >= Self.maxBurnStacks { burns.removeFirst() }
+        burns.append(BurnStack(tickDamage: tickDamage, ticksRemaining: ticks, tickEvery: tickEvery))
+    }
+
+    /// Ticks burns down and returns the health lost to them this step.
+    mutating func tickBurns(_ dt: Double) {
+        guard !burns.isEmpty else { return }
+        var index = burns.count - 1
+        while index >= 0 {
+            burns[index].tickTimer += dt
+            while burns[index].tickTimer >= burns[index].tickEvery, burns[index].ticksRemaining > 0 {
+                burns[index].tickTimer -= burns[index].tickEvery
+                burns[index].ticksRemaining -= 1
+                health = max(0, health - burns[index].tickDamage)
+            }
+            if burns[index].ticksRemaining <= 0 { burns.swapRemove(at: index) }
+            index -= 1
+        }
+    }
 
     /// Adds or refreshes a buff, stacking up to its limit.
     mutating func applyBuff(id: String, modifiers: [StatModifier], duration: Double, maxStacks: Int) {

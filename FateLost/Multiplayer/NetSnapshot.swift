@@ -9,6 +9,8 @@ struct NetHero: Equatable {
     static let stealthed: UInt8 = 1 << 2
     static let sheltered: UInt8 = 1 << 3
     static let connected: UInt8 = 1 << 4
+    static let burning: UInt8 = 1 << 5
+    static let stunned: UInt8 = 1 << 6
 
     var slot: UInt8
     var flags: UInt8
@@ -27,6 +29,8 @@ struct NetHero: Equatable {
     var isStealthed: Bool { flags & Self.stealthed != 0 }
     var isSheltered: Bool { flags & Self.sheltered != 0 }
     var isConnected: Bool { flags & Self.connected != 0 }
+    var isBurning: Bool { flags & Self.burning != 0 }
+    var isStunned: Bool { flags & Self.stunned != 0 }
 }
 
 struct NetMarker: Equatable {
@@ -48,6 +52,9 @@ struct NetEnemy: Equatable {
     var windupFraction: Double
     var aim: CGPoint
     var isCharging: Bool
+    /// A shieldbreaker's barrier, as a share of its own greatest value; 0 for
+    /// anything without one, and for one whose shield has broken.
+    var barrierFraction: Double
 }
 
 struct NetProjectile: Equatable {
@@ -247,6 +254,7 @@ struct NetSnapshot: Equatable {
             writer.fraction(enemy.windupFraction)
             writer.direction(enemy.aim)
             writer.bool(enemy.isCharging)
+            writer.fraction(enemy.barrierFraction)
         }
 
         let projectileList = projectiles.prefix(Limit.projectiles)
@@ -404,7 +412,8 @@ struct NetSnapshot: Equatable {
             snapshot.enemies.append(NetEnemy(
                 id: reader.u32(), kind: reader.u16(), strain: reader.u8(), position: reader.point(),
                 healthFraction: reader.fraction(), heading: reader.direction(), statusMask: reader.u16(),
-                windupFraction: reader.fraction(), aim: reader.direction(), isCharging: reader.bool()))
+                windupFraction: reader.fraction(), aim: reader.direction(), isCharging: reader.bool(),
+                barrierFraction: reader.fraction()))
         }
 
         let projectileCount = Int(reader.u16())
@@ -568,6 +577,8 @@ extension GameSimulation {
             if summary.isStealthed { flags |= NetHero.stealthed }
             if summary.isSheltered { flags |= NetHero.sheltered }
             if summary.isConnected { flags |= NetHero.connected }
+            if summary.isBurning { flags |= NetHero.burning }
+            if summary.isStunned { flags |= NetHero.stunned }
             snapshot.heroes.append(NetHero(
                 slot: UInt8(clamping: summary.slot), flags: flags, position: summary.position,
                 velocity: summary.velocity, facing: summary.facing, health: summary.health,
@@ -599,12 +610,17 @@ extension GameSimulation {
             let strength = store.maxHealth[index] > 0 ? store.health[index] / store.maxHealth[index] : 0
             let windupFraction = definition.attackWindup > 0
                 ? max(0, min(1, store.windup[index] / definition.attackWindup)) : 0
+            var barrierFraction = 0.0
+            if case let .shieldbreaker(kit)? = definition.eliteKit {
+                let maxBarrier = store.maxHealth[index] * kit.barrierFraction
+                barrierFraction = maxBarrier > 0 ? max(0, min(1, store.barrier[index] / maxBarrier)) : 0
+            }
             snapshot.enemies.append(NetEnemy(
                 id: UInt32(truncatingIfNeeded: store.ids[index]), kind: NetTables.hash16(definition.id),
                 strain: UInt8(clamping: store.strains[index]), position: store.positions[index],
                 healthFraction: strength, heading: store.heading[index],
                 statusMask: store.statusMask[index], windupFraction: windupFraction, aim: store.aim[index],
-                isCharging: store.dash[index] != .zero))
+                isCharging: store.dash[index] != .zero, barrierFraction: barrierFraction))
         }
 
         var shots = combat.hostileProjectiles

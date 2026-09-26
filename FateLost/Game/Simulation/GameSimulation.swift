@@ -278,10 +278,11 @@ struct GameSimulation {
             updateConditions()
             refreshStats()
 
-            movement.step(&player, intent: alive ? intent : .idle, speedMultiplier: CGFloat(combat.sheet[.moveSpeed]),
+            let acting = alive && !player.isStunned
+            movement.step(&player, intent: acting ? intent : .idle, speedMultiplier: CGFloat(combat.sheet[.moveSpeed]),
                           world: world, dt: CGFloat(dt))
             syncPlayerSnapshot()
-            if alive {
+            if acting {
                 castAbilities(intent)
             }
             flush()
@@ -305,6 +306,7 @@ struct GameSimulation {
         collectTargets()
         enemyAI.step(&combat, targets: targetScratch, godMode: cheats.godMode, dt: dt)
         BossSystem.step(&combat, targets: targetScratch, dt: dt)
+        EliteSystem.step(&combat, targets: targetScratch, dt: dt)
         projectileSystem.stepHostile(&combat, targets: targetScratch, dt: dt)
         carryOutIncidents()
         registerFallenHeroes()
@@ -316,7 +318,7 @@ struct GameSimulation {
             activate(hero)
             let alive = members[hero].stepAlive
             combat.rebuildGrid()
-            if alive {
+            if alive && !player.isStunned {
                 weaponSystem.step(&combat, player: &player, form: activeForm, dt: dt)
                 flush()
             }
@@ -472,6 +474,19 @@ struct GameSimulation {
         player.timeSinceDodge += dt
         player.timeStationary = player.isMoving ? 0 : player.timeStationary + dt
         player.tickBuffs(dt)
+        player.tickBurns(dt)
+        if let target = player.pullTarget, player.pullSecondsRemaining > 0 {
+            if player.pullSecondsRemaining > dt {
+                let fraction = CGFloat(dt / player.pullSecondsRemaining)
+                player.position = world.wrap(player.position + world.delta(from: player.position, to: target) * fraction)
+                player.pullSecondsRemaining -= dt
+            } else {
+                player.position = world.wrap(target)
+                player.pullSecondsRemaining = 0
+                player.pullTarget = nil
+            }
+        }
+        player.stunSecondsRemaining = max(0, player.stunSecondsRemaining - dt)
         for index in combat.procCooldowns.indices where combat.procCooldowns[index] > 0 {
             combat.procCooldowns[index] = max(0, combat.procCooldowns[index] - dt)
         }

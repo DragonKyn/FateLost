@@ -355,6 +355,44 @@ enum EnemyCatalog {
         spriteVariants: [.enemyIceGolem], drawScale: 1.1
     )
 
+    // MARK: - Rare elites
+
+    /// Carries a barrier over its health (see `EliteKit`). Once it is broken
+    /// it turns berserker — faster, harder-hitting — and can fire a hook that
+    /// pulls a hero in and stuns them. From the Hollow Forest on.
+    static let shieldbreaker = EnemyDefinition(
+        id: "enemy.shieldbreaker", name: "Shieldbreaker", family: .construct, rank: .elite,
+        maxHealth: 260, moveSpeed: 2.0, radius: 0.5,
+        attackDamage: 20, attackReach: 0.5, attackWindup: 0.6, attackCooldown: 1.8,
+        knockbackResistance: 0.75, damageType: .physical, behavior: .melee,
+        experience: 9, spawnWeight: 0.025, earliestWave: 6,
+        spriteVariants: [.enemyShieldbreaker], drawScale: 1.08,
+        eliteKit: .shieldbreaker(ShieldbreakerKit(
+            barrierFraction: 0.4, hookRange: 6.5, hookSpeed: 5.5, hookCooldown: 9,
+            pullSeconds: 0.4, stunSeconds: 2.0, berserkerSpeedMultiplier: 1.35, berserkerDamageMultiplier: 1.25))
+    )
+
+    /// Reckless and unpredictable up close, and it lobs marked bombs from a
+    /// distance that catch fire (a `Hazard`, so leaving the mark before it
+    /// lands takes nothing). Goes off the same way itself once it falls.
+    /// From the Frozen Wastes on.
+    static let explosiveElite = EnemyDefinition(
+        id: "enemy.explosiveElite", name: "Powder Fiend", family: .demon, rank: .elite,
+        maxHealth: 190, moveSpeed: 2.7, radius: 0.42,
+        attackDamage: 14, attackReach: 0.4, attackWindup: 0.4, attackCooldown: 1.4,
+        knockbackResistance: 0.3, damageType: .fire, behavior: .melee,
+        experience: 8, spawnWeight: 0.03, earliestWave: 6,
+        spriteVariants: [.enemyExplosiveElite],
+        eliteKit: .explosive(ExplosiveKit(
+            bombRange: 7, bombWindup: 1.1, bombCooldown: 6, bombRadius: 1.8, bombDamage: 26,
+            burnTickDamage: 5, burnTicks: 5, burnTickEvery: 1.0,
+            deathFuseSeconds: 1.2, deathRadius: 2.2, deathDamage: 30)),
+        flutters: true
+    )
+
+    static let rareElitesFromRealm3: [EnemyDefinition] = [shieldbreaker]
+    static let rareElitesFromRealm4: [EnemyDefinition] = [explosiveElite]
+
     // MARK: - Night hunters (from the Frozen Wastes on)
 
     /// The bite cuts health regeneration to a tenth for a few seconds, so a build
@@ -672,7 +710,8 @@ enum EnemyCatalog {
     ]
 
     static let all: [EnemyDefinition] = goblinWarband + undeadHost + wildBeasts + demonLegion
-        + citadelConstructs + aberrations + cultists + elementals + nightHunters + champions + riftBosses
+        + citadelConstructs + aberrations + cultists + elementals + nightHunters
+        + rareElitesFromRealm3 + rareElitesFromRealm4 + champions + riftBosses
 
     static func definition(for id: EnemyKindID) -> EnemyDefinition? {
         all.first { $0.id == id }
@@ -690,17 +729,21 @@ enum EnemyCatalog {
         case .drownedFen:
             return undeadHost + [giantSpider, flagellant]
         case .hollowForest:
-            return wildBeasts + [goblin, skulker, goblinArcher, goblinShaman, wraith]
+            return wildBeasts + [goblin, skulker, goblinArcher, goblinShaman, wraith] + rareElitesFromRealm3
         case .frozenWastes:
             return elementals + [direWolf, animatedArmour, skeletonWarrior, boneHound] + nightHunters
+                + rareElitesFromRealm3 + rareElitesFromRealm4
         case .blightedKingdom:
-            return cultists + undeadHost + nightHunters
+            return cultists + undeadHost + nightHunters + rareElitesFromRealm3 + rareElitesFromRealm4
         case .burningDepths:
             return demonLegion + [emberWisp, cultist, flagellant] + nightHunters
+                + rareElitesFromRealm3 + rareElitesFromRealm4
         case .shatteredRealm:
             return aberrations + [voidling, wraith, runeSentinel, impling, frostShard] + nightHunters
+                + rareElitesFromRealm3 + rareElitesFromRealm4
         case .fallenCitadel:
             return citadelConstructs + cultists + [skeletonWarrior, skeletonArcher, hobgoblin] + nightHunters
+                + rareElitesFromRealm3 + rareElitesFromRealm4
         case .gateOfRuin, .abyss:
             return all.filter { $0.rank != .boss }
         }

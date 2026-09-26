@@ -6,6 +6,9 @@ final class EnemyView: SKNode {
     let shadowSprite: SKSpriteNode
     let body: SKSpriteNode
     let hitbox: SKSpriteNode
+    /// A shieldbreaker's barrier: a cyan ring that shrinks as it drains and
+    /// vanishes when it breaks.
+    let shieldRing: SKSpriteNode
     fileprivate(set) var spriteID: SpriteID?
     fileprivate var lastSeenFrame = 0
     fileprivate var flash: CGFloat = 0
@@ -23,6 +26,7 @@ final class EnemyView: SKNode {
         shadowSprite = catalog.makeSprite(.shadow)
         body = SKSpriteNode()
         hitbox = catalog.makeSprite(.fxRing)
+        shieldRing = catalog.makeSprite(.fxRing)
         super.init()
         shadowSprite.zPosition = -0.5
         shadowSprite.setScale(0.72)
@@ -34,6 +38,11 @@ final class EnemyView: SKNode {
         hitbox.zPosition = 0.2
         hitbox.isHidden = true
         addChild(hitbox)
+        shieldRing.color = UIColor(red: 0.4, green: 0.85, blue: 1, alpha: 1)
+        shieldRing.colorBlendFactor = 1
+        shieldRing.zPosition = 0.15
+        shieldRing.isHidden = true
+        addChild(shieldRing)
     }
 
     @available(*, unavailable)
@@ -90,6 +99,7 @@ final class EnemyRenderer {
             view.veil = 1
             view.body.alpha = 1
             view.shadowSprite.alpha = 1
+            view.shieldRing.isHidden = true
         })
     }
 
@@ -168,6 +178,10 @@ final class EnemyRenderer {
             } else if mask != 0, let tint = Self.tint(for: mask) {
                 view.body.color = tint
                 view.body.colorBlendFactor = mask & StatusKind.freeze.bit != 0 ? 0.7 : 0.4
+            } else if case .shieldbreaker? = definition.eliteKit, enemies.barrier[index] <= 0 {
+                // Berserker: the shield is gone, and it reads hot from here on.
+                view.body.color = Style.windupTint
+                view.body.colorBlendFactor = 0.28
             } else if let strainTint = view.strainTint {
                 view.body.color = strainTint
                 view.body.colorBlendFactor = view.strainStrength
@@ -188,6 +202,18 @@ final class EnemyRenderer {
             if showHitboxes {
                 let diameter = definition.radius * 2 * pointsPerWorldUnit
                 view.hitbox.size = CGSize(width: diameter, height: diameter / 2)
+            }
+
+            if case let .shieldbreaker(kit)? = definition.eliteKit {
+                let maxBarrier = enemies.maxHealth[index] * kit.barrierFraction
+                let fraction = maxBarrier > 0 ? max(0, min(1, enemies.barrier[index] / maxBarrier)) : 0
+                view.shieldRing.isHidden = fraction <= 0
+                let diameter = (definition.radius * 2.3) * pointsPerWorldUnit * (0.85 + 0.15 * CGFloat(fraction))
+                view.shieldRing.size = CGSize(width: diameter, height: diameter / 2)
+                view.shieldRing.alpha = 0.55 + 0.25 * CGFloat(fraction)
+                view.shieldRing.position = CGPoint(x: 0, y: view.body.position.y)
+            } else {
+                view.shieldRing.isHidden = true
             }
         }
 

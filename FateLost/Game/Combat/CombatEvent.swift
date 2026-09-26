@@ -73,6 +73,12 @@ enum CombatEvent: Equatable {
     case reviveInterrupted(hero: Int)
     /// `hero` is back on their feet.
     case heroRevived(hero: Int, position: CGPoint)
+    /// A shieldbreaker's barrier gave out: it turns berserker from here.
+    case shieldBroke(enemyID: Int, position: CGPoint)
+    /// A grapple connected: the hero is being pulled in and held.
+    case heroGrappled(hero: Int)
+    /// Fire took hold on a hero (a bomb's blast).
+    case heroBurned(hero: Int)
 }
 
 extension CombatEvent {

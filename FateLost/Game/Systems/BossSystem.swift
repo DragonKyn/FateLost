@@ -543,6 +543,9 @@ enum BossSystem {
                 if !hazard.isGuide, hazard.damage > 0 {
                     hurt(hazard, amount: hazard.damage, targets: targets, reach: reach, combat: &combat)
                 }
+                if !hazard.isGuide, hazard.burnTicks > 0 {
+                    burn(hazard, targets: targets, reach: reach, combat: &combat)
+                }
                 if let boss = hazard.carriesBoss, let index = combat.index(ofEnemy: boss) {
                     combat.enemies.positions[index] = hazard.position
                     combat.enemies.knockback[index] = .zero
@@ -573,6 +576,15 @@ enum BossSystem {
             let away = combat.world.delta(from: hazard.position, to: target.position)
             let direction = away.lengthSquared > 0.0001 ? away.normalized : hazard.direction
             combat.incidents.append(.strikeHero(hero: target.hero, amount: amount, direction: direction))
+        }
+    }
+
+    /// A hazard's own fire, left burning on whoever it caught.
+    private static func burn(_ hazard: Hazard, targets: [AITarget], reach: CGFloat, combat: inout CombatState) {
+        for target in targets where target.isAlive {
+            guard hazard.covers(target.position, radius: reach, world: combat.world) else { continue }
+            combat.incidents.append(.burnHero(hero: target.hero, tickDamage: hazard.burnTickDamage,
+                                              ticks: hazard.burnTicks, tickEvery: hazard.burnTickEvery))
         }
     }
 

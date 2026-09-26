@@ -17,7 +17,7 @@ enum NetEventCodec {
         case playerHit, playerDodged, playerHealed, barrierGained, stealthStarted, formChanged, cheatedDeath
         case waveBegan, bossArrived, bossDefeated, realmConquered, experienceCollected, shrineAppeared, shrineUsed
         case dropCollected, weaponWielded, relicGained, levelUp, playerDefeated, heroFell, reviveStarted
-        case reviveInterrupted, heroRevived, riftOpened, riftEntered
+        case reviveInterrupted, heroRevived, riftOpened, riftEntered, shieldBroke, heroGrappled, heroBurned
     }
 
     /// A packet's worth of events, most important first if there are too many.
@@ -140,6 +140,12 @@ enum NetEventCodec {
             w.u8(Tag.reviveInterrupted.rawValue); w.u8(slotOf(hero))
         case let .heroRevived(hero, position):
             w.u8(Tag.heroRevived.rawValue); w.u8(slotOf(hero)); w.point(position)
+        case let .shieldBroke(id, position):
+            w.u8(Tag.shieldBroke.rawValue); w.u32(UInt32(truncatingIfNeeded: id)); w.point(position)
+        case .heroGrappled(let hero):
+            w.u8(Tag.heroGrappled.rawValue); w.u8(slotOf(hero))
+        case .heroBurned(let hero):
+            w.u8(Tag.heroBurned.rawValue); w.u8(slotOf(hero))
         }
     }
 
@@ -219,6 +225,9 @@ enum NetEventCodec {
         case .reviveStarted: return .reviveStarted(hero: Int(r.u8()), reviver: Int(r.u8()))
         case .reviveInterrupted: return .reviveInterrupted(hero: Int(r.u8()))
         case .heroRevived: return .heroRevived(hero: Int(r.u8()), position: r.point())
+        case .shieldBroke: return .shieldBroke(enemyID: Int(r.u32()), position: r.point())
+        case .heroGrappled: return .heroGrappled(hero: Int(r.u8()))
+        case .heroBurned: return .heroBurned(hero: Int(r.u8()))
         }
     }
 }

@@ -201,6 +201,7 @@ extension GameSimulation {
                            health: state.health, maxHealth: state.maxHealth, barrier: state.barrier,
                            isDefeated: state.isDefeated, isInvulnerable: state.isInvulnerable,
                            isStealthed: state.isStealthed, isSheltered: isSheltered(hero),
+                           isBurning: state.isBurning, isStunned: state.isStunned,
                            isConnected: member.isConnected && !member.isGone, level: level,
                            weaponSprite: held.spriteID, form: state.form ?? permanent)
     }
@@ -380,6 +381,21 @@ extension GameSimulation {
                     player.applyBuff(id: effect.buffID, modifiers: effect.modifiers, duration: effect.duration,
                                      maxStacks: 1)
                 }
+                flush()
+            case let .grappleHero(hero, origin, pullSeconds, stunSeconds):
+                activate(hero)
+                guard !player.isDefeated, !player.isInvulnerable else { continue }
+                player.pullTarget = world.wrap(origin)
+                player.pullSecondsRemaining = pullSeconds
+                player.stunSecondsRemaining = max(player.stunSecondsRemaining, stunSeconds)
+                player.knockback = .zero
+                combat.events.append(.heroGrappled(hero: hero))
+                flush()
+            case let .burnHero(hero, tickDamage, ticks, tickEvery):
+                activate(hero)
+                guard !player.isDefeated, !player.isInvulnerable else { continue }
+                player.addBurn(tickDamage: tickDamage, ticks: ticks, tickEvery: tickEvery)
+                combat.events.append(.heroBurned(hero: hero))
                 flush()
             case let .woundAlly(hero, index, id, amount):
                 activate(hero)

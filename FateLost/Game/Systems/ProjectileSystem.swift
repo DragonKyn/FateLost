@@ -124,8 +124,14 @@ struct ProjectileSystem {
         for target in targets where target.isAlive {
             let toTarget = combat.world.delta(from: projectile.position, to: target.position)
             if toTarget.length <= projectile.radius + combat.tuning.playerRadius {
-                combat.incidents.append(.strikeHero(hero: target.hero, amount: projectile.hit.amount,
-                                                    direction: projectile.direction))
+                if projectile.isGrapple {
+                    combat.incidents.append(.grappleHero(hero: target.hero, origin: projectile.position,
+                                                         pullSeconds: projectile.pullSeconds,
+                                                         stunSeconds: projectile.stunSeconds))
+                } else {
+                    combat.incidents.append(.strikeHero(hero: target.hero, amount: projectile.hit.amount,
+                                                        direction: projectile.direction))
+                }
                 combat.events.append(.burst(position: projectile.position, radius: 0.4, visual: projectile.visual))
                 return true
             }

@@ -42,6 +42,9 @@ struct EnemyStore {
     /// The line a charger has committed to while it winds up; zero otherwise.
     /// It is fixed when the windup starts, so a step to the side is an answer.
     var aim: [CGPoint] = []
+    /// A shieldbreaker's barrier: absorbs damage before health, same as the
+    /// player's. Zero for anything without one.
+    var barrier: [Double] = []
 
     /// Bit per active `StatusKind`, for quick checks.
     var statusMask: [UInt16] = []
@@ -122,6 +125,11 @@ struct EnemyStore {
         dash.append(.zero)
         special.append(0)
         aim.append(.zero)
+        if case let .shieldbreaker(kit) = definition.eliteKit {
+            barrier.append(life * kit.barrierFraction)
+        } else {
+            barrier.append(0)
+        }
         statusMask.append(0)
         for kind in 0..<statusTime.count {
             statusTime[kind].append(0)
@@ -151,6 +159,7 @@ struct EnemyStore {
         dash.swapRemove(at: index)
         special.swapRemove(at: index)
         aim.swapRemove(at: index)
+        barrier.swapRemove(at: index)
         statusMask.swapRemove(at: index)
         for kind in 0..<statusTime.count {
             statusTime[kind].swapRemove(at: index)
@@ -178,6 +187,7 @@ struct EnemyStore {
         dash.removeAll(keepingCapacity: true)
         special.removeAll(keepingCapacity: true)
         aim.removeAll(keepingCapacity: true)
+        barrier.removeAll(keepingCapacity: true)
         statusMask.removeAll(keepingCapacity: true)
         for kind in 0..<statusTime.count {
             statusTime[kind].removeAll(keepingCapacity: true)
@@ -206,6 +216,7 @@ struct EnemyStore {
         dash.reserveCapacity(capacity)
         special.reserveCapacity(capacity)
         aim.reserveCapacity(capacity)
+        barrier.reserveCapacity(capacity)
         statusMask.reserveCapacity(capacity)
         for kind in 0..<statusTime.count {
             statusTime[kind].reserveCapacity(capacity)

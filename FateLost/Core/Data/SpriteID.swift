@@ -102,6 +102,8 @@ extension SpriteID {
     static let enemyRiftMatriarch: SpriteID = "enemy.riftMatriarch"
     static let enemyRiftSovereign: SpriteID = "enemy.riftSovereign"
     static let enemyRiftUnblinking: SpriteID = "enemy.riftUnblinking"
+    static let enemyShieldbreaker: SpriteID = "enemy.shieldbreaker"
+    static let enemyExplosiveElite: SpriteID = "enemy.explosiveElite"
 
     // Allies and forms
     static let allySkeleton: SpriteID = "ally.skeleton"
@@ -151,6 +153,8 @@ extension SpriteID {
     static let projectileShard: SpriteID = "projectile.shard"
     /// A white bolt of energy, tinted by its effect's style.
     static let projectileBolt: SpriteID = "projectile.bolt"
+    /// A shieldbreaker's grapple hook, trailing its chain.
+    static let projectileHook: SpriteID = "projectile.hook"
 
     // Decorations
     static let decorDeadTree: SpriteID = "decor.deadTree"

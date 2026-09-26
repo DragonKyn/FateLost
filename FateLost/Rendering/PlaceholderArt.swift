@@ -55,6 +55,11 @@ enum PlaceholderArt {
         case .enemyAnimatedArmour: return animatedArmour()
         case .enemyRuneSentinel: return runeSentinel()
         case .enemySiegeGolem: return siegeGolem()
+        // Borrows an existing silhouette until a bespoke one is drawn; the
+        // shield glow, shatter and berserker tint are keyed off `EliteKit`,
+        // not the sprite, so the mechanics read even before the art does.
+        case .enemyShieldbreaker: return siegeGolem()
+        case .enemyExplosiveElite: return brimstoneBrute()
         case .enemyVoidling: return voidling()
         case .enemyGazer: return gazer()
         case .enemyFleshHorror: return fleshHorror()
@@ -141,6 +146,8 @@ enum PlaceholderArt {
         case .projectileFrostBolt: return projectileFrostBolt()
         case .projectileStormBolt: return projectileStormBolt()
         case .projectileArrow: return arrow()
+        // Borrows the arrow's silhouette until a bespoke hook is drawn.
+        case .projectileHook: return arrow()
         case .projectileArcaneBolt: return arcaneBolt()
         case .decorDeadTree: return deadTree(size: CGSize(width: 84, height: 120), seed: 11, trunk: 8, length: 36)
         case .decorDeadTreeSmall: return deadTree(size: CGSize(width: 54, height: 74), seed: 29, trunk: 5, length: 22)

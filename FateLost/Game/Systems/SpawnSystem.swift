@@ -84,9 +84,21 @@ struct SpawnSystem {
                 break
             }
             let definition = roster[pick(from: &combat.random)]
+            // A rare elite's attacks are only fair alone: never more than one
+            // on the field together, whatever the horde around it is doing.
+            if definition.eliteKit != nil, Self.hasLivingRareElite(combat) {
+                continue
+            }
             let focus = Self.pickFocus(focuses, random: &combat.random)
             spawn(definition, into: &combat, focus: focus, speedVariance: speedVariance)
         }
+    }
+
+    private static func hasLivingRareElite(_ combat: CombatState) -> Bool {
+        for index in 0..<combat.enemies.count where combat.enemies.definition(at: index).eliteKit != nil {
+            return true
+        }
+        return false
     }
 
     /// Places `count` enemies at once, ignoring the natural cap (developer

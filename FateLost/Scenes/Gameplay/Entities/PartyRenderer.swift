@@ -73,6 +73,10 @@ final class PartyRenderer {
             body.velocity = state.velocity
             body.invulnerability = state.isInvulnerable ? 1 : 0
             body.stealth = state.isStealthed ? 1 : 0
+            // Only whether it shows needs to cross the wire; the exact burn
+            // and stun numbers are the host's business.
+            body.burns = state.isBurning ? [BurnStack(tickDamage: 0, ticksRemaining: 1, tickEvery: 999)] : []
+            body.stunSecondsRemaining = state.isStunned ? 1 : 0
             let speed = state.velocity.length
             entry.strideTime += speed > 0.2 ? Double(dt) * Double(speed / 4.2) : 0
             body.strideTime = entry.strideTime

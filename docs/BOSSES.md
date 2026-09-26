@@ -105,13 +105,39 @@ rift is the same as dying anywhere.
 Both show as small red chips under the health bar with the time left; tap one to read it. (A guest sees the slow but not
 the chip.) A blow that is dodged or that lands on a hero who is immune leaves no mark.
 
+## Rare elites
+
+Two elites, each a handful of times across a run at most: never more than one on the field together
+(`SpawnSystem`, whatever the rest of the horde is doing), each gated to its own realms by roster inclusion, the
+same way the night hunters are.
+
+* **Shieldbreaker** (`EnemyCatalog.shieldbreaker`, the Hollow Forest on). Carries a barrier over its health —
+  drawn as a cyan ring — that must be spent before its health can be. Breaking it (`EliteSystem`) is an event of
+  its own (a ring, a flash, a sound) and turns it berserker: faster, harder-hitting, and able to fire a hook
+  (a slow, visible hostile shot, `Projectile.isGrapple`) at a hero. Connecting drags the hero in over a third of
+  a second and holds them past moving, casting or attacking for about 2 seconds (`ShieldbreakerKit.stunSeconds`);
+  missing does nothing. A stun from a second hook only ever refreshes to the longer of the two, never adds to it,
+  and the hook itself has a real cooldown, so a hero is never left unable to act for long.
+* **Powder Fiend** (`EnemyCatalog.explosiveElite`, the Frozen Wastes on). Reckless up close (it darts like a
+  bat), and lobs marked bombs at a hero's feet — an ordinary `Hazard`, so its landing zone is drawn and leaving
+  it before it lands takes nothing. Landing deals its blow and leaves a burn: 5 hits of it over 5 seconds
+  (`ExplosiveKit.burnTicks`/`burnTickEvery`), each hero's burns their own independent stacks (`PlayerState.burns`)
+  capped at `PlayerState.maxBurnStacks` so several bombs landing together hurt more without adding up to an
+  unavoidable kill. Killing it sets off its own blast after a brief fuse, the same shape as one of its bombs.
+
+Both are `EnemyBehavior.melee` between their own moves, so they still close in and swing like anything else of
+their family; `EliteKit`/`EliteBrain`/`EliteSystem` sit beside that the same way `BossKit` sits beside a
+champion's ordinary attack.
+
 ## Multiplayer
 
 The host owns the fight. Marks travel in the snapshot (`NetHazard`: shape, position, direction, size, warning, age,
 linger, a guide flag; up to 24 near the viewer) and so do portals and the rift the party is in (`NetPortal`, and one
 byte). A guest never computes damage; it draws, counts ages on between snapshots, and the host tells it who was hurt
-through the ordinary hero health. Shots are the ordinary hostile projectiles. `NetTables.contentVersion` is now 5: a
-phone on an older build is refused rather than misdrawn.
+through the ordinary hero health. Shots are the ordinary hostile projectiles, a hook among them. A shieldbreaker's
+barrier travels too (`NetEnemy.barrierFraction`), and whether a hero is burning or stunned is two more bits of
+`NetHero`'s existing flags, so a teammate's fire and the shield ring shrinking read the same for everyone.
+`NetTables.contentVersion` is now 6: a phone on an older build is refused rather than misdrawn.
 
 ## Passive healing
 

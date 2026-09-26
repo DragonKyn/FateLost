@@ -35,6 +35,11 @@ struct Projectile {
     var isReturning = false
     /// What it may pass through on each leg of the trip.
     var legPierce = 0
+    /// A shieldbreaker's hook: on reaching a hero it pulls and stuns instead
+    /// of dealing `hit`'s damage.
+    var isGrapple = false
+    var pullSeconds: Double = 0
+    var stunSeconds: Double = 0
 
     var direction: CGPoint { velocity.normalized }
 }

@@ -436,6 +436,21 @@ final class CombatFeedback {
                 effects.motes(at: position, count: 14, color: UIColor(rgb: 0xB8F0A0), spread: 0.8)
                 effects.floatingText("Revived", at: position, color: UIColor(rgb: 0xB8F0A0), size: 18, lifetime: 1.4)
                 audio.play(.skillLearn)
+
+            case let .shieldBroke(_, position):
+                let tint = UIColor(red: 0.4, green: 0.85, blue: 1, alpha: 1)
+                effects.ring(at: position, radius: 1.4, color: tint, lifetime: 0.5)
+                effects.motes(at: position, count: 16, color: .white, spread: 1.1, lifetime: 0.7)
+                effects.floatingText("Shield broken", at: position, color: tint, size: 15, lifetime: 1.1)
+                camera.addTrauma(0.2)
+                audio.play(.kegBlast)
+
+            case .heroGrappled:
+                audio.play(.criticalHit)
+                haptics.play(.criticalHit)
+
+            case .heroBurned:
+                audio.play(.abilityFire)
             }
         }
         if hits > 0 {

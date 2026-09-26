@@ -64,6 +64,12 @@ extension CombatState {
             }
         }
 
+        if enemies.barrier[index] > 0 {
+            let absorbed = min(enemies.barrier[index], amount)
+            enemies.barrier[index] -= absorbed
+            amount -= absorbed
+        }
+
         let dealt = min(amount, enemies.health[index])
         enemies.health[index] -= amount
         // A sapper's keg felling its own kin is not the hero's doing.
@@ -318,6 +324,9 @@ extension CombatState {
                 dropExperience(definition.experienceValue + enemies.strain(at: index).experienceBonus,
                                at: position)
                 dropLoot(for: definition, at: position)
+                if case let .explosive(kit)? = definition.eliteKit {
+                    EliteSystem.detonateOnDeath(kit, at: position, combat: &self)
+                }
 
                 let depth = Int(enemies.lastHitDepth[index])
                 if depth < 2 {

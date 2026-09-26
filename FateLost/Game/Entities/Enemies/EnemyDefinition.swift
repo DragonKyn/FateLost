@@ -88,6 +88,53 @@ enum EnemyOnHit: Equatable {
     }
 }
 
+/// What a rare elite does besides its ordinary attack (see `EliteSystem`).
+///
+/// Like a champion's `BossKit`, this rides alongside the ordinary
+/// `EnemyBehavior` rather than replacing it: an elite still closes in and
+/// swings like any other soldier of its family between its own moves.
+enum EliteKit: Equatable {
+    /// Carries a barrier over its health (see `EnemyStore.barrier`). While it
+    /// stands, the elite only fights as its family does. Once struck down it
+    /// shatters, and the elite turns berserker: faster, harder-hitting, and
+    /// able to fire a grapple that pulls a hero in and stuns them.
+    case shieldbreaker(ShieldbreakerKit)
+    /// Lobs marked bombs at a hero's feet (a `Hazard`, so leaving the mark
+    /// before it lands takes nothing) and, on its own death, goes off the
+    /// same way after a fuse.
+    case explosive(ExplosiveKit)
+}
+
+struct ShieldbreakerKit: Equatable {
+    /// The barrier's share of max health.
+    var barrierFraction: Double
+    var hookRange: CGFloat
+    var hookSpeed: CGFloat
+    var hookCooldown: Double
+    /// Seconds the hook drags the hero in before the stun takes over.
+    var pullSeconds: Double
+    var stunSeconds: Double
+    /// Multiplies move speed and attack damage once the shield breaks.
+    var berserkerSpeedMultiplier: CGFloat
+    var berserkerDamageMultiplier: Double
+}
+
+struct ExplosiveKit: Equatable {
+    var bombRange: CGFloat
+    /// Seconds between the mark appearing and it going off: the telegraph.
+    var bombWindup: Double
+    var bombCooldown: Double
+    var bombRadius: CGFloat
+    var bombDamage: Double
+    var burnTickDamage: Double
+    var burnTicks: Int
+    var burnTickEvery: Double
+    /// Seconds between death and its own blast.
+    var deathFuseSeconds: Double
+    var deathRadius: CGFloat
+    var deathDamage: Double
+}
+
 /// Static description of an enemy type. Balance lives in `EnemyCatalog`;
 /// systems only read these numbers.
 struct EnemyDefinition: Identifiable, Equatable {
@@ -128,6 +175,8 @@ struct EnemyDefinition: Identifiable, Equatable {
     var epithet: String?
     /// What a champion does besides its ordinary attack (see `BossSystem`).
     var kit: BossKit?
+    /// What a rare elite of this kind does besides its ordinary attack.
+    var eliteKit: EliteKit?
     /// What a landed blow leaves on the hero.
     var onHit: EnemyOnHit?
     /// Darts about while it closes in, so it is hard to pin down.

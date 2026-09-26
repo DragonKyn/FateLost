@@ -125,7 +125,8 @@ final class NetSnapshotTests: XCTestCase {
             let enemy = NetEnemy(id: UInt32(1000 + index), kind: NetTables.hash16(EnemyCatalog.goblin.id),
                                  strain: UInt8(index % 3), position: CGPoint(x: x, y: 28), healthFraction: 0.75,
                                  heading: CGPoint(x: -1, y: 0), statusMask: UInt16(index % 4), windupFraction: windup,
-                                 aim: CGPoint(x: 0, y: 1), isCharging: index == 7)
+                                 aim: CGPoint(x: 0, y: 1), isCharging: index == 7,
+                                 barrierFraction: index % 5 == 0 ? 0.6 : 0)
             enemies.append(enemy)
         }
         snapshot.enemies = enemies
@@ -167,6 +168,8 @@ final class NetSnapshotTests: XCTestCase {
         XCTAssertEqual(decoded.enemies[7].isCharging, true)
         XCTAssertEqual(decoded.enemies[5].windupFraction, 0.5, accuracy: 0.01)
         XCTAssertEqual(decoded.enemies[3].id, 1003)
+        XCTAssertEqual(decoded.enemies[0].barrierFraction, 0.6, accuracy: 0.02)
+        XCTAssertEqual(decoded.enemies[3].barrierFraction, 0, accuracy: 0.001)
         XCTAssertEqual(decoded.projectiles.map { $0.isHostile }, [false, true])
         XCTAssertEqual(decoded.zones[0].remaining ?? 0, 4.5, accuracy: 0.1)
         XCTAssertNil(decoded.zones[1].remaining)
@@ -184,7 +187,7 @@ final class NetSnapshotTests: XCTestCase {
         for index in 0..<count {
             list.append(NetEnemy(id: UInt32(index), kind: kind, strain: 1, position: CGPoint(x: 10, y: 10),
                                  healthFraction: 1, heading: right, statusMask: 0xFFFF, windupFraction: 1, aim: right,
-                                 isCharging: true))
+                                 isCharging: true, barrierFraction: 0))
         }
         return list
     }
