@@ -137,9 +137,45 @@ enum UncommonRelics: RelicContent {
         effects: [inc(.areaSize, 0.1, 0.06)]
     )
 
+    static let widowsVeil = relic(
+        "widowsVeil", "Widow's Veil", .uncommon, symbol: "theatermasks",
+        text: "{0%} chance on hit to weaken the target.",
+        values: [rv(0.15, 0.08)],
+        effects: [.inflict(.any, status(.weaken, chance: rv(0.15, 0.08), potency: rv(0.12), duration: rv(3)))]
+    )
+
+    static let alchemistsSatchel = relic(
+        "alchemistsSatchel", "Alchemist's Satchel", .uncommon, symbol: "flask.fill",
+        text: "+{0%} chance to inflict any status effect.",
+        values: [rv(0.15, 0.1)],
+        effects: [inc(.statusChance, 0.15, 0.1)]
+    )
+
+    static let effigyOfAsh = relic(
+        "effigyOfAsh", "Effigy of Ash", .uncommon, symbol: "flame.circle",
+        text: "+{0%} damage from effects that hurt over time.",
+        values: [rv(0.15, 0.1)],
+        effects: [inc(.dotDamage, 0.15, 0.1)]
+    )
+
+    static let wanderersCompass = relic(
+        "wanderersCompass", "Wanderer's Compass", .uncommon, symbol: "location.north.circle.fill",
+        text: "+{0%} longer buffs and afflictions.",
+        values: [rv(0.15, 0.1)],
+        effects: [inc(.effectDuration, 0.15, 0.1)]
+    )
+
+    static let ricochetingRound = relic(
+        "ricochetingRound", "Ricocheting Round", .uncommon, symbol: "arrow.uturn.forward.circle.fill", ranks: 2,
+        text: "Attacks pass through {0} more enemy.",
+        values: [rv(1, 1)],
+        effects: [flat(.pierce, 1, 1)]
+    )
+
     static let all: [RelicDefinition] = [
         vampiricFang, duelistsGlove, cleaversGrip, longreach, echoStone, ashenBlade, rimedBlade, stormForged,
         thornmail, bloodletter, venomVial, frostbittenAmulet, featherfallCloak, berserkersHorn,
         executionersHood, runnersCharm, sentinelsSeal, sextonsBell, tinkersLoop,
+        widowsVeil, alchemistsSatchel, effigyOfAsh, wanderersCompass, ricochetingRound,
     ]
 }

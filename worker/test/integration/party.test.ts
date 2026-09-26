@@ -474,13 +474,18 @@ describe("a run", () => {
     [host, ...guests].forEach((c) => c.close());
   });
 
-  it("aborts the run and picks a new host when the host leaves mid-run", async () => {
+  it("gives the rest of the party a grace window, not an instant abort, when the host leaves mid-run", async () => {
     const { host, guests } = await party(3);
     await startRun(host, guests);
     const marks = guests.map((c) => c.messages.length);
     host.send({ t: "leave" });
+    // A new host is picked straight away, but the run is not torn down yet:
+    // the rest of the party gets the same grace a dropped host would.
+    const away = await guests[0]!.waitFor((m) => m.t === "hostAway", 4000, marks[0]);
+    expect(away.until).toBeGreaterThan(Date.now());
     const ended = await guests[0]!.waitFor((m) => m.t === "runEnd", 4000, marks[0]);
     expect(ended.outcome).toBe("aborted");
+    expect(ended.summary.reason).toBe("hostLost");
     const room = await guests[0]!.room((r) => r.phase === "lobby" && r.members.length === 2, 4000, marks[0]);
     expect(room.members.some((m: any) => m.host)).toBe(true);
     guests.forEach((c) => c.close());

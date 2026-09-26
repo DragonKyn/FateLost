@@ -110,8 +110,34 @@ enum RareRelics: RelicContent {
                   .damageAgainst(.status(.mark), rv(0.1, 0.05))]
     )
 
+    static let executionersToll = relic(
+        "executionersToll", "Executioner's Toll", .rare, symbol: "moon.stars.fill",
+        text: "Every 4th attack releases shadow energy around you for {0%} power.",
+        values: [rv(1.4, 0.5)],
+        effects: [proc(.everyNthAttack(4),
+                       nova(rv(2), dmg(1.4, 0.5, .shadow, [.spell, .area], knockback: 1), .shadow))]
+    )
+
+    static let coldVengeance = relic(
+        "coldVengeance", "Cold Vengeance", .rare, symbol: "wind.snow",
+        text: "When struck, {0%} chance to release a burst of frost for {1%} power, chilling all it touches.",
+        values: [rv(0.2, 0.1), rv(1.3, 0.5)],
+        effects: [proc(.hurt, chance: rv(0.2, 0.1), cooldown: 1.5,
+                       nova(rv(1.8), dmg(1.3, 0.5, .cold, [.spell, .area]),
+                            status: status(.chill, potency: rv(0.3), duration: rv(2)), at: .origin, .frost))]
+    )
+
+    static let ironWill = relic(
+        "ironWill", "Iron Will", .rare, symbol: "shield.righthalf.filled",
+        text: "Below 50% health: +{0} armour and +{1%} dodge chance.",
+        values: [rv(12, 6), rv(0.06, 0.03)],
+        effects: [whileIn(.healthBelow(0.5), .armor, .flat, 12, 6),
+                  whileIn(.healthBelow(0.5), .dodgeChance, .flat, 0.06, 0.03)]
+    )
+
     static let all: [RelicDefinition] = [
         twinNock, stormcallersRing, emberheart, winterKiss, bulwarkCharm, bloodstone, hourglassShard,
         houndsWhistle, scholarsMonocle, dreadBanner, titansBelt, tricksterDie, quicksilverVial, warlordsBrand,
+        executionersToll, coldVengeance, ironWill,
     ]
 }

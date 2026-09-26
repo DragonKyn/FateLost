@@ -559,9 +559,15 @@ export class PartyRoom extends DurableObject<Env> {
     if (room.phase === "inRun") this.sendToHost({ t: "peer", id: member.id, slot: member.slot, event: "left" });
     if (wasHost) {
       // Someone else takes over first, so nobody ever sees a lobby without a
-      // host. A run cannot outlive its host: the simulation went with them.
+      // host. A run cannot outlive its host, but the rest of the party gets
+      // the same grace a dropped host would (see connectionLost): long enough
+      // to see how the run ended, rather than being sent back at once.
       this.promoteHost(room);
-      if (room.phase === "inRun") await this.finishRun(room, "aborted", { reason: "hostLeft" });
+      if (room.phase === "inRun") {
+        const timing = this.timing();
+        room.hostGraceEndsAt = Date.now() + timing.hostGraceRun;
+        this.broadcastExcept(member.id, { t: "hostAway", until: room.hostGraceEndsAt });
+      }
     }
     await this.persist();
     this.broadcastRoom();

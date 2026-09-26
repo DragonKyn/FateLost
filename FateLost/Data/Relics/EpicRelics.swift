@@ -101,5 +101,17 @@ enum LegendaryRelics: RelicContent {
                   .inflict(.any, status(.burn, chance: rv(0.3), duration: rv(3)))]
     )
 
-    static let all: [RelicDefinition] = [hollowCrown, ouroboros, lastWord, dragonheart]
+    static let undyingEmber = relic(
+        "undyingEmber", "The Undying Ember", .legendary, symbol: "flame.fill", ranks: 1,
+        text: "Once, a killing blow is refused instead: you rise with full health and 4 s of invulnerability.",
+        effects: [.cheatDeath(CheatDeathSpec(cooldown: 99_999, restore: 1.0, invulnerability: 4, action: nil))]
+    )
+
+    static let boneThrone = relic(
+        "boneThrone", "The Bone Throne", .legendary, symbol: "person.3.sequence.fill", ranks: 1,
+        text: "Every minion and companion deals 50% more damage, and you may keep 2 more of each.",
+        effects: [inc(.summonDamage, 0.5, 0), flat(.summonCount, 2, 0)]
+    )
+
+    static let all: [RelicDefinition] = [hollowCrown, ouroboros, lastWord, dragonheart, undyingEmber, boneThrone]
 }

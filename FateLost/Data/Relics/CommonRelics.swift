@@ -136,9 +136,52 @@ enum CommonRelics: RelicContent {
         effects: [inc(.poisonDamage, 0.1, 0.06)]
     )
 
+    static let starlitShard = relic(
+        "starlitShard", "Starlit Shard", .common, symbol: "star.fill",
+        text: "+{0%} arcane damage.",
+        values: [rv(0.1, 0.06)],
+        effects: [inc(.arcaneDamage, 0.1, 0.06)]
+    )
+
+    static let warmDraught = relic(
+        "warmDraught", "Warm Draught", .common, symbol: "cup.and.saucer.fill",
+        text: "+{0%} healing received.",
+        values: [rv(0.12, 0.08)],
+        effects: [inc(.healingReceived, 0.12, 0.08)]
+    )
+
+    static let grinningSkull = relic(
+        "grinningSkull", "Grinning Skull", .common, symbol: "theatermasks.fill",
+        text: "+{0%} critical damage.",
+        values: [rv(0.1, 0.06)],
+        effects: [flat(.critDamage, 0.1, 0.06)]
+    )
+
+    static let brawlersKnuckles = relic(
+        "brawlersKnuckles", "Brawler's Knuckles", .common, symbol: "hand.raised.fill",
+        text: "+{0%} physical damage.",
+        values: [rv(0.08, 0.05)],
+        effects: [inc(.physicalDamage, 0.08, 0.05)]
+    )
+
+    static let quickeningSand = relic(
+        "quickeningSand", "Quickening Sand", .common, symbol: "timer",
+        text: "Ability cooldowns are {0%} shorter.",
+        values: [rv(0.03, 0.02)],
+        effects: [flat(.cooldownReduction, 0.03, 0.02)]
+    )
+
+    static let warhammerCharm = relic(
+        "warhammerCharm", "Warhammer Charm", .common, symbol: "hammer.circle.fill",
+        text: "+{0%} knockback dealt.",
+        values: [rv(0.2, 0.12)],
+        effects: [inc(.knockback, 0.2, 0.12)]
+    )
+
     static let all: [RelicDefinition] = [
         whetstone, stridingBoots, ironRing, mendingKnot, heartyTonic, luckyCoin, loadstone, swiftQuiver,
         fletching, sharpEye, soldiersSigil, archersGlove, apprenticesFocus,
         emberCharm, frostCharm, stormCharm, graveDust, sunstone, nightshade,
+        starlitShard, warmDraught, grinningSkull, brawlersKnuckles, quickeningSand, warhammerCharm,
     ]
 }
