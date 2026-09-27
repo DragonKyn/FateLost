@@ -65,6 +65,10 @@ enum StatID: Int, CaseIterable, Codable {
     case spellEcho
     /// Fraction of healing beyond full health kept as a barrier.
     case overhealBarrier
+    /// Added to the base chance a rift guardian's portal opens.
+    case riftChance
+    /// Fraction more Legacy echoes a finished run pays out.
+    case echoGain
 
     /// Starting value before any modifier.
     var baseValue: Double {
@@ -95,6 +99,8 @@ enum StatID: Int, CaseIterable, Codable {
         case .lifeSteal: return 0...0.25
         case .summonLifeSteal: return 0...0.25
         case .spellEcho: return 0...0.5
+        case .riftChance: return 0...0.1
+        case .echoGain: return 0...0.05
         case .moveSpeed: return 0.3...3
         case .attackSpeed: return 0.25...6
         case .areaSize: return 0.3...4
@@ -110,7 +116,7 @@ enum StatID: Int, CaseIterable, Codable {
     var isFraction: Bool {
         switch self {
         case .dodgeChance, .critChance, .critDamage, .cooldownReduction, .lifeSteal, .summonLifeSteal,
-             .spellEcho, .overhealBarrier:
+             .spellEcho, .overhealBarrier, .riftChance, .echoGain:
             return true
         default:
             return false
@@ -172,6 +178,8 @@ enum StatID: Int, CaseIterable, Codable {
         case .summonLifeSteal: return "Summon Life Steal"
         case .spellEcho: return "Spell Echo"
         case .overhealBarrier: return "Overheal to Barrier"
+        case .riftChance: return "Rift Chance"
+        case .echoGain: return "Echo Gain"
         }
     }
 }

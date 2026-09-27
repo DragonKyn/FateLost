@@ -106,6 +106,94 @@ final class LegacyTests: XCTestCase {
         }
     }
 
+    // MARK: Giving nodes back
+
+    func testGivingBackANodeRefundsItInFull() {
+        var profile = LegacyProfile()
+        let node = LegacyTree.nodes(in: .blade, tier: 1)[0]
+        profile.echoes = node.cost
+        profile.buy(node)
+
+        XCTAssertTrue(profile.refund(node))
+        XCTAssertEqual(profile.echoes, node.cost, "a mistaken tap should cost nothing to undo")
+        XCTAssertEqual(profile.spent, 0)
+        XCTAssertFalse(profile.isUnlocked(node))
+    }
+
+    func testCannotGiveBackWhatWasNeverBought() {
+        var profile = LegacyProfile()
+        let node = LegacyTree.nodes(in: .blade, tier: 1)[0]
+        XCTAssertFalse(profile.refund(node))
+    }
+
+    func testCannotGiveBackANodeADeeperTierStillDependsOn() {
+        var profile = LegacyProfile()
+        profile.echoes = 1_000_000
+        let tier1 = LegacyTree.nodes(in: .ward, tier: 1)
+        for node in tier1.prefix(3) { profile.buy(node) }
+        let deeper = LegacyTree.nodes(in: .ward, tier: 2)[0]
+        XCTAssertTrue(profile.buy(deeper), "tier 2 should be open with 3 of tier 1 bought")
+
+        let toGiveBack = tier1[0]
+        XCTAssertFalse(profile.canRefund(toGiveBack), "tier 2 depends on 3 of tier 1 staying bought")
+        XCTAssertFalse(profile.refund(toGiveBack))
+        XCTAssertTrue(profile.isUnlocked(toGiveBack), "the blocked refund changed nothing")
+
+        // A fourth node in the tier makes the first one no longer load-bearing.
+        profile.buy(tier1[3])
+        XCTAssertTrue(profile.canRefund(tier1[0]), "a spare node in the tier makes it safe to give one back")
+    }
+
+    func testGivingBackAndResettingLeaveTotalEarnedUnchanged() {
+        var profile = LegacyProfile()
+        profile.echoes = 1_000_000
+        let before = profile.totalEarned
+        let nodes = Array(LegacyTree.nodes(in: .fortune, tier: 1))
+        for node in nodes { profile.buy(node) }
+        XCTAssertEqual(profile.totalEarned, before, "spending is not losing")
+
+        profile.refund(nodes[0])
+        XCTAssertEqual(profile.totalEarned, before)
+
+        profile.resetBoard()
+        XCTAssertEqual(profile.totalEarned, before)
+        XCTAssertTrue(profile.unlocked.isEmpty)
+    }
+
+    func testResettingTheBoardLeavesTheArmouryAlone() {
+        var profile = LegacyProfile()
+        profile.echoes = 1_000_000
+        profile.buy(LegacyTree.nodes(in: .body, tier: 1)[0])
+        profile.buy(weapon: StarterWeapons.bow)
+        profile.master(weapon: StarterWeapons.bow)
+        let weaponsBefore = profile.weapons
+        let ranksBefore = profile.weaponRanks
+
+        profile.resetBoard()
+        XCTAssertTrue(profile.unlocked.isEmpty)
+        XCTAssertEqual(profile.weapons, weaponsBefore)
+        XCTAssertEqual(profile.weaponRanks, ranksBefore)
+    }
+
+    func testTotalsCombineEveryNodeTouchingTheSameStat() {
+        var profile = LegacyProfile()
+        profile.echoes = 1_000_000
+        // maxHealth is touched, flat, by both Body and Ward at tier 1 — two
+        // different strands, so buying both needs no other tier opened.
+        guard let bodyNode = LegacyTree.nodes(in: .body, tier: 1)
+            .first(where: { $0.modifier.stat == .maxHealth && $0.modifier.kind == .flat }),
+            let wardNode = LegacyTree.nodes(in: .ward, tier: 1)
+            .first(where: { $0.modifier.stat == .maxHealth && $0.modifier.kind == .flat }) else {
+            return XCTFail("expected a tier-1 flat Max Health node in both Body and Ward")
+        }
+        XCTAssertTrue(profile.buy(bodyNode))
+        XCTAssertTrue(profile.buy(wardNode))
+
+        let total = profile.totals.first { $0.stat == .maxHealth && $0.kind == .flat }
+        XCTAssertNotNil(total)
+        XCTAssertEqual(total?.value ?? 0, bodyNode.modifier.value + wardNode.modifier.value, accuracy: 0.0001)
+    }
+
     // MARK: Runs and the record
 
     private func summary(kills: Int = 100, wave: Int = 7, level: Int = 12,
@@ -153,6 +241,23 @@ final class LegacyTests: XCTestCase {
         XCTAssertEqual(profile.lifetime.highestWave, run.wave)
         XCTAssertEqual(profile.lifetime.bestWaveByRealm[RealmID.ashenWilds.rawValue], run.wave)
         XCTAssertEqual(profile.lifetime.echoesEarned, profile.echoes)
+    }
+
+    func testEchoGainBonusIncreasesWhatARunPaysOut() {
+        var plain = LegacyProfile()
+        let run = summary()
+        plain.record(run, realm: RealmCatalog.realm(.ashenWilds))
+
+        var boosted = LegacyProfile()
+        boosted.echoes = 1_000_000
+        // The whole strand, so tier-gating is trivially satisfied and Echo
+        // Gain reaches its full amount.
+        for node in LegacyTree.nodes(in: .rift) { boosted.buy(node) }
+        let echoesFromBuying = boosted.echoes
+        boosted.record(run, realm: RealmCatalog.realm(.ashenWilds))
+        let earned = boosted.echoes - echoesFromBuying
+
+        XCTAssertGreaterThan(earned, plain.echoes, "the same run should pay out more with the Rift strand bought")
     }
 
     func testConqueringARealmOpensTheNextOne() {

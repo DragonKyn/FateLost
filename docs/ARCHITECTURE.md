@@ -350,12 +350,24 @@ companions.
 
 ## 19. Legacy and the record
 
-`LegacyTree` lays out five hundred permanent upgrades from a short table per
-strand rather than hand-writing them: every node in a tier costs the same and
-grants the same size of bonus, and only the stat differs. That is the
-anti-meta rule from the skill tree carried into meta-progression — the board
-rewards hours, not an opening. A tier opens once three of the tier above it
-are taken, in that strand alone.
+`LegacyTree` lays out five hundred and fifty permanent upgrades (eleven
+strands, ten tiers, five nodes a tier) from a short table per strand rather
+than hand-writing them: every node in a tier costs the same and grants the
+same size of bonus, and only the stat differs. That is the anti-meta rule
+from the skill tree carried into meta-progression — the board rewards hours,
+not an opening. A tier opens once three of the tier above it are taken, in
+that strand alone. Any node can be given back in full (`LegacyProfile.refund`),
+blocked only when a deeper tier still depends on it staying bought, and the
+whole board can be redrawn at once (`resetBoard`) without touching the
+Armoury or losing what was ever earned (`echoes + spent` is unchanged by
+either). `LegacyProfile.totals` folds every bought node down to one line per
+stat, for a "what am I actually getting" summary.
+
+The eleventh strand, Rift, is the one exception to "every node is a per-hero
+combat stat": it also carries `.riftChance` (added to `RiftTuning.chance`
+when a champion falls, capped at its own +10%) and `.echoGain` (a percentage
+more a finished run pays out, capped at +5%) — the first Legacy bonuses that
+touch something outside a hero's own `StatSheet`.
 
 `LegacyProfile` is the whole save: echoes, the board, conquered realms and
 `LifetimeStats`. One `Codable` value in one versioned file, so saving is one

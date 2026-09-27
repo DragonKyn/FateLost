@@ -1,6 +1,6 @@
 import Foundation
 
-/// The ten strands of Legacy: what a player invests in between runs.
+/// The strands of Legacy: what a player invests in between runs.
 ///
 /// Each strand is a way of playing rather than a class — a summoner and a
 /// duellist both want Body, and neither is required to take it. Nothing here
@@ -18,6 +18,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
     case shadow
     case bond
     case fate
+    case rift
 
     var id: String { rawValue }
 
@@ -33,6 +34,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         case .shadow: return "Shadow"
         case .bond: return "Bond"
         case .fate: return "Fate"
+        case .rift: return "Rift"
         }
     }
 
@@ -48,6 +50,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         case .shadow: return "What is never seen coming"
         case .bond: return "What answers when called"
         case .fate: return "What was always going to happen"
+        case .rift: return "What crosses between worlds"
         }
     }
 
@@ -60,6 +63,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         case .ward: return "shield.fill"
         case .flame: return "flame.fill"
         case .frost: return "snowflake"
+        case .rift: return "circle.dotted"
         case .blade, .focus, .fortune, .shadow, .bond, .fate: return "circle.fill"
         }
     }
@@ -75,7 +79,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         case .shadow: return "shadow"
         case .bond: return "bond"
         case .fate: return "fate"
-        case .body, .ward, .flame, .frost: return nil
+        case .body, .ward, .flame, .frost, .rift: return nil
         }
     }
 
@@ -91,6 +95,7 @@ enum LegacyBranch: String, CaseIterable, Codable, Identifiable {
         case .shadow: return RGBA(hex: 0x7A5A9E)
         case .bond: return RGBA(hex: 0x6FBF7A)
         case .fate: return RGBA(hex: 0xE0B060)
+        case .rift: return RGBA(hex: 0xC24FE0)
         }
     }
 }
@@ -114,6 +119,18 @@ struct LegacyNode: Identifiable, Equatable {
 
     /// The same, for a small tile.
     var tileText: String { effectText.replacingOccurrences(of: " per second", with: "/s") }
+}
+
+/// One stat's whole contribution from the board, every node that touches it
+/// folded into a single line: what a player actually wants to know is not
+/// which five hundred nodes they own, but what they add up to.
+struct LegacyTotal: Identifiable, Equatable {
+    var stat: StatID
+    var kind: ModifierKind
+    var value: Double
+
+    var id: String { "\(stat.rawValue).\(kind.rawValue)" }
+    var displayText: String { StatModifier(stat, kind, value).displayText }
 }
 
 /// What Legacy is bought with.

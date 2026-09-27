@@ -12,10 +12,17 @@ struct LegacyView: View {
     /// Which half of Legacy is on show.
     private enum Tab: String, CaseIterable, Identifiable {
         case board
+        case totals
         case armoury
 
         var id: String { rawValue }
-        var title: String { self == .board ? "Board" : "Armoury" }
+        var title: String {
+            switch self {
+            case .board: return "Board"
+            case .totals: return "Totals"
+            case .armoury: return "Armoury"
+            }
+        }
     }
 
     @Environment(AppRouter.self) private var router
@@ -24,6 +31,7 @@ struct LegacyView: View {
     @State private var tab: Tab = .board
     @State private var branch: LegacyBranch = .body
     @State private var selected: LegacyNode?
+    @State private var confirmingReset = false
 
     var body: some View {
         ZStack {
@@ -33,9 +41,12 @@ struct LegacyView: View {
 
             VStack(spacing: 8) {
                 toolbar
-                if tab == .armoury {
+                switch tab {
+                case .armoury:
                     ArmouryBoard(profile: services.profile, onBuy: buy(weapon:), onMaster: master(weapon:))
-                } else {
+                case .totals:
+                    TotalsBoard(totals: services.profile.totals)
+                case .board:
                     board
                 }
             }
@@ -45,6 +56,13 @@ struct LegacyView: View {
         .animation(.easeOut(duration: 0.18), value: selected)
         .animation(.easeOut(duration: 0.18), value: branch)
         .animation(.easeOut(duration: 0.18), value: tab)
+        .alert("Unmake the board?", isPresented: $confirmingReset) {
+            Button("Unmake It", role: .destructive) { resetBoard() }
+            Button("Keep My Build", role: .cancel) {}
+        } message: {
+            Text("Every node on the board is given back and every echo spent on it returns. Your Armoury "
+                 + "weapons and their mastery are not affected.")
+        }
     }
 
     private var board: some View {
@@ -64,6 +82,7 @@ struct LegacyView: View {
             if let node = selected {
                 NodeCard(node: node, profile: services.profile,
                          onBuy: { buy(node) },
+                         onRefund: { refund(node) },
                          onClose: { selected = nil })
                     .frame(width: 262)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
@@ -90,13 +109,26 @@ struct LegacyView: View {
                 }
             }
             .pickerStyle(.segmented)
-            .frame(width: 176)
+            .frame(width: 258)
             .onChange(of: tab) { _, _ in
                 services.haptics.play(.uiTap)
                 selected = nil
             }
 
             EchoBadge(echoes: services.profile.echoes)
+
+            if tab == .board {
+                Button {
+                    services.haptics.play(.uiTap)
+                    confirmingReset = true
+                } label: {
+                    Image(systemName: "arrow.counterclockwise")
+                }
+                .buttonStyle(FLButtonStyle(kind: .destructive, compact: true))
+                .fixedSize(horizontal: true, vertical: false)
+                .disabled(services.profile.unlocked.isEmpty)
+                .accessibilityLabel("Reset the board")
+            }
 
             Button("Back") {
                 services.audio.play(.uiBack)
@@ -112,10 +144,19 @@ struct LegacyView: View {
         switch tab {
         case .board:
             return "\(services.profile.unlocked.count) of \(LegacyTree.all.count) taken"
+        case .totals:
+            return "\(services.profile.totals.count) stats improved"
         case .armoury:
             let held = StarterWeapons.all.filter { services.profile.isUnlocked($0) }.count
             return "\(held) of \(StarterWeapons.all.count) weapons on the rack"
         }
+    }
+
+    private func resetBoard() {
+        services.resetLegacy()
+        selected = nil
+        services.audio.play(.uiBack)
+        services.haptics.play(.uiTap)
     }
 
     private func buy(weapon: WeaponDefinition) {
@@ -144,6 +185,16 @@ struct LegacyView: View {
         services.audio.play(.skillLearn)
         services.haptics.play(.uiTap)
         // Keep the card on screen so the next tier is one tap away.
+        selected = LegacyTree.node(node.id)
+    }
+
+    private func refund(_ node: LegacyNode) {
+        guard services.refundLegacy(node) else {
+            services.audio.play(.uiBack)
+            return
+        }
+        services.audio.play(.uiBack)
+        services.haptics.play(.uiTap)
         selected = LegacyTree.node(node.id)
     }
 }
@@ -342,6 +393,7 @@ private struct NodeCard: View {
     let node: LegacyNode
     let profile: LegacyProfile
     let onBuy: () -> Void
+    let onRefund: () -> Void
     let onClose: () -> Void
 
     var body: some View {
@@ -370,19 +422,33 @@ private struct NodeCard: View {
             }
 
             VStack(spacing: 6) {
-                if let denial = profile.denial(for: node) {
-                    Text(denial)
-                        .font(FLTheme.Typeface.body(11))
-                        .foregroundStyle(profile.isUnlocked(node) ? FLTheme.Palette.parchmentDim
-                                                                  : FLTheme.Palette.blood)
-                        .lineLimit(2)
-                        .multilineTextAlignment(.center)
+                if profile.isUnlocked(node) {
+                    if let denial = profile.refundDenial(for: node) {
+                        Text(denial)
+                            .font(FLTheme.Typeface.body(11))
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
+                    Button("Give Back · \(node.cost)", action: onRefund)
+                        .buttonStyle(FLButtonStyle(kind: .destructive, compact: true))
+                        .disabled(profile.refundDenial(for: node) != nil)
+                        .frame(maxWidth: .infinity)
+                } else {
+                    if let denial = profile.denial(for: node) {
+                        Text(denial)
+                            .font(FLTheme.Typeface.body(11))
+                            .foregroundStyle(FLTheme.Palette.blood)
+                            .lineLimit(2)
+                            .multilineTextAlignment(.center)
+                            .frame(maxWidth: .infinity)
+                    }
+                    Button("Take · \(node.cost)", action: onBuy)
+                        .buttonStyle(.flPrimaryCompact)
+                        .disabled(profile.denial(for: node) != nil)
                         .frame(maxWidth: .infinity)
                 }
-                Button("Take · \(node.cost)", action: onBuy)
-                    .buttonStyle(.flPrimaryCompact)
-                    .disabled(profile.denial(for: node) != nil)
-                    .frame(maxWidth: .infinity)
             }
             .padding(14)
             .background(Color.black.opacity(0.25))

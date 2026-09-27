@@ -136,6 +136,20 @@ final class AppServices {
         return true
     }
 
+    /// Gives a single Legacy node back, in full, undoing a mistaken tap.
+    @discardableResult
+    func refundLegacy(_ node: LegacyNode) -> Bool {
+        guard profile.refund(node) else { return false }
+        saveProfile()
+        return true
+    }
+
+    /// Gives the whole Legacy board back at once, so it can be redrawn.
+    func resetLegacy() {
+        profile.resetBoard()
+        saveProfile()
+    }
+
     /// Adds a weapon to the rack.
     @discardableResult
     func buyWeapon(_ weapon: WeaponDefinition) -> Bool {

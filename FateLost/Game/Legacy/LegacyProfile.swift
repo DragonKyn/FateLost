@@ -113,6 +113,78 @@ struct LegacyProfile: Codable, Equatable {
         LegacyTree.nodes(in: branch).filter { unlocked.contains($0.id) }.count
     }
 
+    /// Whether giving this node back would strand a deeper tier that was
+    /// only reachable because it, among others, was bought: false only when
+    /// taking it away would drop this tier below what a bought deeper tier
+    /// still depends on.
+    func canRefund(_ node: LegacyNode) -> Bool {
+        guard isUnlocked(node) else { return false }
+        let boughtInTier = LegacyTree.nodes(in: node.branch, tier: node.tier)
+            .filter { unlocked.contains($0.id) }.count
+        guard boughtInTier - 1 < LegacyTree.nodesToAdvance else { return true }
+        guard node.tier < LegacyTree.tierCount else { return true }
+        for tier in (node.tier + 1)...LegacyTree.tierCount {
+            if LegacyTree.nodes(in: node.branch, tier: tier).contains(where: { unlocked.contains($0.id) }) {
+                return false
+            }
+        }
+        return true
+    }
+
+    /// Why a node cannot be given back right now, or nil if it can.
+    func refundDenial(for node: LegacyNode) -> String? {
+        if !isUnlocked(node) { return "Not yours to give back" }
+        if !canRefund(node) { return "A deeper tier still depends on it" }
+        return nil
+    }
+
+    /// Gives a single node back in full. A tapped mistake should cost nothing
+    /// to undo.
+    @discardableResult
+    mutating func refund(_ node: LegacyNode) -> Bool {
+        guard refundDenial(for: node) == nil else { return false }
+        unlocked.remove(node.id)
+        echoes += node.cost
+        spent -= node.cost
+        return true
+    }
+
+    /// Gives every node on the board back at once, so a build can be
+    /// redrawn from nothing. `echoes + spent` is unchanged by this: nothing
+    /// already earned is lost, only unspent again. The Armoury is a separate
+    /// shelf and is not touched.
+    mutating func resetBoard() {
+        let refunded = unlocked.compactMap { LegacyTree.node($0)?.cost }.reduce(0, +)
+        echoes += refunded
+        spent -= refunded
+        unlocked.removeAll()
+    }
+
+    /// Every bonus currently bought, folded to one line per stat and kind:
+    /// flat and increased amounts summed, "more" amounts combined the way
+    /// they actually stack in combat. For a "what am I getting" summary.
+    var totals: [LegacyTotal] {
+        var flat: [StatID: Double] = [:]
+        var increased: [StatID: Double] = [:]
+        var more: [StatID: Double] = [:]
+        for modifier in modifiers {
+            switch modifier.kind {
+            case .flat: flat[modifier.stat, default: 0] += modifier.value
+            case .increased: increased[modifier.stat, default: 0] += modifier.value
+            case .more: more[modifier.stat] = (1 + (more[modifier.stat] ?? 0)) * (1 + modifier.value) - 1
+            }
+        }
+        var result: [LegacyTotal] = []
+        result.append(contentsOf: flat.map { LegacyTotal(stat: $0.key, kind: .flat, value: $0.value) })
+        result.append(contentsOf: increased.map { LegacyTotal(stat: $0.key, kind: .increased, value: $0.value) })
+        result.append(contentsOf: more.map { LegacyTotal(stat: $0.key, kind: .more, value: $0.value) })
+        return result.sorted {
+            $0.stat.displayName != $1.stat.displayName
+                ? $0.stat.displayName < $1.stat.displayName
+                : $0.kind.rawValue < $1.kind.rawValue
+        }
+    }
+
     // MARK: The Armoury
 
     func isUnlocked(_ weapon: WeaponDefinition) -> Bool {
@@ -175,9 +247,11 @@ struct LegacyProfile: Codable, Equatable {
     /// Folds a finished run into the lifetime record and pays out its echoes.
     /// A party's run passes what the party's shared pool pays this hero.
     mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) {
-        let earned = fixed ?? LegacyEchoes.earned(from: summary.stats, wave: summary.wave, level: summary.level,
-                                                  realmMultiplier: realm.legacyMultiplier,
-                                                  conquered: summary.outcome == .conquered)
+        let base = fixed ?? LegacyEchoes.earned(from: summary.stats, wave: summary.wave, level: summary.level,
+                                                realmMultiplier: realm.legacyMultiplier,
+                                                conquered: summary.outcome == .conquered)
+        let gainBonus = modifiers.filter { $0.stat == .echoGain }.reduce(0.0) { $0 + $1.value }
+        let earned = gainBonus > 0 ? max(1, Int((Double(base) * (1 + gainBonus)).rounded())) : base
         echoes += earned
         lifetime.add(summary, realm: realm, echoes: earned)
         if summary.outcome == .conquered {

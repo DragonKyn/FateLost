@@ -5,11 +5,11 @@ import XCTest
 final class RiftTests: XCTestCase {
     private let dt: TimeInterval = 1.0 / 60
 
-    private func solo(chance: Double = 0.05) -> GameSimulation {
+    private func solo(chance: Double = 0.05, legacy: [StatModifier] = []) -> GameSimulation {
         var tuning = GameTuning.standard
         tuning.simulation.riftChance = chance
         var sim = GameSimulation(run: RunConfiguration(realmID: .ashenWilds, starterWeaponID: StarterWeapons.sword.id,
-                                                       seed: 9), tuning: tuning)
+                                                       seed: 9), tuning: tuning, legacy: legacy)
         sim.cheats = SimulationCheats(godMode: true, spawningEnabled: false)
         return sim
     }
@@ -89,6 +89,15 @@ final class RiftTests: XCTestCase {
             XCTAssertEqual(!sim.combat.portals.isEmpty, expected, "chance \(chance)")
         }
         XCTAssertEqual(RiftTuning.chance, 0.10, "about one champion in ten")
+    }
+
+    func testLegacyRiftChanceAddsToTheBaseChanceAndStaysWithinItsOwnCeiling() {
+        let sim = solo(chance: 0, legacy: [StatModifier(.riftChance, .flat, 1)])
+        XCTAssertEqual(sim.combat.sheet[.riftChance], 0.1, accuracy: 0.0001,
+                      "a huge Legacy bonus still stops at Rift Chance's own 10% ceiling")
+
+        let none = solo(chance: 0)
+        XCTAssertEqual(none.combat.sheet[.riftChance], 0)
     }
 
     func testAPortalWaitsAndThenCloses() {

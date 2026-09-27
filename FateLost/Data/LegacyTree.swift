@@ -1,10 +1,10 @@
 import Foundation
 
-/// The Legacy board: ten strands, ten tiers deep, five nodes across.
+/// The Legacy board: eleven strands, ten tiers deep, five nodes across.
 ///
-/// Five hundred nodes are not hand-written — they are laid out from a short
-/// table per strand, because five hundred hand-written nodes would be five
-/// hundred chances to make one of them the correct first pick. Every node in
+/// Five hundred and fifty nodes are not hand-written — they are laid out from
+/// a short table per strand, because that many hand-written nodes would be
+/// that many chances to make one of them the correct first pick. Every node in
 /// a tier costs the same and gives the same *size* of bonus; what differs is
 /// which stat it touches. That is the anti-meta rule from the skill tree
 /// carried into meta-progression: the board rewards hours, not an opening.
@@ -112,6 +112,14 @@ enum LegacyTree {
                 Grain(stat: .experienceGain, kind: .increased, base: 0.008, title: "It Adds Up"),
                 Grain(stat: .cooldownReduction, kind: .flat, base: 0.002, title: "Sooner Than That"),
                 Grain(stat: .holyDamage, kind: .increased, base: 0.012, title: "Witnessed"),
+            ]
+        case .rift:
+            return [
+                Grain(stat: .arcaneDamage, kind: .increased, base: 0.012, title: "Torn Open"),
+                Grain(stat: .riftChance, kind: .flat, base: 0.0038, title: "Wider Still"),
+                Grain(stat: .echoGain, kind: .flat, base: 0.0019, title: "Paid Twice Over"),
+                Grain(stat: .experienceGain, kind: .increased, base: 0.008, title: "Remembered"),
+                Grain(stat: .cooldownReduction, kind: .flat, base: 0.002, title: "Time Slips"),
             ]
         }
     }
