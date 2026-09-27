@@ -123,6 +123,9 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
     case horned
     case plague
     case skull
+    case bandana
+    case cowboyHat
+    case ninjaMask
 
     var id: String { rawValue }
 
@@ -138,6 +141,9 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
         case .horned: return "Horned Helm"
         case .plague: return "Plague Mask"
         case .skull: return "Bone Mask"
+        case .bandana: return "Bandana"
+        case .cowboyHat: return "Cowboy Hat"
+        case .ninjaMask: return "Ninja Wraps"
         }
     }
 
@@ -153,6 +159,9 @@ enum HeadStyle: String, Codable, CaseIterable, Identifiable {
         case .horned: return "Loud from across a field."
         case .plague: return "It has seen worse than you."
         case .skull: return "What is left, worn on purpose."
+        case .bandana: return "Knotted tight, and out of the way."
+        case .cowboyHat: return "Wide brim. Wider reputation."
+        case .ninjaMask: return "Only the eyes give anything away."
         }
     }
 }
@@ -227,6 +236,7 @@ enum WingStyle: String, Codable, CaseIterable, Identifiable {
     case plain
     case angel
     case demon
+    case skeleton
 
     var id: String { rawValue }
 
@@ -235,6 +245,7 @@ enum WingStyle: String, Codable, CaseIterable, Identifiable {
         case .plain: return "No Wings"
         case .angel: return "Angel Wings"
         case .demon: return "Demon Wings"
+        case .skeleton: return "Skeleton Wings"
         }
     }
 
@@ -243,6 +254,41 @@ enum WingStyle: String, Codable, CaseIterable, Identifiable {
         case .plain: return "Grounded."
         case .angel: return "White feathers, and no apology."
         case .demon: return "Leather and bone, with claws."
+        case .skeleton: return "Nothing left but the ribs and the wind through them."
+        }
+    }
+}
+
+/// Glasses worn over the eyes of any head, so it is a choice of its own
+/// rather than tied to a particular one. It lines up best with an open
+/// face — a bare head, a wizard's hat, or a hood or cowl that still shows
+/// the eyes — and least with a helm or mask that covers them entirely.
+enum EyewearStyle: String, Codable, CaseIterable, Identifiable {
+    case plain
+    case sunglasses
+    case reading
+    case aviators
+    case monocle
+
+    var id: String { rawValue }
+
+    var name: String {
+        switch self {
+        case .plain: return "No Eyewear"
+        case .sunglasses: return "Sunglasses"
+        case .reading: return "Reading Glasses"
+        case .aviators: return "Aviators"
+        case .monocle: return "Monocle"
+        }
+    }
+
+    var blurb: String {
+        switch self {
+        case .plain: return "Nothing over the eyes."
+        case .sunglasses: return "Dark lenses, round and unbothered."
+        case .reading: return "For the fine print on a cursed scroll."
+        case .aviators: return "Teardrop lenses and a thin frame."
+        case .monocle: return "One eye, appraised very precisely."
         }
     }
 }
@@ -352,6 +398,7 @@ struct HeroAppearance: Codable, Equatable, Hashable {
     var emblem: EmblemStyle = .plain
     var detail: MetalDetail = .plain
     var wings: WingStyle = .plain
+    var eyewear: EyewearStyle = .plain
 
     static let standard = HeroAppearance()
 
@@ -370,6 +417,7 @@ struct HeroAppearance: Codable, Equatable, Hashable {
         emblem = (try? values.decodeIfPresent(EmblemStyle.self, forKey: .emblem)) ?? .plain
         detail = (try? values.decodeIfPresent(MetalDetail.self, forKey: .detail)) ?? .plain
         wings = (try? values.decodeIfPresent(WingStyle.self, forKey: .wings)) ?? .plain
+        eyewear = (try? values.decodeIfPresent(EyewearStyle.self, forKey: .eyewear)) ?? .plain
     }
 
     var cloakSwatch: HeroSwatch { HeroPalette.swatch(cloakColor, in: HeroPalette.cloak) }

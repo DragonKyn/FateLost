@@ -51,6 +51,13 @@ final class HeroTests: XCTestCase {
                     }
                 }
             }
+            for eyewear in EyewearStyle.allCases {
+                var look = HeroAppearance()
+                look.build = build
+                look.eyewear = eyewear
+                XCTAssertEqual(PlaceholderArt.hero(look).image.size, PlaceholderArt.heroCanvas,
+                               "\(build) \(eyewear)")
+            }
         }
     }
 
@@ -182,8 +189,9 @@ final class HeroTests: XCTestCase {
 
     func testCoolerCostsMore() {
         let angel = HeroUnlocks.cost(of: .wings(.angel))
-        XCTAssertEqual(angel, 500)
-        XCTAssertEqual(HeroUnlocks.cost(of: .wings(.demon)), 500)
+        XCTAssertEqual(angel, 600)
+        XCTAssertEqual(HeroUnlocks.cost(of: .wings(.demon)), 600)
+        XCTAssertEqual(HeroUnlocks.cost(of: .wings(.skeleton)), 600)
         // Wings are the aspiration: dearer than any cloak, head, emblem or metalwork.
         for option in HeroUnlocks.cloaks + HeroUnlocks.heads + HeroUnlocks.emblems + HeroUnlocks.details {
             XCTAssertLessThan(HeroUnlocks.cost(of: option), angel, "\(option.id) costs as much as wings")
@@ -206,6 +214,11 @@ final class HeroTests: XCTestCase {
         XCTAssertTrue(HeroPalette.trim.contains { $0.id == "black" }, "black trim is missing")
         XCTAssertEqual(EmblemStyle.allCases.count, 6)
         XCTAssertTrue(WingStyle.allCases.contains(.angel) && WingStyle.allCases.contains(.demon))
+        let heads: Set<HeadStyle> = [.bandana, .cowboyHat, .ninjaMask]
+        XCTAssertTrue(heads.isSubset(of: Set(HeadStyle.allCases)), "bandana, cowboy hat or ninja wraps is missing")
+        XCTAssertTrue(WingStyle.allCases.contains(.skeleton), "skeleton wings are missing")
+        let eyewear: Set<EyewearStyle> = [.sunglasses, .reading, .aviators, .monocle]
+        XCTAssertTrue(eyewear.isSubset(of: Set(EyewearStyle.allCases)), "a promised pair of glasses is missing")
     }
 
     func testEveryPricedColourIsARealColour() {

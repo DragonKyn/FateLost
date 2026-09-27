@@ -307,6 +307,95 @@ def demon(g):
     return s
 
 
+def skeleton(g):
+    s = layer(f"heroWingsSkeleton{cap(g.build)}", f"Bare bone wings, ribs and a tattered membrane, behind a {g.build} frame.")
+    for side in (-1, 1):
+        bx, by = CX + side * 5, g.sy + 3
+        spines = []
+        for i in range(5):
+            t = i / 4
+            length = 19 - abs(t - 0.5) * 6
+            angle = math.radians(58 + t * 46)
+            spines.append((bx + side * length * math.cos(angle), by - length * math.sin(angle)))
+        # The membrane stretched between the spine tips, notched and tattered
+        # at the trailing edge rather than a clean curve.
+        membrane = [(bx, by)]
+        for i, tip in enumerate(spines):
+            membrane.append(tip)
+            if i < len(spines) - 1:
+                nxt = spines[i + 1]
+                membrane.append(((tip[0] + nxt[0]) / 2, (tip[1] + nxt[1]) / 2 + 3.6))
+        s.poly(membrane, ("cloak:0.3", 0.4), outline=BONE_SHADE, width=0.5)
+        # The spines themselves: a bone taper from the shoulder to each tip.
+        for tip in spines:
+            s.taper([(bx, by), tip], BONE, 1.6, 0.2, outline=INK, width=0.4)
+        s.dot(bx, by, 1.4, BONE_SHADE)
+    return s
+
+
 EMBLEMS = {"dragon": dragon, "runes": runes, "skulls": skulls, "vines": vines, "celestial": celestial}
 DETAILS = {"studs": studs, "filigree": filigree, "pauldrons": pauldrons, "warPlate": war_plate}
-WINGS = {"angel": angel, "demon": demon}
+WINGS = {"angel": angel, "demon": demon, "skeleton": skeleton}
+
+
+# -- eyewear ------------------------------------------------------------
+#
+# Drawn over whatever the head layer left at the face: it lines up with
+# the eyes on a hood, a bare face or a wizard's hat, since all three put
+# them at about the same height. A full helm or mask covers the eyes
+# entirely, so eyewear is easiest to see paired with an open face.
+
+LENS_DARK = 0x1A1714
+LENS_HILIGHT = 0x453F35
+
+
+def _temple(s, y, colour="trim:0.8"):
+    """The arms of a pair of glasses, running back toward the ears."""
+    for side in (-1, 1):
+        s.line((CX + side * 4.6, y - 0.3), (CX + side * 6.6, y - 1.3), colour, 0.5)
+
+
+def sunglasses(g):
+    s = layer(f"heroEyewearSunglasses{cap(g.build)}", f"Dark round lenses on a {g.build} frame.")
+    y = g.sy - 9.2
+    for side in (-1, 1):
+        s.ellipse(CX + side * 2.6 - 1.8, y - 1.3, 3.6, 2.6, LENS_DARK, outline="trim", width=0.6)
+        s.dot(CX + side * 2.6 - 0.7, y - 0.6, 0.4, LENS_HILIGHT)
+    s.line((CX - 0.9, y - 0.1), (CX + 0.9, y - 0.1), "trim", 0.6)
+    _temple(s, y)
+    return s
+
+
+def reading(g):
+    s = layer(f"heroEyewearReading{cap(g.build)}", f"Thin reading glasses low on the nose of a {g.build} frame.")
+    y = g.sy - 8.6
+    for side in (-1, 1):
+        s.ellipse(CX + side * 2.6 - 1.7, y - 1.1, 3.4, 2.4, (0x000000, 0.0), outline="trim", width=0.5)
+    s.line((CX - 0.9, y - 0.1), (CX + 0.9, y - 0.1), "trim", 0.45)
+    _temple(s, y, "trim:0.7")
+    return s
+
+
+def aviators(g):
+    s = layer(f"heroEyewearAviators{cap(g.build)}", f"Teardrop aviator lenses on a {g.build} frame.")
+    y = g.sy - 9.3
+    for side in (-1, 1):
+        s.poly([(CX + side * 0.9, y - 1.3), (CX + side * 4.6, y - 1.6), (CX + side * 5.0, y + 0.6),
+                (CX + side * 3.6, y + 1.8), (CX + side * 1.2, y + 1.2)], LENS_DARK, outline="trim", width=0.55)
+        s.dot(CX + side * 3.4, y - 0.6, 0.4, LENS_HILIGHT)
+    s.line((CX - 0.9, y - 1.1), (CX + 0.9, y - 1.1), "trim", 0.6)
+    _temple(s, y)
+    return s
+
+
+def monocle(g):
+    s = layer(f"heroEyewearMonocle{cap(g.build)}", f"A single lens and a chain over one eye of a {g.build} frame.")
+    y = g.sy - 9.3
+    x = CX + 2.6
+    s.ellipse(x - 1.9, y - 1.9, 3.8, 3.8, (0x000000, 0.0), outline="trim", width=0.7)
+    s.dot(x + 1.3, y + 1.2, 0.55, "trim")
+    s.curve([(x + 1.7, y + 1.6), (x + 3.4, y + 5), (x + 1.2, y + 8.6)], "trim:0.85", 0.5)
+    return s
+
+
+EYEWEAR = {"sunglasses": sunglasses, "reading": reading, "aviators": aviators, "monocle": monocle}

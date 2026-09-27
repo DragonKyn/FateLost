@@ -36,6 +36,7 @@ HEADS = list(hero_heads.BUILDERS)
 EMBLEMS = list(hero_extras.EMBLEMS)
 DETAILS = list(hero_extras.DETAILS)
 WINGS = list(hero_extras.WINGS)
+EYEWEAR = list(hero_extras.EYEWEAR)
 
 
 def legs(build):
@@ -54,7 +55,7 @@ def all_layers():
     layers = [legs(build) for build in BUILD_NAMES]
     groups = [
         (hero_cloaks.BUILDERS, CLOAKS), (hero_heads.BUILDERS, HEADS), (hero_extras.EMBLEMS, EMBLEMS),
-        (hero_extras.DETAILS, DETAILS), (hero_extras.WINGS, WINGS),
+        (hero_extras.DETAILS, DETAILS), (hero_extras.WINGS, WINGS), (hero_extras.EYEWEAR, EYEWEAR),
     ]
     for builders, names in groups:
         for build in BUILD_NAMES:
@@ -63,7 +64,8 @@ def all_layers():
     return layers
 
 
-def dressed(build="standard", cloak="hooded", head="hood", emblem=None, detail=None, wings=None, name=None):
+def dressed(build="standard", cloak="hooded", head="hood", emblem=None, detail=None, wings=None, eyewear=None,
+           name=None):
     """The layers composited into one sprite, for the preview."""
     g = Geo(build)
     parts = []
@@ -76,6 +78,8 @@ def dressed(build="standard", cloak="hooded", head="hood", emblem=None, detail=N
     if emblem:
         parts.append(hero_extras.EMBLEMS[emblem](g))
     parts.append(hero_heads.BUILDERS[head](g))
+    if eyewear:
+        parts.append(hero_extras.EYEWEAR[eyewear](g))
     s = Sprite(name or f"{build}/{cloak}/{head}", W, H, foot=FOOT)
     for part in parts:
         s.ops.extend(part.ops)
@@ -128,6 +132,8 @@ def previews(here):
         extras.append((f"detail {d}", dressed("standard", "mantle", "hood", detail=d), looks[(i + 2) % len(looks)]))
     for i, w in enumerate(WINGS):
         extras.append((f"wings {w}", dressed("standard", "hooded", "hood", wings=w), looks[i % len(looks)]))
+    for i, e in enumerate(EYEWEAR):
+        extras.append((f"eyewear {e}", dressed("standard", "mantle", "bare", eyewear=e), looks[(i + 3) % len(looks)]))
     sheet(os.path.join(here, "hero-extras.png"), extras, columns=6)
 
     every_build = []
@@ -174,7 +180,7 @@ def dispatch():
     groups = [
         ("Cloak", "CloakStyle", CLOAKS, None), ("Head", "HeadStyle", HEADS, None),
         ("Emblem", "EmblemStyle", EMBLEMS, "plain"), ("Detail", "MetalDetail", DETAILS, "plain"),
-        ("Wings", "WingStyle", WINGS, "plain"),
+        ("Wings", "WingStyle", WINGS, "plain"), ("Eyewear", "EyewearStyle", EYEWEAR, "plain"),
     ]
     for label, enum, names, empty in groups:
         lines.append("")

@@ -2213,6 +2213,77 @@ extension PlaceholderArt {
         fillOval(ctx, CGRect(x: 30.9, y: 21, width: 2.2, height: 2.2), ink.trim())
     }
 
+    // MARK: - heroHeadBandanaLithe
+
+    /// A bandana knotted over the hair of a lithe frame.
+    static func heroHeadBandanaLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 36.5), P(34.1, 36.5), P(34.1, 42), P(29.9, 42)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 21.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 21.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 24, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 24, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 32.5), P(25.4, 26.5), P(28.5, 22.6), P(35.5, 22.6), P(38.6, 26.5), P(39, 32.5), P(37.4, 29.2), P(33.5, 27), P(29, 28.6), P(26.8, 30.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 32.5), P(25.4, 26.5), P(28.5, 22.6), P(35.5, 22.6), P(38.6, 26.5), P(39, 32.5), P(37.4, 29.2), P(33.5, 27), P(29, 28.6), P(26.8, 30.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 30.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 30.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 30.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 30.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 29.6), to: P(30.7, 30.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 30.1), to: P(35.8, 29.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 35.4), to: P(33.2, 35.4), ink.skin(0.55), width: 0.7)
+        fillPolygon(ctx, [P(24.6, 26.6), P(24.2, 23.4), P(39.8, 23.4), P(39.4, 26.6)], ink.trim(0.75))
+        strokePolygon(ctx, [P(24.6, 26.6), P(24.2, 23.4), P(39.8, 23.4), P(39.4, 26.6)], UIColor(rgb: 0x0B0908), width: 0.8)
+        stroke(ctx, from: P(25.4, 25), to: P(38.6, 25), ink.trim(0.5), width: 0.5)
+        fillOval(ctx, CGRect(x: 38.3, y: 23.7, width: 2.6, height: 2.6), ink.trim(0.9))
+        fillPolygon(ctx, [P(39.53, 25.9), P(40.35, 25.81), P(40.8, 25.9), P(41.18, 26.23), P(41.46, 26.97), P(41.51, 28.1), P(41.3, 29.58), P(41.5, 29.62), P(41.97, 28.18), P(42.19, 26.94), P(42.12, 25.87), P(41.64, 24.95), P(40.73, 24.33), P(39.67, 24.1)], ink.trim(0.75))
+        strokePolygon(ctx, [P(39.53, 25.9), P(40.35, 25.81), P(40.8, 25.9), P(41.18, 26.23), P(41.46, 26.97), P(41.51, 28.1), P(41.3, 29.58), P(41.5, 29.62), P(41.97, 28.18), P(42.19, 26.94), P(42.12, 25.87), P(41.64, 24.95), P(40.73, 24.33), P(39.67, 24.1)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(39.66, 26.32), P(40.72, 26.68), P(41.51, 27.2), P(42.14, 27.95), P(42.61, 28.96), P(42.87, 30.24), P(42.9, 31.79), P(43.1, 31.81), P(43.3, 30.23), P(43.26, 28.82), P(42.96, 27.55), P(42.36, 26.45), P(41.45, 25.53), P(40.34, 24.88)], ink.trim(0.6))
+        strokePolygon(ctx, [P(39.66, 26.32), P(40.72, 26.68), P(41.51, 27.2), P(42.14, 27.95), P(42.61, 28.96), P(42.87, 30.24), P(42.9, 31.79), P(43.1, 31.81), P(43.3, 30.23), P(43.26, 28.82), P(42.96, 27.55), P(42.36, 26.45), P(41.45, 25.53), P(40.34, 24.88)], UIColor(rgb: 0x0B0908), width: 0.4)
+    }
+
+    // MARK: - heroHeadCowboyHatLithe
+
+    /// A wide-brimmed hat, pinched at the crown, on a lithe frame.
+    static func heroHeadCowboyHatLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 36.5), P(34.1, 36.5), P(34.1, 42), P(29.9, 42)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 21.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 21.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 24, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 24, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 32.5), P(25.4, 26.5), P(28.5, 22.6), P(35.5, 22.6), P(38.6, 26.5), P(39, 32.5), P(37.4, 29.2), P(33.5, 27), P(29, 28.6), P(26.8, 30.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 32.5), P(25.4, 26.5), P(28.5, 22.6), P(35.5, 22.6), P(38.6, 26.5), P(39, 32.5), P(37.4, 29.2), P(33.5, 27), P(29, 28.6), P(26.8, 30.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 30.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 30.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 30.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 30.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 29.6), to: P(30.7, 30.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 30.1), to: P(35.8, 29.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 35.4), to: P(33.2, 35.4), ink.skin(0.55), width: 0.7)
+        fillOval(ctx, CGRect(x: 18, y: 19.9, width: 28, height: 6.6), ink.cloak(0.8))
+        strokeOval(ctx, CGRect(x: 18, y: 19.9, width: 28, height: 6.6), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 18, y: 19.9, width: 28, height: 3.6), ink.cloak(0.95))
+        fillSmooth(ctx, [P(24, 22.9), P(24.8, 14.1), P(28.4, 10.5), P(35.6, 10.5), P(39.2, 14.1), P(40, 22.9)], ink.cloak(0.85))
+        strokeSmooth(ctx, [P(24, 22.9), P(24.8, 14.1), P(28.4, 10.5), P(35.6, 10.5), P(39.2, 14.1), P(40, 22.9)], UIColor(rgb: 0x0B0908), width: 1)
+        strokeCurve(ctx, [P(32, 22.1), P(31.4, 15.5), P(32, 11.1)], ink.cloak(0.6), width: 0.7)
+        strokeCurve(ctx, [P(26.6, 17.3), P(29, 12.9)], ink.cloak(1.3), width: 0.5)
+        strokeCurve(ctx, [P(37.4, 17.3), P(35, 12.9)], ink.cloak(1.3), width: 0.5)
+        fillPolygon(ctx, [P(24.4, 20.1), P(39.6, 20.1), P(39.6, 22.3), P(24.4, 22.3)], ink.trim(0.85))
+        strokePolygon(ctx, [P(24.4, 20.1), P(39.6, 20.1), P(39.6, 22.3), P(24.4, 22.3)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
+    // MARK: - heroHeadNinjaMaskLithe
+
+    /// A tight wrap over the whole head on a lithe frame, with a slit for the eyes.
+    static func heroHeadNinjaMaskLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 24.86, y: 24.44, width: 14.28, height: 16.56), ink.cloak(0.6))
+        strokeOval(ctx, CGRect(x: 24.86, y: 24.44, width: 14.28, height: 16.56), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 26.86, y: 31.4, width: 10.28, height: 2.65), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.29, y: 31.87, width: 1.7, height: 1.7), ink.eyes())
+        fillOval(ctx, CGRect(x: 34.01, y: 31.87, width: 1.7, height: 1.7), ink.eyes())
+        fillPolygon(ctx, [P(36.15, 33.56), P(37.27, 34.62), P(38.1, 35.98), P(38.71, 37.81), P(39.05, 40.09), P(39.1, 42.8), P(38.84, 45.93), P(39.44, 46.01), P(40.03, 42.88), P(40.31, 40.07), P(40.29, 37.57), P(39.93, 35.35), P(39.18, 33.4), P(38.13, 31.88)], ink.cloak(0.55))
+        strokePolygon(ctx, [P(36.15, 33.56), P(37.27, 34.62), P(38.1, 35.98), P(38.71, 37.81), P(39.05, 40.09), P(39.1, 42.8), P(38.84, 45.93), P(39.44, 46.01), P(40.03, 42.88), P(40.31, 40.07), P(40.29, 37.57), P(39.93, 35.35), P(39.18, 33.4), P(38.13, 31.88)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
     // MARK: - heroHeadHoodStandard
 
     /// A deep hood on a standard frame, the face left in shadow.
@@ -2424,6 +2495,77 @@ extension PlaceholderArt {
         fillPolygon(ctx, [P(23.6, 23.8), P(40.4, 23.8), P(40.4, 26.4), P(23.6, 26.4)], ink.trim(0.85))
         strokePolygon(ctx, [P(23.6, 23.8), P(40.4, 23.8), P(40.4, 26.4), P(23.6, 26.4)], UIColor(rgb: 0x0B0908), width: 0.5)
         fillOval(ctx, CGRect(x: 30.9, y: 24, width: 2.2, height: 2.2), ink.trim())
+    }
+
+    // MARK: - heroHeadBandanaStandard
+
+    /// A bandana knotted over the hair of a standard frame.
+    static func heroHeadBandanaStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 39.5), P(34.1, 39.5), P(34.1, 45), P(29.9, 45)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 24.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 24.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 27, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 27, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 35.5), P(25.4, 29.5), P(28.5, 25.6), P(35.5, 25.6), P(38.6, 29.5), P(39, 35.5), P(37.4, 32.2), P(33.5, 30), P(29, 31.6), P(26.8, 33.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 35.5), P(25.4, 29.5), P(28.5, 25.6), P(35.5, 25.6), P(38.6, 29.5), P(39, 35.5), P(37.4, 32.2), P(33.5, 30), P(29, 31.6), P(26.8, 33.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 33.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 33.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 33.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 33.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 32.6), to: P(30.7, 33.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 33.1), to: P(35.8, 32.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 38.4), to: P(33.2, 38.4), ink.skin(0.55), width: 0.7)
+        fillPolygon(ctx, [P(24.6, 29.6), P(24.2, 26.4), P(39.8, 26.4), P(39.4, 29.6)], ink.trim(0.75))
+        strokePolygon(ctx, [P(24.6, 29.6), P(24.2, 26.4), P(39.8, 26.4), P(39.4, 29.6)], UIColor(rgb: 0x0B0908), width: 0.8)
+        stroke(ctx, from: P(25.4, 28), to: P(38.6, 28), ink.trim(0.5), width: 0.5)
+        fillOval(ctx, CGRect(x: 38.3, y: 26.7, width: 2.6, height: 2.6), ink.trim(0.9))
+        fillPolygon(ctx, [P(39.53, 28.9), P(40.35, 28.81), P(40.8, 28.9), P(41.18, 29.23), P(41.46, 29.97), P(41.51, 31.1), P(41.3, 32.58), P(41.5, 32.62), P(41.97, 31.18), P(42.19, 29.94), P(42.12, 28.87), P(41.64, 27.95), P(40.73, 27.33), P(39.67, 27.1)], ink.trim(0.75))
+        strokePolygon(ctx, [P(39.53, 28.9), P(40.35, 28.81), P(40.8, 28.9), P(41.18, 29.23), P(41.46, 29.97), P(41.51, 31.1), P(41.3, 32.58), P(41.5, 32.62), P(41.97, 31.18), P(42.19, 29.94), P(42.12, 28.87), P(41.64, 27.95), P(40.73, 27.33), P(39.67, 27.1)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(39.66, 29.32), P(40.72, 29.68), P(41.51, 30.2), P(42.14, 30.95), P(42.61, 31.96), P(42.87, 33.24), P(42.9, 34.79), P(43.1, 34.81), P(43.3, 33.23), P(43.26, 31.82), P(42.96, 30.55), P(42.36, 29.45), P(41.45, 28.53), P(40.34, 27.88)], ink.trim(0.6))
+        strokePolygon(ctx, [P(39.66, 29.32), P(40.72, 29.68), P(41.51, 30.2), P(42.14, 30.95), P(42.61, 31.96), P(42.87, 33.24), P(42.9, 34.79), P(43.1, 34.81), P(43.3, 33.23), P(43.26, 31.82), P(42.96, 30.55), P(42.36, 29.45), P(41.45, 28.53), P(40.34, 27.88)], UIColor(rgb: 0x0B0908), width: 0.4)
+    }
+
+    // MARK: - heroHeadCowboyHatStandard
+
+    /// A wide-brimmed hat, pinched at the crown, on a standard frame.
+    static func heroHeadCowboyHatStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 39.5), P(34.1, 39.5), P(34.1, 45), P(29.9, 45)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 24.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 24.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 27, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 27, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 35.5), P(25.4, 29.5), P(28.5, 25.6), P(35.5, 25.6), P(38.6, 29.5), P(39, 35.5), P(37.4, 32.2), P(33.5, 30), P(29, 31.6), P(26.8, 33.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 35.5), P(25.4, 29.5), P(28.5, 25.6), P(35.5, 25.6), P(38.6, 29.5), P(39, 35.5), P(37.4, 32.2), P(33.5, 30), P(29, 31.6), P(26.8, 33.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 33.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 33.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 33.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 33.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 32.6), to: P(30.7, 33.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 33.1), to: P(35.8, 32.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 38.4), to: P(33.2, 38.4), ink.skin(0.55), width: 0.7)
+        fillOval(ctx, CGRect(x: 18, y: 22.9, width: 28, height: 6.6), ink.cloak(0.8))
+        strokeOval(ctx, CGRect(x: 18, y: 22.9, width: 28, height: 6.6), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 18, y: 22.9, width: 28, height: 3.6), ink.cloak(0.95))
+        fillSmooth(ctx, [P(24, 25.9), P(24.8, 17.1), P(28.4, 13.5), P(35.6, 13.5), P(39.2, 17.1), P(40, 25.9)], ink.cloak(0.85))
+        strokeSmooth(ctx, [P(24, 25.9), P(24.8, 17.1), P(28.4, 13.5), P(35.6, 13.5), P(39.2, 17.1), P(40, 25.9)], UIColor(rgb: 0x0B0908), width: 1)
+        strokeCurve(ctx, [P(32, 25.1), P(31.4, 18.5), P(32, 14.1)], ink.cloak(0.6), width: 0.7)
+        strokeCurve(ctx, [P(26.6, 20.3), P(29, 15.9)], ink.cloak(1.3), width: 0.5)
+        strokeCurve(ctx, [P(37.4, 20.3), P(35, 15.9)], ink.cloak(1.3), width: 0.5)
+        fillPolygon(ctx, [P(24.4, 23.1), P(39.6, 23.1), P(39.6, 25.3), P(24.4, 25.3)], ink.trim(0.85))
+        strokePolygon(ctx, [P(24.4, 23.1), P(39.6, 23.1), P(39.6, 25.3), P(24.4, 25.3)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
+    // MARK: - heroHeadNinjaMaskStandard
+
+    /// A tight wrap over the whole head on a standard frame, with a slit for the eyes.
+    static func heroHeadNinjaMaskStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 24.02, y: 26.52, width: 15.96, height: 17.48), ink.cloak(0.6))
+        strokeOval(ctx, CGRect(x: 24.02, y: 26.52, width: 15.96, height: 17.48), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 26.25, y: 33.86, width: 11.49, height: 2.8), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 27.96, y: 34.41, width: 1.7, height: 1.7), ink.eyes())
+        fillOval(ctx, CGRect(x: 34.34, y: 34.41, width: 1.7, height: 1.7), ink.eyes())
+        fillPolygon(ctx, [P(36.78, 36.13), P(38.02, 37.25), P(38.93, 38.7), P(39.59, 40.63), P(39.95, 43.04), P(39.99, 45.9), P(39.68, 49.2), P(40.28, 49.29), P(40.91, 45.99), P(41.22, 43.02), P(41.17, 40.38), P(40.75, 38.04), P(39.9, 35.99), P(38.72, 34.39)], ink.cloak(0.55))
+        strokePolygon(ctx, [P(36.78, 36.13), P(38.02, 37.25), P(38.93, 38.7), P(39.59, 40.63), P(39.95, 43.04), P(39.99, 45.9), P(39.68, 49.2), P(40.28, 49.29), P(40.91, 45.99), P(41.22, 43.02), P(41.17, 40.38), P(40.75, 38.04), P(39.9, 35.99), P(38.72, 34.39)], UIColor(rgb: 0x0B0908), width: 0.5)
     }
 
     // MARK: - heroHeadHoodBroad
@@ -2639,6 +2781,77 @@ extension PlaceholderArt {
         fillOval(ctx, CGRect(x: 30.9, y: 25, width: 2.2, height: 2.2), ink.trim())
     }
 
+    // MARK: - heroHeadBandanaBroad
+
+    /// A bandana knotted over the hair of a broad frame.
+    static func heroHeadBandanaBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 40.5), P(34.1, 40.5), P(34.1, 46), P(29.9, 46)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 25.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 25.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 28, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 28, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 36.5), P(25.4, 30.5), P(28.5, 26.6), P(35.5, 26.6), P(38.6, 30.5), P(39, 36.5), P(37.4, 33.2), P(33.5, 31), P(29, 32.6), P(26.8, 34.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 36.5), P(25.4, 30.5), P(28.5, 26.6), P(35.5, 26.6), P(38.6, 30.5), P(39, 36.5), P(37.4, 33.2), P(33.5, 31), P(29, 32.6), P(26.8, 34.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 34.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 34.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 34.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 34.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 33.6), to: P(30.7, 34.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 34.1), to: P(35.8, 33.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 39.4), to: P(33.2, 39.4), ink.skin(0.55), width: 0.7)
+        fillPolygon(ctx, [P(24.6, 30.6), P(24.2, 27.4), P(39.8, 27.4), P(39.4, 30.6)], ink.trim(0.75))
+        strokePolygon(ctx, [P(24.6, 30.6), P(24.2, 27.4), P(39.8, 27.4), P(39.4, 30.6)], UIColor(rgb: 0x0B0908), width: 0.8)
+        stroke(ctx, from: P(25.4, 29), to: P(38.6, 29), ink.trim(0.5), width: 0.5)
+        fillOval(ctx, CGRect(x: 38.3, y: 27.7, width: 2.6, height: 2.6), ink.trim(0.9))
+        fillPolygon(ctx, [P(39.53, 29.9), P(40.35, 29.81), P(40.8, 29.9), P(41.18, 30.23), P(41.46, 30.97), P(41.51, 32.1), P(41.3, 33.58), P(41.5, 33.62), P(41.97, 32.18), P(42.19, 30.94), P(42.12, 29.87), P(41.64, 28.95), P(40.73, 28.33), P(39.67, 28.1)], ink.trim(0.75))
+        strokePolygon(ctx, [P(39.53, 29.9), P(40.35, 29.81), P(40.8, 29.9), P(41.18, 30.23), P(41.46, 30.97), P(41.51, 32.1), P(41.3, 33.58), P(41.5, 33.62), P(41.97, 32.18), P(42.19, 30.94), P(42.12, 29.87), P(41.64, 28.95), P(40.73, 28.33), P(39.67, 28.1)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(39.66, 30.32), P(40.72, 30.68), P(41.51, 31.2), P(42.14, 31.95), P(42.61, 32.96), P(42.87, 34.24), P(42.9, 35.79), P(43.1, 35.81), P(43.3, 34.23), P(43.26, 32.82), P(42.96, 31.55), P(42.36, 30.45), P(41.45, 29.53), P(40.34, 28.88)], ink.trim(0.6))
+        strokePolygon(ctx, [P(39.66, 30.32), P(40.72, 30.68), P(41.51, 31.2), P(42.14, 31.95), P(42.61, 32.96), P(42.87, 34.24), P(42.9, 35.79), P(43.1, 35.81), P(43.3, 34.23), P(43.26, 32.82), P(42.96, 31.55), P(42.36, 30.45), P(41.45, 29.53), P(40.34, 28.88)], UIColor(rgb: 0x0B0908), width: 0.4)
+    }
+
+    // MARK: - heroHeadCowboyHatBroad
+
+    /// A wide-brimmed hat, pinched at the crown, on a broad frame.
+    static func heroHeadCowboyHatBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 40.5), P(34.1, 40.5), P(34.1, 46), P(29.9, 46)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 25.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 25.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 28, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 28, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 36.5), P(25.4, 30.5), P(28.5, 26.6), P(35.5, 26.6), P(38.6, 30.5), P(39, 36.5), P(37.4, 33.2), P(33.5, 31), P(29, 32.6), P(26.8, 34.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 36.5), P(25.4, 30.5), P(28.5, 26.6), P(35.5, 26.6), P(38.6, 30.5), P(39, 36.5), P(37.4, 33.2), P(33.5, 31), P(29, 32.6), P(26.8, 34.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 34.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 34.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 34.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 34.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 33.6), to: P(30.7, 34.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 34.1), to: P(35.8, 33.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 39.4), to: P(33.2, 39.4), ink.skin(0.55), width: 0.7)
+        fillOval(ctx, CGRect(x: 18, y: 23.9, width: 28, height: 6.6), ink.cloak(0.8))
+        strokeOval(ctx, CGRect(x: 18, y: 23.9, width: 28, height: 6.6), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 18, y: 23.9, width: 28, height: 3.6), ink.cloak(0.95))
+        fillSmooth(ctx, [P(24, 26.9), P(24.8, 18.1), P(28.4, 14.5), P(35.6, 14.5), P(39.2, 18.1), P(40, 26.9)], ink.cloak(0.85))
+        strokeSmooth(ctx, [P(24, 26.9), P(24.8, 18.1), P(28.4, 14.5), P(35.6, 14.5), P(39.2, 18.1), P(40, 26.9)], UIColor(rgb: 0x0B0908), width: 1)
+        strokeCurve(ctx, [P(32, 26.1), P(31.4, 19.5), P(32, 15.1)], ink.cloak(0.6), width: 0.7)
+        strokeCurve(ctx, [P(26.6, 21.3), P(29, 16.9)], ink.cloak(1.3), width: 0.5)
+        strokeCurve(ctx, [P(37.4, 21.3), P(35, 16.9)], ink.cloak(1.3), width: 0.5)
+        fillPolygon(ctx, [P(24.4, 24.1), P(39.6, 24.1), P(39.6, 26.3), P(24.4, 26.3)], ink.trim(0.85))
+        strokePolygon(ctx, [P(24.4, 24.1), P(39.6, 24.1), P(39.6, 26.3), P(24.4, 26.3)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
+    // MARK: - heroHeadNinjaMaskBroad
+
+    /// A tight wrap over the whole head on a broad frame, with a slit for the eyes.
+    static func heroHeadNinjaMaskBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 23.18, y: 26.6, width: 17.64, height: 18.4), ink.cloak(0.6))
+        strokeOval(ctx, CGRect(x: 23.18, y: 26.6, width: 17.64, height: 18.4), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 25.65, y: 34.33, width: 12.7, height: 2.94), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 27.62, y: 34.95, width: 1.7, height: 1.7), ink.eyes())
+        fillOval(ctx, CGRect(x: 34.68, y: 34.95, width: 1.7, height: 1.7), ink.eyes())
+        fillPolygon(ctx, [P(37.4, 36.69), P(38.77, 37.89), P(39.76, 39.42), P(40.47, 41.45), P(40.85, 43.99), P(40.88, 47), P(40.52, 50.48), P(41.12, 50.56), P(41.8, 47.09), P(42.12, 43.97), P(42.05, 41.19), P(41.57, 38.72), P(40.62, 36.58), P(39.3, 34.91)], ink.cloak(0.55))
+        strokePolygon(ctx, [P(37.4, 36.69), P(38.77, 37.89), P(39.76, 39.42), P(40.47, 41.45), P(40.85, 43.99), P(40.88, 47), P(40.52, 50.48), P(41.12, 50.56), P(41.8, 47.09), P(42.12, 43.97), P(42.05, 41.19), P(41.57, 38.72), P(40.62, 36.58), P(39.3, 34.91)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
     // MARK: - heroHeadHoodStout
 
     /// A deep hood on a stout frame, the face left in shadow.
@@ -2852,6 +3065,77 @@ extension PlaceholderArt {
         fillOval(ctx, CGRect(x: 30.9, y: 30, width: 2.2, height: 2.2), ink.trim())
     }
 
+    // MARK: - heroHeadBandanaStout
+
+    /// A bandana knotted over the hair of a stout frame.
+    static func heroHeadBandanaStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 45.5), P(34.1, 45.5), P(34.1, 51), P(29.9, 51)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 30.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 30.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 33, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 33, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 41.5), P(25.4, 35.5), P(28.5, 31.6), P(35.5, 31.6), P(38.6, 35.5), P(39, 41.5), P(37.4, 38.2), P(33.5, 36), P(29, 37.6), P(26.8, 39.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 41.5), P(25.4, 35.5), P(28.5, 31.6), P(35.5, 31.6), P(38.6, 35.5), P(39, 41.5), P(37.4, 38.2), P(33.5, 36), P(29, 37.6), P(26.8, 39.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 39.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 39.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 39.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 39.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 38.6), to: P(30.7, 39.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 39.1), to: P(35.8, 38.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 44.4), to: P(33.2, 44.4), ink.skin(0.55), width: 0.7)
+        fillPolygon(ctx, [P(24.6, 35.6), P(24.2, 32.4), P(39.8, 32.4), P(39.4, 35.6)], ink.trim(0.75))
+        strokePolygon(ctx, [P(24.6, 35.6), P(24.2, 32.4), P(39.8, 32.4), P(39.4, 35.6)], UIColor(rgb: 0x0B0908), width: 0.8)
+        stroke(ctx, from: P(25.4, 34), to: P(38.6, 34), ink.trim(0.5), width: 0.5)
+        fillOval(ctx, CGRect(x: 38.3, y: 32.7, width: 2.6, height: 2.6), ink.trim(0.9))
+        fillPolygon(ctx, [P(39.53, 34.9), P(40.35, 34.81), P(40.8, 34.9), P(41.18, 35.23), P(41.46, 35.97), P(41.51, 37.1), P(41.3, 38.58), P(41.5, 38.62), P(41.97, 37.18), P(42.19, 35.94), P(42.12, 34.87), P(41.64, 33.95), P(40.73, 33.33), P(39.67, 33.1)], ink.trim(0.75))
+        strokePolygon(ctx, [P(39.53, 34.9), P(40.35, 34.81), P(40.8, 34.9), P(41.18, 35.23), P(41.46, 35.97), P(41.51, 37.1), P(41.3, 38.58), P(41.5, 38.62), P(41.97, 37.18), P(42.19, 35.94), P(42.12, 34.87), P(41.64, 33.95), P(40.73, 33.33), P(39.67, 33.1)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(39.66, 35.32), P(40.72, 35.68), P(41.51, 36.2), P(42.14, 36.95), P(42.61, 37.96), P(42.87, 39.24), P(42.9, 40.79), P(43.1, 40.81), P(43.3, 39.23), P(43.26, 37.82), P(42.96, 36.55), P(42.36, 35.45), P(41.45, 34.53), P(40.34, 33.88)], ink.trim(0.6))
+        strokePolygon(ctx, [P(39.66, 35.32), P(40.72, 35.68), P(41.51, 36.2), P(42.14, 36.95), P(42.61, 37.96), P(42.87, 39.24), P(42.9, 40.79), P(43.1, 40.81), P(43.3, 39.23), P(43.26, 37.82), P(42.96, 36.55), P(42.36, 35.45), P(41.45, 34.53), P(40.34, 33.88)], UIColor(rgb: 0x0B0908), width: 0.4)
+    }
+
+    // MARK: - heroHeadCowboyHatStout
+
+    /// A wide-brimmed hat, pinched at the crown, on a stout frame.
+    static func heroHeadCowboyHatStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 45.5), P(34.1, 45.5), P(34.1, 51), P(29.9, 51)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 30.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 30.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 33, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 33, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 41.5), P(25.4, 35.5), P(28.5, 31.6), P(35.5, 31.6), P(38.6, 35.5), P(39, 41.5), P(37.4, 38.2), P(33.5, 36), P(29, 37.6), P(26.8, 39.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 41.5), P(25.4, 35.5), P(28.5, 31.6), P(35.5, 31.6), P(38.6, 35.5), P(39, 41.5), P(37.4, 38.2), P(33.5, 36), P(29, 37.6), P(26.8, 39.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 39.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 39.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 39.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 39.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 38.6), to: P(30.7, 39.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 39.1), to: P(35.8, 38.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 44.4), to: P(33.2, 44.4), ink.skin(0.55), width: 0.7)
+        fillOval(ctx, CGRect(x: 18, y: 28.9, width: 28, height: 6.6), ink.cloak(0.8))
+        strokeOval(ctx, CGRect(x: 18, y: 28.9, width: 28, height: 6.6), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 18, y: 28.9, width: 28, height: 3.6), ink.cloak(0.95))
+        fillSmooth(ctx, [P(24, 31.9), P(24.8, 23.1), P(28.4, 19.5), P(35.6, 19.5), P(39.2, 23.1), P(40, 31.9)], ink.cloak(0.85))
+        strokeSmooth(ctx, [P(24, 31.9), P(24.8, 23.1), P(28.4, 19.5), P(35.6, 19.5), P(39.2, 23.1), P(40, 31.9)], UIColor(rgb: 0x0B0908), width: 1)
+        strokeCurve(ctx, [P(32, 31.1), P(31.4, 24.5), P(32, 20.1)], ink.cloak(0.6), width: 0.7)
+        strokeCurve(ctx, [P(26.6, 26.3), P(29, 21.9)], ink.cloak(1.3), width: 0.5)
+        strokeCurve(ctx, [P(37.4, 26.3), P(35, 21.9)], ink.cloak(1.3), width: 0.5)
+        fillPolygon(ctx, [P(24.4, 29.1), P(39.6, 29.1), P(39.6, 31.3), P(24.4, 31.3)], ink.trim(0.85))
+        strokePolygon(ctx, [P(24.4, 29.1), P(39.6, 29.1), P(39.6, 31.3), P(24.4, 31.3)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
+    // MARK: - heroHeadNinjaMaskStout
+
+    /// A tight wrap over the whole head on a stout frame, with a slit for the eyes.
+    static func heroHeadNinjaMaskStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 23.6, y: 33.44, width: 16.8, height: 16.56), ink.cloak(0.6))
+        strokeOval(ctx, CGRect(x: 23.6, y: 33.44, width: 16.8, height: 16.56), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 25.95, y: 40.4, width: 12.1, height: 2.65), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 27.79, y: 40.87, width: 1.7, height: 1.7), ink.eyes())
+        fillOval(ctx, CGRect(x: 34.51, y: 40.87, width: 1.7, height: 1.7), ink.eyes())
+        fillPolygon(ctx, [P(37.13, 42.64), P(38.42, 43.69), P(39.35, 45.03), P(40.03, 46.83), P(40.4, 49.09), P(40.43, 51.79), P(40.1, 54.92), P(40.7, 55.01), P(41.36, 51.89), P(41.67, 49.07), P(41.61, 46.55), P(41.15, 44.3), P(40.23, 42.33), P(38.97, 40.8)], ink.cloak(0.55))
+        strokePolygon(ctx, [P(37.13, 42.64), P(38.42, 43.69), P(39.35, 45.03), P(40.03, 46.83), P(40.4, 49.09), P(40.43, 51.79), P(40.1, 54.92), P(40.7, 55.01), P(41.36, 51.89), P(41.67, 49.07), P(41.61, 46.55), P(41.15, 44.3), P(40.23, 42.33), P(38.97, 40.8)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
     // MARK: - heroHeadHoodTowering
 
     /// A deep hood on a towering frame, the face left in shadow.
@@ -3063,6 +3347,77 @@ extension PlaceholderArt {
         fillPolygon(ctx, [P(23.6, 16.8), P(40.4, 16.8), P(40.4, 19.4), P(23.6, 19.4)], ink.trim(0.85))
         strokePolygon(ctx, [P(23.6, 16.8), P(40.4, 16.8), P(40.4, 19.4), P(23.6, 19.4)], UIColor(rgb: 0x0B0908), width: 0.5)
         fillOval(ctx, CGRect(x: 30.9, y: 17, width: 2.2, height: 2.2), ink.trim())
+    }
+
+    // MARK: - heroHeadBandanaTowering
+
+    /// A bandana knotted over the hair of a towering frame.
+    static func heroHeadBandanaTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 32.5), P(34.1, 32.5), P(34.1, 38), P(29.9, 38)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 17.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 17.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 20, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 20, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 28.5), P(25.4, 22.5), P(28.5, 18.6), P(35.5, 18.6), P(38.6, 22.5), P(39, 28.5), P(37.4, 25.2), P(33.5, 23), P(29, 24.6), P(26.8, 26.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 28.5), P(25.4, 22.5), P(28.5, 18.6), P(35.5, 18.6), P(38.6, 22.5), P(39, 28.5), P(37.4, 25.2), P(33.5, 23), P(29, 24.6), P(26.8, 26.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 26.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 26.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 26.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 26.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 25.6), to: P(30.7, 26.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 26.1), to: P(35.8, 25.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 31.4), to: P(33.2, 31.4), ink.skin(0.55), width: 0.7)
+        fillPolygon(ctx, [P(24.6, 22.6), P(24.2, 19.4), P(39.8, 19.4), P(39.4, 22.6)], ink.trim(0.75))
+        strokePolygon(ctx, [P(24.6, 22.6), P(24.2, 19.4), P(39.8, 19.4), P(39.4, 22.6)], UIColor(rgb: 0x0B0908), width: 0.8)
+        stroke(ctx, from: P(25.4, 21), to: P(38.6, 21), ink.trim(0.5), width: 0.5)
+        fillOval(ctx, CGRect(x: 38.3, y: 19.7, width: 2.6, height: 2.6), ink.trim(0.9))
+        fillPolygon(ctx, [P(39.53, 21.9), P(40.35, 21.81), P(40.8, 21.9), P(41.18, 22.23), P(41.46, 22.97), P(41.51, 24.1), P(41.3, 25.58), P(41.5, 25.62), P(41.97, 24.18), P(42.19, 22.94), P(42.12, 21.87), P(41.64, 20.95), P(40.73, 20.33), P(39.67, 20.1)], ink.trim(0.75))
+        strokePolygon(ctx, [P(39.53, 21.9), P(40.35, 21.81), P(40.8, 21.9), P(41.18, 22.23), P(41.46, 22.97), P(41.51, 24.1), P(41.3, 25.58), P(41.5, 25.62), P(41.97, 24.18), P(42.19, 22.94), P(42.12, 21.87), P(41.64, 20.95), P(40.73, 20.33), P(39.67, 20.1)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(39.66, 22.32), P(40.72, 22.68), P(41.51, 23.2), P(42.14, 23.95), P(42.61, 24.96), P(42.87, 26.24), P(42.9, 27.79), P(43.1, 27.81), P(43.3, 26.23), P(43.26, 24.82), P(42.96, 23.55), P(42.36, 22.45), P(41.45, 21.53), P(40.34, 20.88)], ink.trim(0.6))
+        strokePolygon(ctx, [P(39.66, 22.32), P(40.72, 22.68), P(41.51, 23.2), P(42.14, 23.95), P(42.61, 24.96), P(42.87, 26.24), P(42.9, 27.79), P(43.1, 27.81), P(43.3, 26.23), P(43.26, 24.82), P(42.96, 23.55), P(42.36, 22.45), P(41.45, 21.53), P(40.34, 20.88)], UIColor(rgb: 0x0B0908), width: 0.4)
+    }
+
+    // MARK: - heroHeadCowboyHatTowering
+
+    /// A wide-brimmed hat, pinched at the crown, on a towering frame.
+    static func heroHeadCowboyHatTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(29.9, 32.5), P(34.1, 32.5), P(34.1, 38), P(29.9, 38)], ink.skin(0.66))
+        fillOval(ctx, CGRect(x: 24.4, y: 17.5, width: 15.2, height: 15), ink.hair(0.8))
+        strokeOval(ctx, CGRect(x: 24.4, y: 17.5, width: 15.2, height: 15), UIColor(rgb: 0x0B0908), width: 1)
+        fillOval(ctx, CGRect(x: 26, y: 20, width: 12, height: 13.5), ink.skin())
+        strokeOval(ctx, CGRect(x: 26, y: 20, width: 12, height: 13.5), UIColor(rgb: 0x0B0908), width: 1)
+        fillSmooth(ctx, [P(25, 28.5), P(25.4, 22.5), P(28.5, 18.6), P(35.5, 18.6), P(38.6, 22.5), P(39, 28.5), P(37.4, 25.2), P(33.5, 23), P(29, 24.6), P(26.8, 26.2)], ink.hair())
+        strokeSmooth(ctx, [P(25, 28.5), P(25.4, 22.5), P(28.5, 18.6), P(35.5, 18.6), P(38.6, 22.5), P(39, 28.5), P(37.4, 25.2), P(33.5, 23), P(29, 24.6), P(26.8, 26.2)], UIColor(rgb: 0x0B0908), width: 0.8)
+        fillOval(ctx, CGRect(x: 28.5, y: 26.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 33.3, y: 26.5, width: 2.2, height: 2.2), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 28.85, y: 26.85, width: 1.5, height: 1.5), ink.eyes())
+        fillOval(ctx, CGRect(x: 33.65, y: 26.85, width: 1.5, height: 1.5), ink.eyes())
+        stroke(ctx, from: P(28.2, 25.6), to: P(30.7, 26.1), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(33.3, 26.1), to: P(35.8, 25.6), ink.hair(0.7), width: 0.8)
+        stroke(ctx, from: P(30.8, 31.4), to: P(33.2, 31.4), ink.skin(0.55), width: 0.7)
+        fillOval(ctx, CGRect(x: 18, y: 15.9, width: 28, height: 6.6), ink.cloak(0.8))
+        strokeOval(ctx, CGRect(x: 18, y: 15.9, width: 28, height: 6.6), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 18, y: 15.9, width: 28, height: 3.6), ink.cloak(0.95))
+        fillSmooth(ctx, [P(24, 18.9), P(24.8, 10.1), P(28.4, 6.5), P(35.6, 6.5), P(39.2, 10.1), P(40, 18.9)], ink.cloak(0.85))
+        strokeSmooth(ctx, [P(24, 18.9), P(24.8, 10.1), P(28.4, 6.5), P(35.6, 6.5), P(39.2, 10.1), P(40, 18.9)], UIColor(rgb: 0x0B0908), width: 1)
+        strokeCurve(ctx, [P(32, 18.1), P(31.4, 11.5), P(32, 7.1)], ink.cloak(0.6), width: 0.7)
+        strokeCurve(ctx, [P(26.6, 13.3), P(29, 8.9)], ink.cloak(1.3), width: 0.5)
+        strokeCurve(ctx, [P(37.4, 13.3), P(35, 8.9)], ink.cloak(1.3), width: 0.5)
+        fillPolygon(ctx, [P(24.4, 16.1), P(39.6, 16.1), P(39.6, 18.3), P(24.4, 18.3)], ink.trim(0.85))
+        strokePolygon(ctx, [P(24.4, 16.1), P(39.6, 16.1), P(39.6, 18.3), P(24.4, 18.3)], UIColor(rgb: 0x0B0908), width: 0.5)
+    }
+
+    // MARK: - heroHeadNinjaMaskTowering
+
+    /// A tight wrap over the whole head on a towering frame, with a slit for the eyes.
+    static func heroHeadNinjaMaskTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 23.6, y: 18.6, width: 16.8, height: 18.4), ink.cloak(0.6))
+        strokeOval(ctx, CGRect(x: 23.6, y: 18.6, width: 16.8, height: 18.4), UIColor(rgb: 0x0B0908), width: 1.1)
+        fillOval(ctx, CGRect(x: 25.95, y: 26.33, width: 12.1, height: 2.94), UIColor(rgb: 0x120D0C))
+        fillOval(ctx, CGRect(x: 27.79, y: 26.95, width: 1.7, height: 1.7), ink.eyes())
+        fillOval(ctx, CGRect(x: 34.51, y: 26.95, width: 1.7, height: 1.7), ink.eyes())
+        fillPolygon(ctx, [P(37.08, 28.67), P(38.39, 29.86), P(39.34, 31.4), P(40.03, 33.45), P(40.4, 35.99), P(40.43, 39), P(40.1, 42.48), P(40.7, 42.56), P(41.36, 39.09), P(41.67, 35.97), P(41.61, 33.19), P(41.16, 30.74), P(40.27, 28.6), P(39.02, 26.93)], ink.cloak(0.55))
+        strokePolygon(ctx, [P(37.08, 28.67), P(38.39, 29.86), P(39.34, 31.4), P(40.03, 33.45), P(40.4, 35.99), P(40.43, 39), P(40.1, 42.48), P(40.7, 42.56), P(41.36, 39.09), P(41.67, 35.97), P(41.61, 33.19), P(41.16, 30.74), P(40.27, 28.6), P(39.02, 26.93)], UIColor(rgb: 0x0B0908), width: 0.5)
     }
 
     // MARK: - heroEmblemDragonLithe
@@ -4524,6 +4879,38 @@ extension PlaceholderArt {
         stroke(ctx, from: P(42, 37), to: P(48, 34), UIColor(rgb: 0x8A2A30), width: 0.5)
     }
 
+    // MARK: - heroWingsSkeletonLithe
+
+    /// Bare bone wings, ribs and a tattered membrane, behind a lithe frame.
+    static func heroWingsSkeletonLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(27, 44), P(18.52, 30.43), P(19.7, 32.62), P(20.87, 27.61), P(22.45, 30.02), P(24.03, 25.23), P(25.9, 29.48), P(27.76, 26.52), P(29.32, 31.1), P(30.87, 28.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(27, 44), P(18.52, 30.43), P(19.7, 32.62), P(20.87, 27.61), P(22.45, 30.02), P(24.03, 25.23), P(25.9, 29.48), P(27.76, 26.52), P(29.32, 31.1), P(30.87, 28.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(27.68, 43.58), P(18.61, 30.38), P(18.44, 30.48), P(26.32, 44.42)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.68, 43.58), P(18.61, 30.38), P(18.44, 30.48), P(26.32, 44.42)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.75, 43.72), P(20.97, 27.57), P(20.78, 27.64), P(26.25, 44.28)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.75, 43.72), P(20.97, 27.57), P(20.78, 27.64), P(26.25, 44.28)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.79, 43.87), P(24.13, 25.22), P(23.93, 25.25), P(26.21, 44.13)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.79, 43.87), P(24.13, 25.22), P(23.93, 25.25), P(26.21, 44.13)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.8, 44.03), P(27.86, 26.52), P(27.66, 26.51), P(26.2, 43.97)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.8, 44.03), P(27.86, 26.52), P(27.66, 26.51), P(26.2, 43.97)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.78, 44.19), P(30.97, 28.5), P(30.77, 28.45), P(26.22, 43.81)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.78, 44.19), P(30.97, 28.5), P(30.77, 28.45), P(26.22, 43.81)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 25.6, y: 42.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+        fillPolygon(ctx, [P(37, 44), P(45.48, 30.43), P(44.3, 32.62), P(43.13, 27.61), P(41.55, 30.02), P(39.97, 25.23), P(38.1, 29.48), P(36.24, 26.52), P(34.68, 31.1), P(33.13, 28.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(37, 44), P(45.48, 30.43), P(44.3, 32.62), P(43.13, 27.61), P(41.55, 30.02), P(39.97, 25.23), P(38.1, 29.48), P(36.24, 26.52), P(34.68, 31.1), P(33.13, 28.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(37.68, 44.42), P(45.56, 30.48), P(45.39, 30.38), P(36.32, 43.58)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.68, 44.42), P(45.56, 30.48), P(45.39, 30.38), P(36.32, 43.58)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.75, 44.28), P(43.22, 27.64), P(43.03, 27.57), P(36.25, 43.72)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.75, 44.28), P(43.22, 27.64), P(43.03, 27.57), P(36.25, 43.72)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.79, 44.13), P(40.07, 25.25), P(39.87, 25.22), P(36.21, 43.87)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.79, 44.13), P(40.07, 25.25), P(39.87, 25.22), P(36.21, 43.87)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.8, 43.97), P(36.34, 26.51), P(36.14, 26.52), P(36.2, 44.03)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.8, 43.97), P(36.34, 26.51), P(36.14, 26.52), P(36.2, 44.03)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.78, 43.81), P(33.23, 28.45), P(33.03, 28.5), P(36.22, 44.19)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.78, 43.81), P(33.23, 28.45), P(33.03, 28.5), P(36.22, 44.19)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 35.6, y: 42.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+    }
+
     // MARK: - heroWingsAngelStandard
 
     /// A pair of tiered white wings with gilded edges behind a standard frame.
@@ -4722,6 +5109,38 @@ extension PlaceholderArt {
         fillPolygon(ctx, [P(59.54, 25.72), P(60.45, 24.87), P(61.29, 23.9), P(62.02, 22.85), P(62.66, 21.71), P(63.2, 20.51), P(63.65, 19.22), P(63.55, 19.18), P(62.86, 20.33), P(62.1, 21.35), P(61.28, 22.25), P(60.4, 23.04), P(59.48, 23.7), P(58.46, 24.28)], UIColor(rgb: 0xE0D8C0))
         strokePolygon(ctx, [P(59.54, 25.72), P(60.45, 24.87), P(61.29, 23.9), P(62.02, 22.85), P(62.66, 21.71), P(63.2, 20.51), P(63.65, 19.22), P(63.55, 19.18), P(62.86, 20.33), P(62.1, 21.35), P(61.28, 22.25), P(60.4, 23.04), P(59.48, 23.7), P(58.46, 24.28)], UIColor(rgb: 0x0B0908), width: 0.4)
         stroke(ctx, from: P(42, 40), to: P(48, 37), UIColor(rgb: 0x8A2A30), width: 0.5)
+    }
+
+    // MARK: - heroWingsSkeletonStandard
+
+    /// Bare bone wings, ribs and a tattered membrane, behind a standard frame.
+    static func heroWingsSkeletonStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(27, 47), P(18.52, 33.43), P(19.7, 35.62), P(20.87, 30.61), P(22.45, 33.02), P(24.03, 28.23), P(25.9, 32.48), P(27.76, 29.52), P(29.32, 34.1), P(30.87, 31.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(27, 47), P(18.52, 33.43), P(19.7, 35.62), P(20.87, 30.61), P(22.45, 33.02), P(24.03, 28.23), P(25.9, 32.48), P(27.76, 29.52), P(29.32, 34.1), P(30.87, 31.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(27.68, 46.58), P(18.61, 33.38), P(18.44, 33.48), P(26.32, 47.42)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.68, 46.58), P(18.61, 33.38), P(18.44, 33.48), P(26.32, 47.42)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.75, 46.72), P(20.97, 30.57), P(20.78, 30.64), P(26.25, 47.28)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.75, 46.72), P(20.97, 30.57), P(20.78, 30.64), P(26.25, 47.28)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.79, 46.87), P(24.13, 28.22), P(23.93, 28.25), P(26.21, 47.13)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.79, 46.87), P(24.13, 28.22), P(23.93, 28.25), P(26.21, 47.13)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.8, 47.03), P(27.86, 29.52), P(27.66, 29.51), P(26.2, 46.97)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.8, 47.03), P(27.86, 29.52), P(27.66, 29.51), P(26.2, 46.97)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.78, 47.19), P(30.97, 31.5), P(30.77, 31.45), P(26.22, 46.81)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.78, 47.19), P(30.97, 31.5), P(30.77, 31.45), P(26.22, 46.81)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 25.6, y: 45.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+        fillPolygon(ctx, [P(37, 47), P(45.48, 33.43), P(44.3, 35.62), P(43.13, 30.61), P(41.55, 33.02), P(39.97, 28.23), P(38.1, 32.48), P(36.24, 29.52), P(34.68, 34.1), P(33.13, 31.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(37, 47), P(45.48, 33.43), P(44.3, 35.62), P(43.13, 30.61), P(41.55, 33.02), P(39.97, 28.23), P(38.1, 32.48), P(36.24, 29.52), P(34.68, 34.1), P(33.13, 31.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(37.68, 47.42), P(45.56, 33.48), P(45.39, 33.38), P(36.32, 46.58)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.68, 47.42), P(45.56, 33.48), P(45.39, 33.38), P(36.32, 46.58)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.75, 47.28), P(43.22, 30.64), P(43.03, 30.57), P(36.25, 46.72)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.75, 47.28), P(43.22, 30.64), P(43.03, 30.57), P(36.25, 46.72)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.79, 47.13), P(40.07, 28.25), P(39.87, 28.22), P(36.21, 46.87)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.79, 47.13), P(40.07, 28.25), P(39.87, 28.22), P(36.21, 46.87)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.8, 46.97), P(36.34, 29.51), P(36.14, 29.52), P(36.2, 47.03)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.8, 46.97), P(36.34, 29.51), P(36.14, 29.52), P(36.2, 47.03)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.78, 46.81), P(33.23, 31.45), P(33.03, 31.5), P(36.22, 47.19)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.78, 46.81), P(33.23, 31.45), P(33.03, 31.5), P(36.22, 47.19)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 35.6, y: 45.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
     }
 
     // MARK: - heroWingsAngelBroad
@@ -4924,6 +5343,38 @@ extension PlaceholderArt {
         stroke(ctx, from: P(42, 41), to: P(48, 38), UIColor(rgb: 0x8A2A30), width: 0.5)
     }
 
+    // MARK: - heroWingsSkeletonBroad
+
+    /// Bare bone wings, ribs and a tattered membrane, behind a broad frame.
+    static func heroWingsSkeletonBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(27, 48), P(18.52, 34.43), P(19.7, 36.62), P(20.87, 31.61), P(22.45, 34.02), P(24.03, 29.23), P(25.9, 33.48), P(27.76, 30.52), P(29.32, 35.1), P(30.87, 32.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(27, 48), P(18.52, 34.43), P(19.7, 36.62), P(20.87, 31.61), P(22.45, 34.02), P(24.03, 29.23), P(25.9, 33.48), P(27.76, 30.52), P(29.32, 35.1), P(30.87, 32.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(27.68, 47.58), P(18.61, 34.38), P(18.44, 34.48), P(26.32, 48.42)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.68, 47.58), P(18.61, 34.38), P(18.44, 34.48), P(26.32, 48.42)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.75, 47.72), P(20.97, 31.57), P(20.78, 31.64), P(26.25, 48.28)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.75, 47.72), P(20.97, 31.57), P(20.78, 31.64), P(26.25, 48.28)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.79, 47.87), P(24.13, 29.22), P(23.93, 29.25), P(26.21, 48.13)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.79, 47.87), P(24.13, 29.22), P(23.93, 29.25), P(26.21, 48.13)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.8, 48.03), P(27.86, 30.52), P(27.66, 30.51), P(26.2, 47.97)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.8, 48.03), P(27.86, 30.52), P(27.66, 30.51), P(26.2, 47.97)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.78, 48.19), P(30.97, 32.5), P(30.77, 32.45), P(26.22, 47.81)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.78, 48.19), P(30.97, 32.5), P(30.77, 32.45), P(26.22, 47.81)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 25.6, y: 46.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+        fillPolygon(ctx, [P(37, 48), P(45.48, 34.43), P(44.3, 36.62), P(43.13, 31.61), P(41.55, 34.02), P(39.97, 29.23), P(38.1, 33.48), P(36.24, 30.52), P(34.68, 35.1), P(33.13, 32.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(37, 48), P(45.48, 34.43), P(44.3, 36.62), P(43.13, 31.61), P(41.55, 34.02), P(39.97, 29.23), P(38.1, 33.48), P(36.24, 30.52), P(34.68, 35.1), P(33.13, 32.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(37.68, 48.42), P(45.56, 34.48), P(45.39, 34.38), P(36.32, 47.58)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.68, 48.42), P(45.56, 34.48), P(45.39, 34.38), P(36.32, 47.58)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.75, 48.28), P(43.22, 31.64), P(43.03, 31.57), P(36.25, 47.72)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.75, 48.28), P(43.22, 31.64), P(43.03, 31.57), P(36.25, 47.72)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.79, 48.13), P(40.07, 29.25), P(39.87, 29.22), P(36.21, 47.87)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.79, 48.13), P(40.07, 29.25), P(39.87, 29.22), P(36.21, 47.87)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.8, 47.97), P(36.34, 30.51), P(36.14, 30.52), P(36.2, 48.03)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.8, 47.97), P(36.34, 30.51), P(36.14, 30.52), P(36.2, 48.03)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.78, 47.81), P(33.23, 32.45), P(33.03, 32.5), P(36.22, 48.19)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.78, 47.81), P(33.23, 32.45), P(33.03, 32.5), P(36.22, 48.19)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 35.6, y: 46.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+    }
+
     // MARK: - heroWingsAngelStout
 
     /// A pair of tiered white wings with gilded edges behind a stout frame.
@@ -5122,6 +5573,38 @@ extension PlaceholderArt {
         fillPolygon(ctx, [P(59.54, 31.72), P(60.45, 30.87), P(61.29, 29.9), P(62.02, 28.85), P(62.66, 27.71), P(63.2, 26.51), P(63.65, 25.22), P(63.55, 25.18), P(62.86, 26.33), P(62.1, 27.35), P(61.28, 28.25), P(60.4, 29.04), P(59.48, 29.7), P(58.46, 30.28)], UIColor(rgb: 0xE0D8C0))
         strokePolygon(ctx, [P(59.54, 31.72), P(60.45, 30.87), P(61.29, 29.9), P(62.02, 28.85), P(62.66, 27.71), P(63.2, 26.51), P(63.65, 25.22), P(63.55, 25.18), P(62.86, 26.33), P(62.1, 27.35), P(61.28, 28.25), P(60.4, 29.04), P(59.48, 29.7), P(58.46, 30.28)], UIColor(rgb: 0x0B0908), width: 0.4)
         stroke(ctx, from: P(42, 46), to: P(48, 43), UIColor(rgb: 0x8A2A30), width: 0.5)
+    }
+
+    // MARK: - heroWingsSkeletonStout
+
+    /// Bare bone wings, ribs and a tattered membrane, behind a stout frame.
+    static func heroWingsSkeletonStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(27, 53), P(18.52, 39.43), P(19.7, 41.62), P(20.87, 36.61), P(22.45, 39.02), P(24.03, 34.23), P(25.9, 38.48), P(27.76, 35.52), P(29.32, 40.1), P(30.87, 37.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(27, 53), P(18.52, 39.43), P(19.7, 41.62), P(20.87, 36.61), P(22.45, 39.02), P(24.03, 34.23), P(25.9, 38.48), P(27.76, 35.52), P(29.32, 40.1), P(30.87, 37.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(27.68, 52.58), P(18.61, 39.38), P(18.44, 39.48), P(26.32, 53.42)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.68, 52.58), P(18.61, 39.38), P(18.44, 39.48), P(26.32, 53.42)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.75, 52.72), P(20.97, 36.57), P(20.78, 36.64), P(26.25, 53.28)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.75, 52.72), P(20.97, 36.57), P(20.78, 36.64), P(26.25, 53.28)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.79, 52.87), P(24.13, 34.22), P(23.93, 34.25), P(26.21, 53.13)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.79, 52.87), P(24.13, 34.22), P(23.93, 34.25), P(26.21, 53.13)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.8, 53.03), P(27.86, 35.52), P(27.66, 35.51), P(26.2, 52.97)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.8, 53.03), P(27.86, 35.52), P(27.66, 35.51), P(26.2, 52.97)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.78, 53.19), P(30.97, 37.5), P(30.77, 37.45), P(26.22, 52.81)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.78, 53.19), P(30.97, 37.5), P(30.77, 37.45), P(26.22, 52.81)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 25.6, y: 51.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+        fillPolygon(ctx, [P(37, 53), P(45.48, 39.43), P(44.3, 41.62), P(43.13, 36.61), P(41.55, 39.02), P(39.97, 34.23), P(38.1, 38.48), P(36.24, 35.52), P(34.68, 40.1), P(33.13, 37.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(37, 53), P(45.48, 39.43), P(44.3, 41.62), P(43.13, 36.61), P(41.55, 39.02), P(39.97, 34.23), P(38.1, 38.48), P(36.24, 35.52), P(34.68, 40.1), P(33.13, 37.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(37.68, 53.42), P(45.56, 39.48), P(45.39, 39.38), P(36.32, 52.58)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.68, 53.42), P(45.56, 39.48), P(45.39, 39.38), P(36.32, 52.58)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.75, 53.28), P(43.22, 36.64), P(43.03, 36.57), P(36.25, 52.72)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.75, 53.28), P(43.22, 36.64), P(43.03, 36.57), P(36.25, 52.72)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.79, 53.13), P(40.07, 34.25), P(39.87, 34.22), P(36.21, 52.87)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.79, 53.13), P(40.07, 34.25), P(39.87, 34.22), P(36.21, 52.87)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.8, 52.97), P(36.34, 35.51), P(36.14, 35.52), P(36.2, 53.03)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.8, 52.97), P(36.34, 35.51), P(36.14, 35.52), P(36.2, 53.03)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.78, 52.81), P(33.23, 37.45), P(33.03, 37.5), P(36.22, 53.19)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.78, 52.81), P(33.23, 37.45), P(33.03, 37.5), P(36.22, 53.19)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 35.6, y: 51.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
     }
 
     // MARK: - heroWingsAngelTowering
@@ -5324,6 +5807,303 @@ extension PlaceholderArt {
         stroke(ctx, from: P(42, 33), to: P(48, 30), UIColor(rgb: 0x8A2A30), width: 0.5)
     }
 
+    // MARK: - heroWingsSkeletonTowering
+
+    /// Bare bone wings, ribs and a tattered membrane, behind a towering frame.
+    static func heroWingsSkeletonTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(27, 40), P(18.52, 26.43), P(19.7, 28.62), P(20.87, 23.61), P(22.45, 26.02), P(24.03, 21.23), P(25.9, 25.48), P(27.76, 22.52), P(29.32, 27.1), P(30.87, 24.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(27, 40), P(18.52, 26.43), P(19.7, 28.62), P(20.87, 23.61), P(22.45, 26.02), P(24.03, 21.23), P(25.9, 25.48), P(27.76, 22.52), P(29.32, 27.1), P(30.87, 24.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(27.68, 39.58), P(18.61, 26.38), P(18.44, 26.48), P(26.32, 40.42)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.68, 39.58), P(18.61, 26.38), P(18.44, 26.48), P(26.32, 40.42)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.75, 39.72), P(20.97, 23.57), P(20.78, 23.64), P(26.25, 40.28)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.75, 39.72), P(20.97, 23.57), P(20.78, 23.64), P(26.25, 40.28)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.79, 39.87), P(24.13, 21.22), P(23.93, 21.25), P(26.21, 40.13)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.79, 39.87), P(24.13, 21.22), P(23.93, 21.25), P(26.21, 40.13)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.8, 40.03), P(27.86, 22.52), P(27.66, 22.51), P(26.2, 39.97)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.8, 40.03), P(27.86, 22.52), P(27.66, 22.51), P(26.2, 39.97)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(27.78, 40.19), P(30.97, 24.5), P(30.77, 24.45), P(26.22, 39.81)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(27.78, 40.19), P(30.97, 24.5), P(30.77, 24.45), P(26.22, 39.81)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 25.6, y: 38.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+        fillPolygon(ctx, [P(37, 40), P(45.48, 26.43), P(44.3, 28.62), P(43.13, 23.61), P(41.55, 26.02), P(39.97, 21.23), P(38.1, 25.48), P(36.24, 22.52), P(34.68, 27.1), P(33.13, 24.48)], ink.cloak(0.3).withAlphaComponent(0.4))
+        strokePolygon(ctx, [P(37, 40), P(45.48, 26.43), P(44.3, 28.62), P(43.13, 23.61), P(41.55, 26.02), P(39.97, 21.23), P(38.1, 25.48), P(36.24, 22.52), P(34.68, 27.1), P(33.13, 24.48)], UIColor(rgb: 0xB5AC92), width: 0.5)
+        fillPolygon(ctx, [P(37.68, 40.42), P(45.56, 26.48), P(45.39, 26.38), P(36.32, 39.58)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.68, 40.42), P(45.56, 26.48), P(45.39, 26.38), P(36.32, 39.58)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.75, 40.28), P(43.22, 23.64), P(43.03, 23.57), P(36.25, 39.72)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.75, 40.28), P(43.22, 23.64), P(43.03, 23.57), P(36.25, 39.72)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.79, 40.13), P(40.07, 21.25), P(39.87, 21.22), P(36.21, 39.87)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.79, 40.13), P(40.07, 21.25), P(39.87, 21.22), P(36.21, 39.87)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.8, 39.97), P(36.34, 22.51), P(36.14, 22.52), P(36.2, 40.03)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.8, 39.97), P(36.34, 22.51), P(36.14, 22.52), P(36.2, 40.03)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillPolygon(ctx, [P(37.78, 39.81), P(33.23, 24.45), P(33.03, 24.5), P(36.22, 40.19)], UIColor(rgb: 0xE0D8C0))
+        strokePolygon(ctx, [P(37.78, 39.81), P(33.23, 24.45), P(33.03, 24.5), P(36.22, 40.19)], UIColor(rgb: 0x0B0908), width: 0.4)
+        fillOval(ctx, CGRect(x: 35.6, y: 38.6, width: 2.8, height: 2.8), UIColor(rgb: 0xB5AC92))
+    }
+
+    // MARK: - heroEyewearSunglassesLithe
+
+    /// Dark round lenses on a lithe frame.
+    static func heroEyewearSunglassesLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.6, y: 30.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 27.6, y: 30.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 28.3, y: 30.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillOval(ctx, CGRect(x: 32.8, y: 30.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 32.8, y: 30.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 33.5, y: 30.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 31.7), to: P(32.9, 31.7), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 31.5), to: P(25.4, 30.5), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 31.5), to: P(38.6, 30.5), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearReadingLithe
+
+    /// Thin reading glasses low on the nose of a lithe frame.
+    static func heroEyewearReadingLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.7, y: 31.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 27.7, y: 31.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        fillOval(ctx, CGRect(x: 32.9, y: 31.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.9, y: 31.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        stroke(ctx, from: P(31.1, 32.3), to: P(32.9, 32.3), ink.trim(), width: 0.45)
+        stroke(ctx, from: P(27.4, 32.1), to: P(25.4, 31.1), ink.trim(0.7), width: 0.5)
+        stroke(ctx, from: P(36.6, 32.1), to: P(38.6, 31.1), ink.trim(0.7), width: 0.5)
+    }
+
+    // MARK: - heroEyewearAviatorsLithe
+
+    /// Teardrop aviator lenses on a lithe frame.
+    static func heroEyewearAviatorsLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(31.1, 30.4), P(27.4, 30.1), P(27, 32.3), P(28.4, 33.5), P(30.8, 32.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(31.1, 30.4), P(27.4, 30.1), P(27, 32.3), P(28.4, 33.5), P(30.8, 32.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 28.2, y: 30.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillPolygon(ctx, [P(32.9, 30.4), P(36.6, 30.1), P(37, 32.3), P(35.6, 33.5), P(33.2, 32.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(32.9, 30.4), P(36.6, 30.1), P(37, 32.3), P(35.6, 33.5), P(33.2, 32.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 35, y: 30.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 30.6), to: P(32.9, 30.6), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 31.4), to: P(25.4, 30.4), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 31.4), to: P(38.6, 30.4), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearMonocleLithe
+
+    /// A single lens and a chain over one eye of a lithe frame.
+    static func heroEyewearMonocleLithe(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 32.7, y: 29.8, width: 3.8, height: 3.8), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.7, y: 29.8, width: 3.8, height: 3.8), ink.trim(), width: 0.7)
+        fillOval(ctx, CGRect(x: 35.35, y: 32.35, width: 1.1, height: 1.1), ink.trim())
+        strokeCurve(ctx, [P(36.3, 33.3), P(38, 36.7), P(35.8, 40.3)], ink.trim(0.85), width: 0.5)
+    }
+
+    // MARK: - heroEyewearSunglassesStandard
+
+    /// Dark round lenses on a standard frame.
+    static func heroEyewearSunglassesStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.6, y: 33.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 27.6, y: 33.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 28.3, y: 33.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillOval(ctx, CGRect(x: 32.8, y: 33.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 32.8, y: 33.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 33.5, y: 33.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 34.7), to: P(32.9, 34.7), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 34.5), to: P(25.4, 33.5), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 34.5), to: P(38.6, 33.5), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearReadingStandard
+
+    /// Thin reading glasses low on the nose of a standard frame.
+    static func heroEyewearReadingStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.7, y: 34.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 27.7, y: 34.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        fillOval(ctx, CGRect(x: 32.9, y: 34.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.9, y: 34.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        stroke(ctx, from: P(31.1, 35.3), to: P(32.9, 35.3), ink.trim(), width: 0.45)
+        stroke(ctx, from: P(27.4, 35.1), to: P(25.4, 34.1), ink.trim(0.7), width: 0.5)
+        stroke(ctx, from: P(36.6, 35.1), to: P(38.6, 34.1), ink.trim(0.7), width: 0.5)
+    }
+
+    // MARK: - heroEyewearAviatorsStandard
+
+    /// Teardrop aviator lenses on a standard frame.
+    static func heroEyewearAviatorsStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(31.1, 33.4), P(27.4, 33.1), P(27, 35.3), P(28.4, 36.5), P(30.8, 35.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(31.1, 33.4), P(27.4, 33.1), P(27, 35.3), P(28.4, 36.5), P(30.8, 35.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 28.2, y: 33.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillPolygon(ctx, [P(32.9, 33.4), P(36.6, 33.1), P(37, 35.3), P(35.6, 36.5), P(33.2, 35.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(32.9, 33.4), P(36.6, 33.1), P(37, 35.3), P(35.6, 36.5), P(33.2, 35.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 35, y: 33.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 33.6), to: P(32.9, 33.6), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 34.4), to: P(25.4, 33.4), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 34.4), to: P(38.6, 33.4), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearMonocleStandard
+
+    /// A single lens and a chain over one eye of a standard frame.
+    static func heroEyewearMonocleStandard(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 32.7, y: 32.8, width: 3.8, height: 3.8), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.7, y: 32.8, width: 3.8, height: 3.8), ink.trim(), width: 0.7)
+        fillOval(ctx, CGRect(x: 35.35, y: 35.35, width: 1.1, height: 1.1), ink.trim())
+        strokeCurve(ctx, [P(36.3, 36.3), P(38, 39.7), P(35.8, 43.3)], ink.trim(0.85), width: 0.5)
+    }
+
+    // MARK: - heroEyewearSunglassesBroad
+
+    /// Dark round lenses on a broad frame.
+    static func heroEyewearSunglassesBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.6, y: 34.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 27.6, y: 34.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 28.3, y: 34.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillOval(ctx, CGRect(x: 32.8, y: 34.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 32.8, y: 34.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 33.5, y: 34.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 35.7), to: P(32.9, 35.7), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 35.5), to: P(25.4, 34.5), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 35.5), to: P(38.6, 34.5), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearReadingBroad
+
+    /// Thin reading glasses low on the nose of a broad frame.
+    static func heroEyewearReadingBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.7, y: 35.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 27.7, y: 35.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        fillOval(ctx, CGRect(x: 32.9, y: 35.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.9, y: 35.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        stroke(ctx, from: P(31.1, 36.3), to: P(32.9, 36.3), ink.trim(), width: 0.45)
+        stroke(ctx, from: P(27.4, 36.1), to: P(25.4, 35.1), ink.trim(0.7), width: 0.5)
+        stroke(ctx, from: P(36.6, 36.1), to: P(38.6, 35.1), ink.trim(0.7), width: 0.5)
+    }
+
+    // MARK: - heroEyewearAviatorsBroad
+
+    /// Teardrop aviator lenses on a broad frame.
+    static func heroEyewearAviatorsBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(31.1, 34.4), P(27.4, 34.1), P(27, 36.3), P(28.4, 37.5), P(30.8, 36.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(31.1, 34.4), P(27.4, 34.1), P(27, 36.3), P(28.4, 37.5), P(30.8, 36.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 28.2, y: 34.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillPolygon(ctx, [P(32.9, 34.4), P(36.6, 34.1), P(37, 36.3), P(35.6, 37.5), P(33.2, 36.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(32.9, 34.4), P(36.6, 34.1), P(37, 36.3), P(35.6, 37.5), P(33.2, 36.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 35, y: 34.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 34.6), to: P(32.9, 34.6), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 35.4), to: P(25.4, 34.4), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 35.4), to: P(38.6, 34.4), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearMonocleBroad
+
+    /// A single lens and a chain over one eye of a broad frame.
+    static func heroEyewearMonocleBroad(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 32.7, y: 33.8, width: 3.8, height: 3.8), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.7, y: 33.8, width: 3.8, height: 3.8), ink.trim(), width: 0.7)
+        fillOval(ctx, CGRect(x: 35.35, y: 36.35, width: 1.1, height: 1.1), ink.trim())
+        strokeCurve(ctx, [P(36.3, 37.3), P(38, 40.7), P(35.8, 44.3)], ink.trim(0.85), width: 0.5)
+    }
+
+    // MARK: - heroEyewearSunglassesStout
+
+    /// Dark round lenses on a stout frame.
+    static func heroEyewearSunglassesStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.6, y: 39.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 27.6, y: 39.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 28.3, y: 39.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillOval(ctx, CGRect(x: 32.8, y: 39.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 32.8, y: 39.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 33.5, y: 39.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 40.7), to: P(32.9, 40.7), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 40.5), to: P(25.4, 39.5), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 40.5), to: P(38.6, 39.5), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearReadingStout
+
+    /// Thin reading glasses low on the nose of a stout frame.
+    static func heroEyewearReadingStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.7, y: 40.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 27.7, y: 40.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        fillOval(ctx, CGRect(x: 32.9, y: 40.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.9, y: 40.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        stroke(ctx, from: P(31.1, 41.3), to: P(32.9, 41.3), ink.trim(), width: 0.45)
+        stroke(ctx, from: P(27.4, 41.1), to: P(25.4, 40.1), ink.trim(0.7), width: 0.5)
+        stroke(ctx, from: P(36.6, 41.1), to: P(38.6, 40.1), ink.trim(0.7), width: 0.5)
+    }
+
+    // MARK: - heroEyewearAviatorsStout
+
+    /// Teardrop aviator lenses on a stout frame.
+    static func heroEyewearAviatorsStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(31.1, 39.4), P(27.4, 39.1), P(27, 41.3), P(28.4, 42.5), P(30.8, 41.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(31.1, 39.4), P(27.4, 39.1), P(27, 41.3), P(28.4, 42.5), P(30.8, 41.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 28.2, y: 39.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillPolygon(ctx, [P(32.9, 39.4), P(36.6, 39.1), P(37, 41.3), P(35.6, 42.5), P(33.2, 41.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(32.9, 39.4), P(36.6, 39.1), P(37, 41.3), P(35.6, 42.5), P(33.2, 41.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 35, y: 39.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 39.6), to: P(32.9, 39.6), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 40.4), to: P(25.4, 39.4), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 40.4), to: P(38.6, 39.4), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearMonocleStout
+
+    /// A single lens and a chain over one eye of a stout frame.
+    static func heroEyewearMonocleStout(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 32.7, y: 38.8, width: 3.8, height: 3.8), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.7, y: 38.8, width: 3.8, height: 3.8), ink.trim(), width: 0.7)
+        fillOval(ctx, CGRect(x: 35.35, y: 41.35, width: 1.1, height: 1.1), ink.trim())
+        strokeCurve(ctx, [P(36.3, 42.3), P(38, 45.7), P(35.8, 49.3)], ink.trim(0.85), width: 0.5)
+    }
+
+    // MARK: - heroEyewearSunglassesTowering
+
+    /// Dark round lenses on a towering frame.
+    static func heroEyewearSunglassesTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.6, y: 26.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 27.6, y: 26.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 28.3, y: 26.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillOval(ctx, CGRect(x: 32.8, y: 26.5, width: 3.6, height: 2.6), UIColor(rgb: 0x1A1714))
+        strokeOval(ctx, CGRect(x: 32.8, y: 26.5, width: 3.6, height: 2.6), ink.trim(), width: 0.6)
+        fillOval(ctx, CGRect(x: 33.5, y: 26.8, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 27.7), to: P(32.9, 27.7), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 27.5), to: P(25.4, 26.5), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 27.5), to: P(38.6, 26.5), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearReadingTowering
+
+    /// Thin reading glasses low on the nose of a towering frame.
+    static func heroEyewearReadingTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 27.7, y: 27.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 27.7, y: 27.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        fillOval(ctx, CGRect(x: 32.9, y: 27.3, width: 3.4, height: 2.4), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.9, y: 27.3, width: 3.4, height: 2.4), ink.trim(), width: 0.5)
+        stroke(ctx, from: P(31.1, 28.3), to: P(32.9, 28.3), ink.trim(), width: 0.45)
+        stroke(ctx, from: P(27.4, 28.1), to: P(25.4, 27.1), ink.trim(0.7), width: 0.5)
+        stroke(ctx, from: P(36.6, 28.1), to: P(38.6, 27.1), ink.trim(0.7), width: 0.5)
+    }
+
+    // MARK: - heroEyewearAviatorsTowering
+
+    /// Teardrop aviator lenses on a towering frame.
+    static func heroEyewearAviatorsTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillPolygon(ctx, [P(31.1, 26.4), P(27.4, 26.1), P(27, 28.3), P(28.4, 29.5), P(30.8, 28.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(31.1, 26.4), P(27.4, 26.1), P(27, 28.3), P(28.4, 29.5), P(30.8, 28.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 28.2, y: 26.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        fillPolygon(ctx, [P(32.9, 26.4), P(36.6, 26.1), P(37, 28.3), P(35.6, 29.5), P(33.2, 28.9)], UIColor(rgb: 0x1A1714))
+        strokePolygon(ctx, [P(32.9, 26.4), P(36.6, 26.1), P(37, 28.3), P(35.6, 29.5), P(33.2, 28.9)], ink.trim(), width: 0.55)
+        fillOval(ctx, CGRect(x: 35, y: 26.7, width: 0.8, height: 0.8), UIColor(rgb: 0x453F35))
+        stroke(ctx, from: P(31.1, 26.6), to: P(32.9, 26.6), ink.trim(), width: 0.6)
+        stroke(ctx, from: P(27.4, 27.4), to: P(25.4, 26.4), ink.trim(0.8), width: 0.5)
+        stroke(ctx, from: P(36.6, 27.4), to: P(38.6, 26.4), ink.trim(0.8), width: 0.5)
+    }
+
+    // MARK: - heroEyewearMonocleTowering
+
+    /// A single lens and a chain over one eye of a towering frame.
+    static func heroEyewearMonocleTowering(_ ctx: CGContext, _ ink: HeroInk) {
+        fillOval(ctx, CGRect(x: 32.7, y: 25.8, width: 3.8, height: 3.8), UIColor(rgb: 0x000000, alpha: 0))
+        strokeOval(ctx, CGRect(x: 32.7, y: 25.8, width: 3.8, height: 3.8), ink.trim(), width: 0.7)
+        fillOval(ctx, CGRect(x: 35.35, y: 28.35, width: 1.1, height: 1.1), ink.trim())
+        strokeCurve(ctx, [P(36.3, 29.3), P(38, 32.7), P(35.8, 36.3)], ink.trim(0.85), width: 0.5)
+    }
+
     // MARK: - Dispatch
 
     static func drawHeroLegs(_ build: BodyBuild, _ ctx: CGContext, _ ink: HeroInk) {
@@ -5458,6 +6238,21 @@ extension PlaceholderArt {
         case (.wizardHat, .broad): heroHeadWizardHatBroad(ctx, ink)
         case (.wizardHat, .stout): heroHeadWizardHatStout(ctx, ink)
         case (.wizardHat, .towering): heroHeadWizardHatTowering(ctx, ink)
+        case (.bandana, .lithe): heroHeadBandanaLithe(ctx, ink)
+        case (.bandana, .standard): heroHeadBandanaStandard(ctx, ink)
+        case (.bandana, .broad): heroHeadBandanaBroad(ctx, ink)
+        case (.bandana, .stout): heroHeadBandanaStout(ctx, ink)
+        case (.bandana, .towering): heroHeadBandanaTowering(ctx, ink)
+        case (.cowboyHat, .lithe): heroHeadCowboyHatLithe(ctx, ink)
+        case (.cowboyHat, .standard): heroHeadCowboyHatStandard(ctx, ink)
+        case (.cowboyHat, .broad): heroHeadCowboyHatBroad(ctx, ink)
+        case (.cowboyHat, .stout): heroHeadCowboyHatStout(ctx, ink)
+        case (.cowboyHat, .towering): heroHeadCowboyHatTowering(ctx, ink)
+        case (.ninjaMask, .lithe): heroHeadNinjaMaskLithe(ctx, ink)
+        case (.ninjaMask, .standard): heroHeadNinjaMaskStandard(ctx, ink)
+        case (.ninjaMask, .broad): heroHeadNinjaMaskBroad(ctx, ink)
+        case (.ninjaMask, .stout): heroHeadNinjaMaskStout(ctx, ink)
+        case (.ninjaMask, .towering): heroHeadNinjaMaskTowering(ctx, ink)
         }
     }
 
@@ -5531,6 +6326,37 @@ extension PlaceholderArt {
         case (.demon, .broad): heroWingsDemonBroad(ctx, ink)
         case (.demon, .stout): heroWingsDemonStout(ctx, ink)
         case (.demon, .towering): heroWingsDemonTowering(ctx, ink)
+        case (.skeleton, .lithe): heroWingsSkeletonLithe(ctx, ink)
+        case (.skeleton, .standard): heroWingsSkeletonStandard(ctx, ink)
+        case (.skeleton, .broad): heroWingsSkeletonBroad(ctx, ink)
+        case (.skeleton, .stout): heroWingsSkeletonStout(ctx, ink)
+        case (.skeleton, .towering): heroWingsSkeletonTowering(ctx, ink)
+        }
+    }
+
+    static func drawHeroEyewear(_ style: EyewearStyle, _ build: BodyBuild, _ ctx: CGContext, _ ink: HeroInk) {
+        switch (style, build) {
+        case (.plain, _): break
+        case (.sunglasses, .lithe): heroEyewearSunglassesLithe(ctx, ink)
+        case (.sunglasses, .standard): heroEyewearSunglassesStandard(ctx, ink)
+        case (.sunglasses, .broad): heroEyewearSunglassesBroad(ctx, ink)
+        case (.sunglasses, .stout): heroEyewearSunglassesStout(ctx, ink)
+        case (.sunglasses, .towering): heroEyewearSunglassesTowering(ctx, ink)
+        case (.reading, .lithe): heroEyewearReadingLithe(ctx, ink)
+        case (.reading, .standard): heroEyewearReadingStandard(ctx, ink)
+        case (.reading, .broad): heroEyewearReadingBroad(ctx, ink)
+        case (.reading, .stout): heroEyewearReadingStout(ctx, ink)
+        case (.reading, .towering): heroEyewearReadingTowering(ctx, ink)
+        case (.aviators, .lithe): heroEyewearAviatorsLithe(ctx, ink)
+        case (.aviators, .standard): heroEyewearAviatorsStandard(ctx, ink)
+        case (.aviators, .broad): heroEyewearAviatorsBroad(ctx, ink)
+        case (.aviators, .stout): heroEyewearAviatorsStout(ctx, ink)
+        case (.aviators, .towering): heroEyewearAviatorsTowering(ctx, ink)
+        case (.monocle, .lithe): heroEyewearMonocleLithe(ctx, ink)
+        case (.monocle, .standard): heroEyewearMonocleStandard(ctx, ink)
+        case (.monocle, .broad): heroEyewearMonocleBroad(ctx, ink)
+        case (.monocle, .stout): heroEyewearMonocleStout(ctx, ink)
+        case (.monocle, .towering): heroEyewearMonocleTowering(ctx, ink)
         }
     }
 }

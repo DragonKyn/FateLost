@@ -15,6 +15,7 @@ enum HeroOption: Hashable, Identifiable {
     case emblem(EmblemStyle)
     case detail(MetalDetail)
     case wings(WingStyle)
+    case eyewear(EyewearStyle)
 
     /// Stable, and the key a purchase is saved under.
     var id: String {
@@ -28,6 +29,7 @@ enum HeroOption: Hashable, Identifiable {
         case .emblem(let value): return "emblem.\(value.rawValue)"
         case .detail(let value): return "detail.\(value.rawValue)"
         case .wings(let value): return "wings.\(value.rawValue)"
+        case .eyewear(let value): return "eyewear.\(value.rawValue)"
         }
     }
 
@@ -43,6 +45,7 @@ enum HeroOption: Hashable, Identifiable {
         case .emblem(let value): return value.name
         case .detail(let value): return value.name
         case .wings(let value): return value.name
+        case .eyewear(let value): return value.name
         }
     }
 
@@ -55,6 +58,7 @@ enum HeroOption: Hashable, Identifiable {
         case .emblem(let value): return value.blurb
         case .detail(let value): return value.blurb
         case .wings(let value): return value.blurb
+        case .eyewear(let value): return value.blurb
         case .cloakColor, .trimColor, .eyeColor: return ""
         }
     }
@@ -72,6 +76,7 @@ enum HeroOption: Hashable, Identifiable {
         case .emblem(let value): next.emblem = value
         case .detail(let value): next.detail = value
         case .wings(let value): next.wings = value
+        case .eyewear(let value): next.eyewear = value
         }
         return next
     }
@@ -97,63 +102,74 @@ enum HeroUnlocks {
         case .cloak(let style):
             switch style {
             case .hooded, .mantle, .longCoat: return 0
-            case .shroud: return 120
-            case .pilgrim: return 180
-            case .druid: return 200
-            case .ninja: return 220
-            case .wizard: return 240
-            case .samurai: return 260
-            case .paladin: return 300
-            case .vampire: return 350
-            case .angelic, .demonic: return 450
+            case .shroud: return 144
+            case .pilgrim: return 216
+            case .druid: return 240
+            case .ninja: return 264
+            case .wizard: return 288
+            case .samurai: return 312
+            case .paladin: return 360
+            case .vampire: return 420
+            case .angelic, .demonic: return 540
             }
         case .head(let style):
             switch style {
             case .hood, .bare: return 0
-            case .cowl: return 100
-            case .helm: return 150
-            case .greatHelm: return 200
-            case .wizardHat: return 240
-            case .eyeless: return 250
-            case .horned: return 260
-            case .plague: return 300
-            case .skull: return 320
+            case .cowl: return 120
+            case .helm: return 180
+            case .greatHelm: return 240
+            case .wizardHat: return 288
+            case .eyeless: return 300
+            case .horned: return 312
+            case .plague: return 360
+            case .skull: return 384
+            case .bandana: return 120
+            case .cowboyHat: return 264
+            case .ninjaMask: return 288
             }
         case .cloakColor(let id):
             return [
-                "ivory": 30, "slate": 30, "ochre": 40, "teal": 40, "rust": 40, "sunset": 40, "royal": 50,
-                "emerald": 50, "rose": 60, "violet": 70, "black": 70, "white": 80,
+                "ivory": 36, "slate": 36, "ochre": 48, "teal": 48, "rust": 48, "sunset": 48, "royal": 60,
+                "emerald": 60, "rose": 72, "violet": 84, "black": 84, "white": 96,
             ][id] ?? 0
         case .trimColor(let id):
             return [
-                "black": 30, "white": 30, "ember": 40, "verdigris": 40, "blood": 40, "copper": 40,
-                "sapphire": 60, "amethyst": 60, "gold": 70,
+                "black": 36, "white": 36, "ember": 48, "verdigris": 48, "blood": 48, "copper": 48,
+                "sapphire": 72, "amethyst": 72, "gold": 84,
             ][id] ?? 0
         case .eyeColor(let id):
             return [
-                "azure": 30, "jade": 40, "crimson": 40, "gold": 50, "rose": 50, "ember": 70, "violet": 70,
+                "azure": 36, "jade": 48, "crimson": 48, "gold": 60, "rose": 60, "ember": 84, "violet": 84,
             ][id] ?? 0
         case .emblem(let style):
             switch style {
             case .plain: return 0
-            case .skulls: return 150
-            case .vines: return 180
-            case .runes: return 200
-            case .celestial: return 250
-            case .dragon: return 350
+            case .skulls: return 180
+            case .vines: return 216
+            case .runes: return 240
+            case .celestial: return 300
+            case .dragon: return 420
             }
         case .detail(let style):
             switch style {
             case .plain: return 0
-            case .studs: return 100
-            case .filigree: return 150
-            case .pauldrons: return 220
-            case .warPlate: return 380
+            case .studs: return 120
+            case .filigree: return 180
+            case .pauldrons: return 264
+            case .warPlate: return 456
             }
         case .wings(let style):
             switch style {
             case .plain: return 0
-            case .angel, .demon: return 500
+            case .angel, .demon, .skeleton: return 600
+            }
+        case .eyewear(let style):
+            switch style {
+            case .plain: return 0
+            case .reading: return 60
+            case .monocle: return 84
+            case .sunglasses: return 120
+            case .aviators: return 144
             }
         }
     }
@@ -171,10 +187,11 @@ enum HeroUnlocks {
     static let emblems: [HeroOption] = EmblemStyle.allCases.map { .emblem($0) }
     static let details: [HeroOption] = MetalDetail.allCases.map { .detail($0) }
     static let wings: [HeroOption] = WingStyle.allCases.map { .wings($0) }
+    static let eyewear: [HeroOption] = EyewearStyle.allCases.map { .eyewear($0) }
 
     /// Every option there is.
     static let all: [HeroOption] = builds + cloaks + heads + cloakColours + trimColours + eyeColours
-        + emblems + details + wings
+        + emblems + details + wings + eyewear
 
     /// Every option that costs something.
     static let priced: [HeroOption] = all.filter { !isFree($0) }
@@ -182,7 +199,8 @@ enum HeroUnlocks {
     /// The options a look is currently made of, the ones that can be locked.
     static func options(of look: HeroAppearance) -> [HeroOption] {
         [.cloak(look.cloak), .head(look.head), .cloakColor(look.cloakColor), .trimColor(look.trimColor),
-         .eyeColor(look.eyeColor), .emblem(look.emblem), .detail(look.detail), .wings(look.wings)]
+         .eyeColor(look.eyeColor), .emblem(look.emblem), .detail(look.detail), .wings(look.wings),
+         .eyewear(look.eyewear)]
     }
 }
 
@@ -202,6 +220,7 @@ extension HeroAppearance {
             case .emblem: look.emblem = .plain
             case .detail: look.detail = .plain
             case .wings: look.wings = .plain
+            case .eyewear: look.eyewear = .plain
             case .build: break
             }
         }
@@ -222,7 +241,7 @@ extension HeroAppearance {
                 look = chosen.applying(to: look)
             }
         }
-        for options in [HeroUnlocks.emblems, HeroUnlocks.details, HeroUnlocks.wings] {
+        for options in [HeroUnlocks.emblems, HeroUnlocks.details, HeroUnlocks.wings, HeroUnlocks.eyewear] {
             if Bool.random(using: &generator), let chosen = pick(options) {
                 look = chosen.applying(to: look)
             }

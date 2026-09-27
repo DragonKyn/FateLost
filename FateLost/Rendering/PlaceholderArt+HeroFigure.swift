@@ -53,6 +53,7 @@ extension PlaceholderArt {
         drawHeroDetail(look.detail, look.build, ctx, ink)
         drawHeroEmblem(look.emblem, look.build, ctx, ink)
         drawHeroHead(look.head, look.build, ctx, ink)
+        drawHeroEyewear(look.eyewear, look.build, ctx, ink)
     }
 
     /// The figure in three pieces on the same canvas, back to front, so the
@@ -72,6 +73,7 @@ extension PlaceholderArt {
             drawHeroDetail(look.detail, look.build, ctx, ink)
             drawHeroEmblem(look.emblem, look.build, ctx, ink)
             drawHeroHead(look.head, look.build, ctx, ink)
+            drawHeroEyewear(look.eyewear, look.build, ctx, ink)
         }
         return (Sprite(image: behind, anchor: anchor), Sprite(image: cloak, anchor: anchor),
                 Sprite(image: front, anchor: anchor))

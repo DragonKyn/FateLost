@@ -209,7 +209,61 @@ def wizard_hat(g):
     return s
 
 
+def bandana(g):
+    s = layer(f"heroHeadBandana{cap(g.build)}", f"A bandana knotted over the hair of a {g.build} frame.")
+    y = g.sy
+    bare_face(s, g)
+    top, bottom = y - 17.6, y - 14.4
+    mid = (top + bottom) / 2
+    s.poly([(CX - 7.4, bottom), (CX - 7.8, top), (CX + 7.8, top), (CX + 7.4, bottom)], "trim:0.75",
+           outline=INK, width=0.8)
+    s.line((CX - 6.6, mid), (CX + 6.6, mid), "trim:0.5", 0.5)
+    # The knot and two trailing ends, at the side, so they read on a
+    # front-on figure the way a knot at the back of the head would not.
+    s.dot(CX + 7.6, mid, 1.3, "trim:0.9")
+    s.taper([(CX + 7.6, mid), (CX + 10.8, top + 1.4), (CX + 9.4, top + 6.2)], "trim:0.75", 1.8, 0.2,
+            outline=INK, width=0.4)
+    s.taper([(CX + 8, mid + 0.6), (CX + 11.6, top + 3.4), (CX + 11, top + 8.4)], "trim:0.6", 1.6, 0.2,
+            outline=INK, width=0.4)
+    return s
+
+
+def cowboy_hat(g):
+    s = layer(f"heroHeadCowboyHat{cap(g.build)}", f"A wide-brimmed hat, pinched at the crown, on a {g.build} frame.")
+    y = g.sy
+    bare_face(s, g)
+    brim_y = y - 19.5
+    s.ellipse(CX - 14, brim_y - 1.6, 28, 6.6, "cloak:0.8", outline=INK, width=1.1)
+    s.ellipse(CX - 14, brim_y - 1.6, 28, 3.6, "cloak:0.95")
+    crown = [(CX - 8, brim_y + 1.4), (CX - 7.2, brim_y - 7.4), (CX - 3.6, brim_y - 11), (CX + 3.6, brim_y - 11),
+             (CX + 7.2, brim_y - 7.4), (CX + 8, brim_y + 1.4)]
+    s.blob(crown, "cloak:0.85", outline=INK, width=1.0)
+    s.curve([(CX, brim_y + 0.6), (CX - 0.6, brim_y - 6), (CX, brim_y - 10.4)], "cloak:0.6", 0.7)
+    s.curve([(CX - 5.4, brim_y - 4.2), (CX - 3, brim_y - 8.6)], "cloak:1.3", 0.5)
+    s.curve([(CX + 5.4, brim_y - 4.2), (CX + 3, brim_y - 8.6)], "cloak:1.3", 0.5)
+    rect(s, CX - 7.6, brim_y - 1.4, 15.2, 2.2, "trim:0.85", outline=INK, width=0.5)
+    return s
+
+
+def ninja_mask(g):
+    s = layer(f"heroHeadNinjaMask{cap(g.build)}",
+             f"A tight wrap over the whole head on a {g.build} frame, with a slit for the eyes.")
+    x, y = CX - g.hood_w * 0.42, g.sy - g.hood_h * 0.92
+    w, h = g.hood_w * 0.84, g.hood_h * 0.92
+    s.ellipse(x, y, w, h, "cloak:0.6", outline=INK, width=1.1)
+    slit_y = y + 0.42 * h
+    s.ellipse(x + 0.14 * w, slit_y, 0.72 * w, 0.16 * h, VOID)
+    k = w / 16
+    s.dot(CX - 3.2 * k, slit_y + 0.08 * h, 0.85, "eyes")
+    s.dot(CX + 3.2 * k, slit_y + 0.08 * h, 0.85, "eyes")
+    # The tail, wrapped once and trailing off to the side.
+    s.taper([(CX + w * 0.36, y + h * 0.5), (CX + w * 0.62, y + h * 0.7), (CX + w * 0.5, y + h * 1.3)],
+            "cloak:0.55", 2.6, 0.6, outline=INK, width=0.5)
+    return s
+
+
 BUILDERS = {
     "hood": hood, "cowl": cowl, "bare": bare, "helm": helm, "eyeless": eyeless, "plague": plague,
     "greatHelm": great_helm, "skull": skull, "horned": horned, "wizardHat": wizard_hat,
+    "bandana": bandana, "cowboyHat": cowboy_hat, "ninjaMask": ninja_mask,
 }

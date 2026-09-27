@@ -242,6 +242,7 @@ struct CharacterView: View {
             extraSection("Emblem", HeroUnlocks.emblems)
             extraSection("Metalwork", HeroUnlocks.details)
             extraSection("Wings", HeroUnlocks.wings)
+            extraSection("Eyewear", HeroUnlocks.eyewear)
         }
     }
 
@@ -259,10 +260,10 @@ struct CharacterView: View {
             swatches("Cloak", HeroPalette.cloak, options: HeroUnlocks.cloakColours, selected: look.cloakColor)
             swatches("Trim", HeroPalette.trim, options: HeroUnlocks.trimColours, selected: look.trimColor)
             swatches("Eyes", HeroPalette.eyes, options: HeroUnlocks.eyeColours, selected: look.eyeColor)
-            if look.head == .bare || look.head == .wizardHat {
+            if [.bare, .wizardHat, .bandana, .cowboyHat].contains(look.head) {
                 skinAndHair
             } else {
-                Text("Skin and hair are seen with a bare head or a wizard's hat.")
+                Text("Skin and hair are seen with a bare head, a wizard's hat, a bandana or a cowboy hat.")
                     .font(FLTheme.Typeface.body(12))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
             }

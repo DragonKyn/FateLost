@@ -127,7 +127,8 @@ enum LegacyTree {
     /// Echoes one node in a tier costs. Deeper is dearer, but never so dear
     /// that the first strand a player picks becomes the only one they finish.
     static func cost(atTier tier: Int) -> Int {
-        40 + (tier - 1) * (tier - 1) * 22 + (tier - 1) * 60
+        let base = 40 + (tier - 1) * (tier - 1) * 22 + (tier - 1) * 60
+        return Int((Double(base) * 1.2).rounded())
     }
 
     /// How much a tier-1 bonus is multiplied by at this depth.

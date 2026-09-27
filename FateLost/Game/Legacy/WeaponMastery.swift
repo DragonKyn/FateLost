@@ -16,16 +16,16 @@ enum WeaponMastery {
     static func unlockCost(_ weapon: WeaponDefinition) -> Int {
         switch weapon.rarity {
         case .common: return 0
-        case .uncommon: return 240
-        case .rare: return 420
-        case .epic: return 700
-        case .legendary: return 1_100
+        case .uncommon: return 288
+        case .rare: return 504
+        case .epic: return 840
+        case .legendary: return 1_320
         }
     }
 
     /// Echoes for the `rank`th rank of mastery, counting from one.
     static func rankCost(_ rank: Int) -> Int {
-        max(1, rank) * 60 + 60
+        max(1, rank) * 72 + 72
     }
 
     /// Everything mastery costs from nothing to fully mastered.
