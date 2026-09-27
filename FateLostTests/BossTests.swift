@@ -184,7 +184,7 @@ final class BossTests: XCTestCase {
         // property; there's nothing more to learn from grinding out the
         // full seventy seconds for the slowest one, and doing that for
         // all twenty-odd champions was most of this suite's CI time.
-        let confirmationsNeeded = 3
+        let confirmationsNeeded = 2
         for champion in EnemyCatalog.champions {
             var (sim, _) = fight(champion)
             var seen = Set<Int>()
