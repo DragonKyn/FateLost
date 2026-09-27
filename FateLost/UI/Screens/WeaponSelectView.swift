@@ -90,12 +90,12 @@ private struct DifficultyModifiersSection: View {
             Button {
                 withAnimation(.easeInOut(duration: 0.22)) { isExpanded.toggle() }
             } label: {
-                HStack {
+                HStack(spacing: 10) {
                     FLSectionLabel(text: "Difficulty Modifiers")
                     if !selections.isEmpty {
                         Text("\(selections.count) active")
                             .font(FLTheme.Typeface.number(11))
-                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                            .foregroundStyle(FLTheme.Palette.emberBright)
                     }
                     Spacer()
                     if payoutBonus > 0 {
@@ -103,14 +103,21 @@ private struct DifficultyModifiersSection: View {
                             .font(FLTheme.Typeface.number(12))
                             .foregroundStyle(FLTheme.Palette.emberBright)
                     }
+                    Text(isExpanded ? "Hide" : "Show")
+                        .font(FLTheme.Typeface.label(13))
+                        .tracking(1)
+                        .foregroundStyle(FLTheme.Palette.parchment)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(FLTheme.Palette.parchment)
                         .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
+                .padding(.horizontal, 14)
+                .frame(height: 44)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .flPanel()
 
             if isExpanded {
                 ScrollView(.horizontal, showsIndicators: false) {
