@@ -175,7 +175,8 @@ final class AllyRenderer {
 
         let target = CompanionTarget(summonKey: spec.key)
         let look = target.map { companions[$0] }
-        if let tintID = look?.tint {
+        let appearance = target.map { CompanionAppearanceCatalog.option(look?.appearanceID ?? "base", for: $0) }
+        if let tintID = appearance?.tint {
             view.body.color = UIColor(rgb: HeroPalette.swatch(tintID, in: HeroPalette.trim).hex)
             view.body.colorBlendFactor = spec.sprite == .allyWisp ? 1 : 0.65
         } else if let tint = spec.tint {
@@ -189,12 +190,11 @@ final class AllyRenderer {
             switch look.extra {
             case .none:
                 view.extraSprite.isHidden = true
-            case .banner, .charm:
-                let extraID: SpriteID = look.extra == .banner ? .allyExtraBanner : .allyExtraCharm
-                view.extraSprite.texture = catalog.texture(extraID)
-                view.extraSprite.size = catalog.size(extraID)
-                view.extraSprite.anchorPoint = catalog.anchor(extraID)
-                view.extraSprite.color = UIColor(rgb: HeroPalette.swatch(look.tint ?? "brass", in: HeroPalette.trim).hex)
+            case .banner:
+                view.extraSprite.texture = catalog.texture(.allyExtraBanner)
+                view.extraSprite.size = catalog.size(.allyExtraBanner)
+                view.extraSprite.anchorPoint = catalog.anchor(.allyExtraBanner)
+                view.extraSprite.color = UIColor(rgb: HeroPalette.swatch(appearance?.tint ?? "brass", in: HeroPalette.trim).hex)
                 view.extraSprite.colorBlendFactor = 0.6
                 view.extraSprite.isHidden = false
             }

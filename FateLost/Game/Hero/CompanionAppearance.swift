@@ -47,8 +47,8 @@ enum CompanionTarget: String, Codable, CaseIterable, Identifiable {
         }
     }
 
-    /// The tint it already carries in the catalogue, if any — kept as the
-    /// look's own default rather than overwritten by an unmade choice.
+    /// The tint it already carries in the catalogue — kept as the base
+    /// appearance's own look rather than overwritten by an unmade choice.
     var catalogueTint: RGBA? {
         switch self {
         case .bearForm: return FormCatalog.bear.tint
@@ -72,10 +72,99 @@ enum CompanionTarget: String, Codable, CaseIterable, Identifiable {
         case .fiend: return Double(SummonCatalog.fiend.scale)
         }
     }
+
+    /// Roughly how much heavier or flashier this target is, for pricing:
+    /// the druid's own forms and the two biggest summons cost the most to
+    /// restyle.
+    enum Weight { case light, medium, heavy }
+    var weight: Weight {
+        switch self {
+        case .skeleton, .hellhound: return .light
+        case .bearForm, .wolfForm: return .medium
+        case .boneColossus, .fiend: return .heavy
+        }
+    }
+}
+
+/// One named appearance a target can wear. Every target has exactly one
+/// free "Base" appearance (its catalogue look, id `"base"`) plus a handful
+/// of themed recolours, priced and owned individually — buying one never
+/// buys another.
+struct CompanionAppearanceOption: Identifiable, Equatable {
+    let id: String
+    let name: String
+    let blurb: String
+    /// A swatch id from `HeroPalette.trim`, or nil for the untouched
+    /// catalogue look.
+    let tint: String?
+
+    var isBase: Bool { tint == nil }
+}
+
+enum CompanionAppearanceCatalog {
+    /// Every appearance a target can wear, base first.
+    static func options(for target: CompanionTarget) -> [CompanionAppearanceOption] {
+        let base = CompanionAppearanceOption(id: "base", name: "Base", blurb: "However it already looks.", tint: nil)
+        return [base] + themed(for: target)
+    }
+
+    static func option(_ id: String, for target: CompanionTarget) -> CompanionAppearanceOption {
+        options(for: target).first { $0.id == id } ?? options(for: target)[0]
+    }
+
+    /// The themed recolours, skipping whichever theme would be redundant
+    /// with a target that is already that colour by nature (a hellhound
+    /// hardly needs an "ember" variant when it is already on fire).
+    private static func themed(for target: CompanionTarget) -> [CompanionAppearanceOption] {
+        switch target {
+        case .bearForm:
+            return [
+                variant("ember", "Ember Bear", "Fur gone the colour of coals.", "ember"),
+                variant("frost", "Frost Bear", "Breath that fogs in the summer.", "sapphire"),
+                variant("shadow", "Shadow Bear", "Barely there until it isn't.", "black"),
+            ]
+        case .wolfForm:
+            return [
+                variant("ember", "Ember Wolf", "A coat that smoulders at a run.", "ember"),
+                variant("frost", "Frost Wolf", "Leaves frost on the grass behind it.", "sapphire"),
+                variant("void", "Void Wolf", "Eyes like something looked back.", "amethyst"),
+            ]
+        case .skeleton:
+            return [
+                variant("ember", "Flaming Skeleton", "Bones that never quite stopped burning.", "ember"),
+                variant("frost", "Frost Skeleton", "Rimed over, and colder for it.", "sapphire"),
+                variant("plague", "Plague Skeleton", "Whatever it died of, it's catching.", "verdigris"),
+            ]
+        case .boneColossus:
+            return [
+                variant("ember", "Cinder Colossus", "A furnace wearing borrowed bone.", "ember"),
+                variant("frost", "Glacial Colossus", "Bone gone the blue of old ice.", "sapphire"),
+                variant("void", "Hollow Colossus", "Empty in a way that shows.", "amethyst"),
+            ]
+        case .hellhound:
+            return [
+                variant("frost", "Frost Hellhound", "Cold enough to put itself out.", "sapphire"),
+                variant("plague", "Plague Hellhound", "A different way to be dangerous.", "verdigris"),
+                variant("void", "Void Hellhound", "Its bark left with the rest of it.", "amethyst"),
+            ]
+        case .fiend:
+            return [
+                variant("frost", "Frost Fiend", "The pact, paid in a colder coin.", "sapphire"),
+                variant("plague", "Plague Fiend", "The pact, paid in rot instead.", "verdigris"),
+                variant("void", "Void Fiend", "The pact's fine print.", "amethyst"),
+            ]
+        }
+    }
+
+    private static func variant(_ suffix: String, _ name: String, _ blurb: String,
+                                _ tint: String) -> CompanionAppearanceOption {
+        CompanionAppearanceOption(id: suffix, name: name, blurb: blurb, tint: tint)
+    }
 }
 
 /// A discrete size choice, a multiple of whatever the creature's own base
-/// scale already is.
+/// scale already is. "Standard" is always free and is never bought — it is
+/// simply the absence of a size choice.
 enum CompanionScale: String, Codable, CaseIterable, Identifiable {
     case runt
     case standard
@@ -102,11 +191,11 @@ enum CompanionScale: String, Codable, CaseIterable, Identifiable {
 
 /// A prop shown beside a companion rather than worn on it, so one drawing
 /// fits a skeleton, a hellhound and a bone colossus alike without needing
-/// to match three different silhouettes.
+/// to match three different silhouettes. Independent of appearance: a
+/// player combines whichever look they bought with whichever charm they bought.
 enum CompanionExtra: String, Codable, CaseIterable, Identifiable {
     case none
     case banner
-    case charm
 
     var id: String { rawValue }
 
@@ -114,7 +203,6 @@ enum CompanionExtra: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .none: return "No Extra"
         case .banner: return "Battle Standard"
-        case .charm: return "Bone Charm"
         }
     }
 
@@ -122,16 +210,14 @@ enum CompanionExtra: String, Codable, CaseIterable, Identifiable {
         switch self {
         case .none: return "Nothing extra."
         case .banner: return "A small banner, planted beside it."
-        case .charm: return "A trophy, strung up and swaying."
         }
     }
 }
 
-/// One target's chosen look. A `nil` tint keeps whatever the catalogue
-/// already gives it — some summons come pre-tinted on purpose, like the
-/// spirit wolf's chill blue — so never having made a choice can't look wrong.
+/// One target's chosen look: which of its bought appearances is worn,
+/// which of its bought sizes, and which extra, if any.
 struct CompanionLook: Codable, Equatable, Hashable {
-    var tint: String?
+    var appearanceID: String?
     var scale: CompanionScale = .standard
     var extra: CompanionExtra = .none
 }
@@ -160,13 +246,15 @@ struct CompanionCustomization: Codable, Equatable, Hashable {
 
     /// This customisation with anything not owned swapped back to default,
     /// the same rule `HeroAppearance.restricted(to:)` holds the hero's own
-    /// look to.
+    /// look to. Each axis is checked on its own, since each is its own purchase.
     func restricted(to owns: (CompanionOption) -> Bool) -> CompanionCustomization {
         var result = self
         for target in CompanionTarget.allCases {
             var look = self[target]
-            if !owns(.customize(target)) {
-                look.tint = nil
+            if let id = look.appearanceID, id != "base", !owns(.appearance(target, id)) {
+                look.appearanceID = nil
+            }
+            if look.scale != .standard, !owns(.scale(target, look.scale)) {
                 look.scale = .standard
             }
             if look.extra != .none, !owns(.extra(target, look.extra)) {
@@ -201,13 +289,14 @@ extension CompanionTarget {
 }
 
 extension FormDefinition {
-    /// This form with a player's chosen colour and size applied, if they
-    /// have restyled it; unchanged otherwise, including forms with no
+    /// This form with a player's chosen appearance and size applied, if
+    /// they have restyled it; unchanged otherwise, including forms with no
     /// target at all (Iron Fist belongs to the monk, not the druid).
     func customized(with companions: CompanionCustomization) -> FormDefinition {
         guard let target = CompanionTarget(formID: id) else { return self }
         let look = companions[target]
-        let tint = look.tint.map { RGBA(hex: HeroPalette.swatch($0, in: HeroPalette.trim).hex) } ?? tint
+        let chosen = CompanionAppearanceCatalog.option(look.appearanceID ?? "base", for: target)
+        let tint = chosen.tint.map { RGBA(hex: HeroPalette.swatch($0, in: HeroPalette.trim).hex) } ?? tint
         let scale = CGFloat(target.catalogueScale * look.scale.multiplier)
         return FormDefinition(id: id, name: name, weapon: weapon, modifiers: modifiers, sprite: sprite, tint: tint,
                               scale: scale, hidesWeapon: hidesWeapon)

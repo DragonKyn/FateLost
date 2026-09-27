@@ -18,7 +18,7 @@ struct CharacterView: View {
         case head = "Head"
         case colours = "Colours"
         case extras = "Extras"
-        case companions = "Companions"
+        case companions = "Allies"
 
         var id: String { rawValue }
     }
@@ -31,11 +31,8 @@ struct CharacterView: View {
     @State private var inspected: HeroOption?
 
     @State private var selectedCompanion: CompanionTarget = .bearForm
+    /// A locked companion option selected to be tried on and, if wanted, bought.
     @State private var inspectedCompanion: CompanionOption?
-    /// A colour or size tried on before it's bought, so tapping a locked
-    /// choice shows what it would look like rather than just a price.
-    @State private var previewCompanionTint: String?
-    @State private var previewCompanionScale: CompanionScale?
 
     private var look: HeroAppearance { services.hero }
 
@@ -46,15 +43,13 @@ struct CharacterView: View {
     }
 
     private var companionLook: CompanionLook { services.hero.companions[selectedCompanion] }
-    private var companionUnlocked: Bool { services.owns(.customize(selectedCompanion)) }
 
-    /// The look the companion preview shows: the saved choice, with anything
-    /// currently being tried on layered over it.
+    /// What the companion preview shows: the saved look, or that look with
+    /// the selected locked option tried on — the same rule the hero's own
+    /// preview follows.
     private var shownCompanionLook: CompanionLook {
-        var next = companionLook
-        if let previewCompanionTint { next.tint = previewCompanionTint }
-        if let previewCompanionScale { next.scale = previewCompanionScale }
-        return next
+        guard let inspectedCompanion, inspectedCompanion.target == selectedCompanion else { return companionLook }
+        return inspectedCompanion.applying(to: companionLook)
     }
 
     var body: some View {
@@ -86,8 +81,6 @@ struct CharacterView: View {
                             services.haptics.play(.uiTap)
                             inspected = nil
                             inspectedCompanion = nil
-                            previewCompanionTint = nil
-                            previewCompanionScale = nil
                         }
 
                         ScrollView(.vertical, showsIndicators: false) {
@@ -95,7 +88,14 @@ struct CharacterView: View {
                                 .padding(.bottom, 8)
                         }
 
+                        // Pinned below the scroll, never buried by it: a
+                        // player should never have to hunt for the button
+                        // that spends their echoes.
                         if let option = inspected {
+                            unlockBar(for: option)
+                                .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+                        if let option = inspectedCompanion {
                             unlockBar(for: option)
                                 .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
@@ -108,6 +108,7 @@ struct CharacterView: View {
             .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
         .animation(.easeOut(duration: 0.16), value: inspected)
+        .animation(.easeOut(duration: 0.16), value: inspectedCompanion)
         .onAppear { breathing = true }
     }
 
@@ -262,10 +263,19 @@ struct CharacterView: View {
             .frame(height: 210)
             .flPanel(highlighted: inspectedCompanion != nil)
 
-            Text(selectedCompanion.name)
-                .font(FLTheme.Typeface.heading(16))
-                .foregroundStyle(FLTheme.Palette.parchment)
+            VStack(spacing: 2) {
+                Text(selectedCompanion.name)
+                    .font(FLTheme.Typeface.heading(16))
+                    .foregroundStyle(FLTheme.Palette.parchment)
+                Text(shownAppearance.name)
+                    .font(FLTheme.Typeface.body(12))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            }
         }
+    }
+
+    private var shownAppearance: CompanionAppearanceOption {
+        CompanionAppearanceCatalog.option(shownCompanionLook.appearanceID ?? "base", for: selectedCompanion)
     }
 
     private var shownCompanionScale: CGFloat {
@@ -273,7 +283,7 @@ struct CharacterView: View {
     }
 
     private var shownCompanionTintColor: Color {
-        guard let id = shownCompanionLook.tint else { return .white }
+        guard let id = shownAppearance.tint else { return .white }
         return Color(uiColor: UIColor(rgb: HeroPalette.swatch(id, in: HeroPalette.trim).hex))
     }
 
@@ -327,106 +337,85 @@ struct CharacterView: View {
 
     private var companionsSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Picker("", selection: $selectedCompanion) {
+            companionTargetPicker
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Editing \(selectedCompanion.name)")
+                    .font(FLTheme.Typeface.heading(15))
+                    .foregroundStyle(FLTheme.Palette.parchment)
+                Text(selectedCompanion.blurb)
+                    .font(FLTheme.Typeface.body(12))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            }
+
+            companionOptionSection("APPEARANCE", CompanionUnlocks.appearances(for: selectedCompanion))
+            companionOptionSection("SIZE", CompanionUnlocks.scales(for: selectedCompanion)
+                .filter { if case .scale(_, .standard) = $0 { return false } else { return true } })
+            companionOptionSection("EXTRA", CompanionUnlocks.extras(for: selectedCompanion)
+                .filter { if case .extra(_, .none) = $0 { return false } else { return true } })
+        }
+    }
+
+    /// Every companion or form, as a row of chips: which one is being
+    /// edited is always in view, and switching is one tap away.
+    private var companionTargetPicker: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
                 ForEach(CompanionTarget.allCases) { target in
-                    Text(target.name).tag(target)
-                }
-            }
-            .pickerStyle(.menu)
-            .tint(FLTheme.Palette.ember)
-            .onChange(of: selectedCompanion) { _, _ in
-                services.haptics.play(.uiTap)
-                inspectedCompanion = nil
-                previewCompanionTint = nil
-                previewCompanionScale = nil
-            }
-
-            Text(selectedCompanion.blurb)
-                .font(FLTheme.Typeface.body(13))
-                .foregroundStyle(FLTheme.Palette.parchmentDim)
-
-            VStack(alignment: .leading, spacing: 8) {
-                FLSectionLabel(text: "COLOUR & SIZE")
-                if !companionUnlocked {
-                    Text("Try a colour or size, then unlock to keep it.")
-                        .font(FLTheme.Typeface.body(12))
-                        .foregroundStyle(FLTheme.Palette.parchmentDim)
-                }
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 40), spacing: 8)], alignment: .leading, spacing: 8) {
-                    ForEach(HeroPalette.trim) { swatch in
-                        Button { chooseCompanionTint(swatch.id) } label: {
-                            SwatchDot(hex: swatch.hex, isSelected: shownCompanionLook.tint == swatch.id,
-                                     isLocked: !companionUnlocked)
-                        }
+                    Button {
+                        services.haptics.play(.uiTap)
+                        selectedCompanion = target
+                        inspectedCompanion = nil
+                    } label: {
+                        Text(target.name)
+                            .font(FLTheme.Typeface.label(12))
+                            .foregroundStyle(target == selectedCompanion
+                                             ? FLTheme.Palette.emberBright : FLTheme.Palette.parchment)
+                            .lineLimit(1)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
                     }
-                }
-                HStack(spacing: 8) {
-                    ForEach(CompanionScale.allCases) { tier in
-                        Button(tier.name) { chooseCompanionScale(tier) }
-                            .buttonStyle(.flSecondaryCompact)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: FLTheme.Metrics.cornerRadius, style: .continuous)
-                                    .strokeBorder(shownCompanionLook.scale == tier ? FLTheme.Palette.ember : .clear,
-                                                 lineWidth: 2)
-                            )
-                    }
+                    .buttonStyle(.plain)
+                    .flPanel(highlighted: target == selectedCompanion)
                 }
             }
+            .padding(.horizontal, 2)
+        }
+        .scrollClipDisabled()
+    }
 
-            VStack(alignment: .leading, spacing: 8) {
-                FLSectionLabel(text: "EXTRA")
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 118), spacing: 10)], spacing: 10) {
-                    ForEach(CompanionExtra.allCases) { extra in
-                        let option = CompanionOption.extra(selectedCompanion, extra)
-                        CompanionExtraCard(extra: extra,
-                                          isSelected: companionLook.extra == extra || inspectedCompanion == option,
-                                          price: extra == .none || services.owns(option)
-                                              ? nil : CompanionUnlocks.cost(of: option))
-                            .onTapGesture { chooseCompanionExtra(extra) }
-                    }
+    private func companionOptionSection(_ title: String, _ options: [CompanionOption]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            FLSectionLabel(text: title)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 110), spacing: 10)], spacing: 10) {
+                ForEach(options) { option in
+                    CompanionOptionCard(target: selectedCompanion, option: option,
+                                        isEquipped: option.isWorn(by: companionLook),
+                                        isInspected: inspectedCompanion == option,
+                                        price: price(of: option))
+                        .onTapGesture { chooseCompanion(option) }
                 }
-            }
-
-            if let option = inspectedCompanion {
-                unlockBar(for: option)
             }
         }
     }
 
-    private func chooseCompanionTint(_ id: String) {
-        services.haptics.play(.uiTap)
-        previewCompanionTint = id
-        if companionUnlocked {
-            var next = companionLook
-            next.tint = id
-            applyCompanion(next)
-            inspectedCompanion = nil
-        } else {
-            inspectedCompanion = .customize(selectedCompanion)
-        }
+    /// The price of a companion option the player does not yet own, if any.
+    private func price(of option: CompanionOption) -> Int? {
+        services.owns(option) ? nil : CompanionUnlocks.cost(of: option)
     }
 
-    private func chooseCompanionScale(_ tier: CompanionScale) {
+    /// Wears an option that is owned, and selects one that is not so it can
+    /// be tried on — the same rule the hero's own wardrobe follows. Tapping
+    /// an already-equipped size or extra a second time takes it back off.
+    private func chooseCompanion(_ option: CompanionOption) {
         services.haptics.play(.uiTap)
-        previewCompanionScale = tier
-        if companionUnlocked {
-            var next = companionLook
-            next.scale = tier
-            applyCompanion(next)
-            inspectedCompanion = nil
-        } else {
-            inspectedCompanion = .customize(selectedCompanion)
-        }
-    }
-
-    private func chooseCompanionExtra(_ extra: CompanionExtra) {
-        services.haptics.play(.uiTap)
-        let option = CompanionOption.extra(selectedCompanion, extra)
-        if services.owns(option) {
+        if option.isWorn(by: companionLook), let fallback = option.fallback {
             services.audio.play(.uiConfirm)
-            var next = companionLook
-            next.extra = extra
-            applyCompanion(next)
+            applyCompanion(fallback.applying(to: companionLook))
+            inspectedCompanion = nil
+        } else if services.owns(option) {
+            services.audio.play(.uiConfirm)
+            applyCompanion(option.applying(to: companionLook))
             inspectedCompanion = nil
         } else {
             inspectedCompanion = option
@@ -443,14 +432,7 @@ struct CharacterView: View {
         guard services.buyCompanion(option) else { return }
         services.haptics.play(.uiTap)
         services.audio.play(.uiConfirm)
-        switch option {
-        case .customize:
-            applyCompanion(shownCompanionLook)
-        case .extra(_, let extra):
-            var next = companionLook
-            next.extra = extra
-            applyCompanion(next)
-        }
+        applyCompanion(option.applying(to: companionLook))
         inspectedCompanion = nil
     }
 
@@ -602,49 +584,84 @@ private struct SwatchDot: View {
     }
 }
 
-/// A companion's extra: a prop shown beside it, not a whole figure, so a
-/// symbol stands in for it rather than a portrait.
-private struct CompanionExtraCard: View {
-    let extra: CompanionExtra
-    let isSelected: Bool
+/// One companion option: an appearance (previewed on the real sprite, in
+/// its own colour), a size or an extra (a symbol standing in for it, since
+/// neither has art of its own). Every card reads the same way the hero's
+/// own `OptionCard` does: locked shows a price, owned shows a checkmark,
+/// worn is highlighted.
+private struct CompanionOptionCard: View {
+    let target: CompanionTarget
+    let option: CompanionOption
+    let isEquipped: Bool
+    let isInspected: Bool
     /// Echoes it costs while it is still locked; nil once it is owned.
     let price: Int?
 
-    private var symbol: String {
-        switch extra {
-        case .none: return "nosign"
-        case .banner: return "flag.fill"
-        case .charm: return "seal.fill"
-        }
-    }
-
     var body: some View {
         VStack(spacing: 6) {
-            Image(systemName: symbol)
-                .font(.system(size: 26, weight: .semibold))
-                .foregroundStyle(isSelected ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
-                .frame(height: 40)
-            Text(extra.name)
+            thumbnail
+                .frame(height: 46)
+            Text(option.title)
                 .font(FLTheme.Typeface.heading(13))
-                .foregroundStyle(isSelected ? FLTheme.Palette.emberBright : FLTheme.Palette.parchment)
+                .foregroundStyle(isEquipped || isInspected ? FLTheme.Palette.emberBright : FLTheme.Palette.parchment)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
-            Text(extra.blurb)
-                .font(FLTheme.Typeface.body(11))
-                .foregroundStyle(FLTheme.Palette.parchmentDim)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-            if let price {
+            if isEquipped {
+                Label("Equipped", systemImage: "checkmark.seal.fill")
+                    .font(FLTheme.Typeface.number(10))
+                    .foregroundStyle(FLTheme.Palette.emberBright)
+            } else if let price {
                 Text("\(price) echoes")
                     .font(FLTheme.Typeface.number(11))
-                    .foregroundStyle(FLTheme.Palette.emberBright)
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            } else {
+                Text("Owned")
+                    .font(FLTheme.Typeface.number(11))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
             }
         }
         .padding(10)
         .frame(maxWidth: .infinity)
-        .flPanel(highlighted: isSelected)
+        .flPanel(highlighted: isEquipped || isInspected)
+        .opacity(price == nil || isEquipped ? 1 : 0.85)
         .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(isEquipped ? .isSelected : [])
+    }
+
+    @ViewBuilder private var thumbnail: some View {
+        switch option {
+        case .appearance(let target, let appearanceID):
+            let tint = CompanionAppearanceCatalog.option(appearanceID, for: target).tint
+            if let sprite = PlaceholderArt.sprite(for: target.sprite) {
+                ZStack(alignment: .topTrailing) {
+                    Image(uiImage: sprite.image)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .colorMultiply(tint.map { Color(uiColor: UIColor(rgb: HeroPalette.swatch($0, in: HeroPalette.trim).hex)) } ?? .white)
+                    if price != nil, !isEquipped {
+                        lockBadge
+                    }
+                }
+            }
+        case .scale(_, let scale):
+            Image(systemName: scale == .runt ? "arrow.down.right.and.arrow.up.left"
+                  : scale == .massive ? "arrow.up.left.and.arrow.down.right" : "circle")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(isEquipped ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
+        case .extra(_, let extra):
+            Image(systemName: extra == .banner ? "flag.fill" : "nosign")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(isEquipped ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
+        }
+    }
+
+    private var lockBadge: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 9, weight: .bold))
+            .foregroundStyle(FLTheme.Palette.parchment)
+            .padding(5)
+            .background(Circle().fill(Color.black.opacity(0.6)))
     }
 }
 
