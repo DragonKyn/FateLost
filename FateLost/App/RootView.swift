@@ -34,6 +34,9 @@ struct RootView: View {
             case .weaponSelect(let realmID):
                 WeaponSelectView(realm: RealmCatalog.realm(realmID))
                     .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .difficultySelect(let realmID, let weaponID):
+                DifficultyModifiersView(realm: RealmCatalog.realm(realmID), weapon: weaponID)
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             case .multiplayer:
                 MultiplayerMenuView()
                     .transition(.move(edge: .trailing).combined(with: .opacity))

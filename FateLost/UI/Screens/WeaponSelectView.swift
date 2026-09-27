@@ -8,8 +8,10 @@ struct WeaponSelectView: View {
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
     @State private var selectedID: WeaponID = StarterWeapons.sword.id
-    @State private var modifierSelections: [RunModifierSelection] = []
-    @State private var modifiersExpanded = false
+
+    /// A conquered, non-endless realm has its own difficulty modifiers
+    /// screen to visit before the run starts; anything else skips straight in.
+    private var continuesToModifiers: Bool { services.isDifficultyEligible(realm) }
 
     var body: some View {
         ZStack {
@@ -22,21 +24,15 @@ struct WeaponSelectView: View {
                     router.show(.realmSelect)
                 }
 
-                if services.isDifficultyEligible(realm) {
-                    DifficultyModifiersSection(realm: realm.id, selections: $modifierSelections,
-                                                isExpanded: $modifiersExpanded)
-                        .onChange(of: modifierSelections) { _, newValue in
-                            services.setActiveModifiers(newValue, for: realm.id)
-                        }
-                }
-
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 14) {
+                // A vertical list, not a horizontal carousel: every weapon on
+                // the rack gets its full name, summary and stats at once
+                // instead of a sliver of a card.
+                ScrollView(showsIndicators: false) {
+                    LazyVStack(spacing: 10) {
                         ForEach(StarterWeapons.all) { weapon in
                             let unlocked = services.isUnlocked(weapon)
-                            WeaponCard(weapon: weapon, isSelected: weapon.id == selectedID,
-                                       isUnlocked: unlocked, mastery: services.profile.rank(of: weapon))
-                                .frame(width: 236)
+                            WeaponRow(weapon: weapon, isSelected: weapon.id == selectedID,
+                                      isUnlocked: unlocked, mastery: services.profile.rank(of: weapon))
                                 .onTapGesture {
                                     guard unlocked else { return }
                                     services.haptics.play(.uiTap)
@@ -45,21 +41,23 @@ struct WeaponSelectView: View {
                                 }
                         }
                     }
-                    .padding(.horizontal, 2)
+                    .padding(.vertical, 2)
                 }
-                .scrollClipDisabled()
-                .frame(maxHeight: .infinity)
 
                 HStack {
                     Text("More weapons, and mastery of the ones you have, come from the Legacy armoury.")
                         .font(FLTheme.Typeface.body(13))
                         .foregroundStyle(FLTheme.Palette.parchmentDim)
                     Spacer()
-                    Button("Enter the Realm") {
+                    Button(continuesToModifiers ? "Continue" : "Enter the Realm") {
                         services.haptics.play(.uiTap)
                         services.audio.play(.uiConfirm)
-                        router.startRun(.new(realm: realm.id, weapon: selectedID, modifiers: modifierSelections),
-                                        services: services)
+                        if continuesToModifiers {
+                            router.show(.difficultySelect(realm.id, selectedID))
+                        } else {
+                            router.startRun(.new(realm: realm.id, weapon: selectedID, modifiers: []),
+                                            services: services)
+                        }
                     }
                     .buttonStyle(.flPrimary)
                     .frame(width: 260)
@@ -68,177 +66,62 @@ struct WeaponSelectView: View {
             .padding(.horizontal, FLTheme.Metrics.screenPadding)
             .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
-        .onAppear {
-            modifierSelections = services.activeModifiers(for: realm.id)
-            modifiersExpanded = !modifierSelections.isEmpty
-        }
     }
 }
 
-/// Toggles for the difficulty modifiers a conquered realm has opened up: a
-/// row of chips, each worth more echoes when switched on, with a slider for
-/// the one modifier that has a range.
-private struct DifficultyModifiersSection: View {
-    let realm: RealmID
-    @Binding var selections: [RunModifierSelection]
-    @Binding var isExpanded: Bool
-
-    private var payoutBonus: Double { DifficultyModifierCatalog.effects(for: selections).payoutBonus }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Button {
-                withAnimation(.easeInOut(duration: 0.22)) { isExpanded.toggle() }
-            } label: {
-                HStack(spacing: 10) {
-                    FLSectionLabel(text: "Difficulty Modifiers")
-                    if !selections.isEmpty {
-                        Text("\(selections.count) active")
-                            .font(FLTheme.Typeface.number(11))
-                            .foregroundStyle(FLTheme.Palette.emberBright)
-                    }
-                    Spacer()
-                    if payoutBonus > 0 {
-                        Text("+\(Int((payoutBonus * 100).rounded()))% echoes")
-                            .font(FLTheme.Typeface.number(12))
-                            .foregroundStyle(FLTheme.Palette.emberBright)
-                    }
-                    Text(isExpanded ? "Hide" : "Show")
-                        .font(FLTheme.Typeface.label(13))
-                        .tracking(1)
-                        .foregroundStyle(FLTheme.Palette.parchment)
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(FLTheme.Palette.parchment)
-                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
-                }
-                .padding(.horizontal, 14)
-                .frame(height: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .flPanel()
-
-            if isExpanded {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(DifficultyModifierCatalog.all) { definition in
-                            ModifierChip(definition: definition, isOn: isOn(definition.id)) {
-                                toggle(definition.id)
-                            }
-                        }
-                    }
-                    .padding(.horizontal, 2)
-                }
-                .scrollClipDisabled()
-
-                if let index = selections.firstIndex(where: { $0.id == .reinforcedEnemies }) {
-                    let bonus = 50 + Int((selections[index].intensity * 200).rounded())
-                    HStack(spacing: 10) {
-                        Text("+\(bonus)% enemy health")
-                            .font(FLTheme.Typeface.body(12))
-                            .foregroundStyle(FLTheme.Palette.parchmentDim)
-                            .frame(width: 140, alignment: .leading)
-                        Slider(value: Binding(
-                            get: { selections[index].intensity },
-                            set: { selections[index].intensity = $0 }
-                        ), in: 0...1)
-                    }
-                }
-            }
-        }
-        .transition(.opacity)
-    }
-
-    private func isOn(_ id: DifficultyModifierID) -> Bool {
-        selections.contains { $0.id == id }
-    }
-
-    private func toggle(_ id: DifficultyModifierID) {
-        if let index = selections.firstIndex(where: { $0.id == id }) {
-            selections.remove(at: index)
-        } else {
-            selections.append(RunModifierSelection(id: id, intensity: 0.2))
-        }
-    }
-}
-
-private struct ModifierChip: View {
-    let definition: DifficultyModifierDefinition
-    let isOn: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(definition.name)
-                    .font(FLTheme.Typeface.label(12))
-                    .foregroundStyle(isOn ? FLTheme.Palette.ember : FLTheme.Palette.parchment)
-                Text("+\(Int((definition.echoBonusAtMinimum * 100).rounded()))% echoes")
-                    .font(FLTheme.Typeface.number(10))
-                    .foregroundStyle(FLTheme.Palette.parchmentDim)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.plain)
-        .flPanel(highlighted: isOn)
-        .help(definition.tagline)
-    }
-}
-
-private struct WeaponCard: View {
+private struct WeaponRow: View {
     let weapon: WeaponDefinition
     let isSelected: Bool
     let isUnlocked: Bool
     var mastery = 0
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Image(systemName: isUnlocked ? symbol : "lock.fill")
-                    .font(.system(size: 22, weight: .semibold))
-                    .foregroundStyle(isSelected ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
-                Spacer()
-                Text(weapon.damageType.displayName)
-                    .font(FLTheme.Typeface.label(12))
+        HStack(spacing: 14) {
+            Image(systemName: isUnlocked ? symbol : "lock.fill")
+                .font(.system(size: 24, weight: .semibold))
+                .foregroundStyle(isSelected ? FLTheme.Palette.ember : FLTheme.Palette.parchmentDim)
+                .frame(width: 30)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 8) {
+                    Text(weapon.name)
+                        .font(FLTheme.Typeface.heading(18))
+                        .foregroundStyle(FLTheme.Palette.parchment)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(weapon.damageType.displayName)
+                        .font(FLTheme.Typeface.label(11))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                }
+
+                Text(weapon.summary)
+                    .font(FLTheme.Typeface.body(12))
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if isUnlocked, mastery > 0 {
+                    Text("Mastery \(mastery) of \(WeaponMastery.maxRank)")
+                        .font(FLTheme.Typeface.number(11))
+                        .foregroundStyle(FLTheme.Palette.emberBright)
+                } else if !isUnlocked {
+                    Text("Locked · \(WeaponMastery.unlockCost(weapon)) echoes")
+                        .font(FLTheme.Typeface.number(11))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                }
             }
 
-            Text(weapon.name)
-                .font(FLTheme.Typeface.heading(20))
-                .foregroundStyle(FLTheme.Palette.parchment)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-
-            Text(weapon.summary)
-                .font(FLTheme.Typeface.body(12))
-                .foregroundStyle(FLTheme.Palette.parchmentDim)
-                .lineLimit(2)
-                .fixedSize(horizontal: false, vertical: true)
-
-            Spacer(minLength: 2)
-
-            if isUnlocked, mastery > 0 {
-                Text("Mastery \(mastery) of \(WeaponMastery.maxRank)")
-                    .font(FLTheme.Typeface.number(12))
-                    .foregroundStyle(FLTheme.Palette.emberBright)
-            } else if !isUnlocked {
-                Text("Locked · \(WeaponMastery.unlockCost(weapon)) echoes")
-                    .font(FLTheme.Typeface.number(12))
-                    .foregroundStyle(FLTheme.Palette.parchmentDim)
-            }
+            Spacer(minLength: 8)
 
             VStack(spacing: 5) {
-                statRow("Damage", value: String(format: "%.0f", weapon.baseDamage),
-                        fraction: weapon.baseDamage / 24)
-                statRow("Speed", value: String(format: "%.2f/s", weapon.attackSpeed),
-                        fraction: weapon.attackSpeed / 2.4)
-                statRow("Range", value: String(format: "%.1f", weapon.range), fraction: weapon.range / 8)
+                statRow("Dmg", value: String(format: "%.0f", weapon.baseDamage), fraction: weapon.baseDamage / 24)
+                statRow("Spd", value: String(format: "%.2f/s", weapon.attackSpeed), fraction: weapon.attackSpeed / 2.4)
+                statRow("Rng", value: String(format: "%.1f", weapon.range), fraction: weapon.range / 8)
             }
+            .frame(width: 150)
         }
         .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .leading)
         .flPanel(highlighted: isSelected)
         .opacity(isUnlocked ? 1 : 0.5)
         .contentShape(Rectangle())
@@ -251,7 +134,7 @@ private struct WeaponCard: View {
     private func statRow(_ label: String, value: String, fraction: Double) -> some View {
         HStack(spacing: 8) {
             FLSectionLabel(text: label)
-                .frame(width: 68, alignment: .leading)
+                .frame(width: 32, alignment: .leading)
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule().fill(FLTheme.Palette.abyss)
@@ -264,7 +147,7 @@ private struct WeaponCard: View {
             Text(value)
                 .font(FLTheme.Typeface.number(13))
                 .foregroundStyle(FLTheme.Palette.parchment)
-                .frame(width: 52, alignment: .trailing)
+                .frame(width: 46, alignment: .trailing)
         }
     }
 }

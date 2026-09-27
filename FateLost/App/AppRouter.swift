@@ -8,6 +8,9 @@ enum AppScreen: Equatable {
     case mainMenu
     case realmSelect
     case weaponSelect(RealmID)
+    /// Only reached for a realm `AppServices.isDifficultyEligible` allows:
+    /// the weapon carried over from the screen before it.
+    case difficultySelect(RealmID, WeaponID)
     case legacy
     case statistics
     case character
