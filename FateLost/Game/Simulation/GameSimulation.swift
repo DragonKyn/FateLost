@@ -622,6 +622,12 @@ struct GameSimulation {
                 sheet.add(spec.at(rank))
             }
         }
+        // Hand Claws stay on the hand inside a beast form too, so their edge
+        // carries into the shapeshift's own attack rather than sitting idle
+        // while something else is doing the hitting.
+        if weapon.id == StarterWeapons.handClaws.id, formID != nil {
+            sheet.add(StatModifier(.damage, .increased, 0.15))
+        }
         sheet.finalize()
         if !combat.build.conversions.isEmpty {
             for conversion in combat.build.conversions {

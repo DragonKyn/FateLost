@@ -24,10 +24,19 @@ final class ClaymoreTests: XCTestCase {
         XCTAssertFalse(StarterWeapons.defaultUnlocked.contains(claymore.id), "it is bought, not given")
 
         let others = StarterWeapons.all.filter { $0.id != claymore.id }
+        // Blades only: the polearms (spear, lance, halberd) and the whip are a
+        // deliberately longer-reaching tier of their own, so they sit outside
+        // what this test means by "more than any other blade".
+        let polearmsAndWhip: Set<WeaponID> = [
+            StarterWeapons.spear.id, StarterWeapons.lance.id, StarterWeapons.halberd.id, StarterWeapons.whip.id,
+        ]
         let melee = others.filter { if case .meleeArc = $0.delivery { return true } else { return false } }
+            .filter { !polearmsAndWhip.contains($0.id) }
         // Reach, arc and blow: more than any other blade; slower than all but the hammer.
         XCTAssertGreaterThan(claymore.range, melee.map(\.range).max() ?? 0)
-        XCTAssertGreaterThan(claymore.baseDamage, melee.filter { $0.id != StarterWeapons.warHammer.id }.map(\.baseDamage).max() ?? 0)
+        let heaviestHitters: Set<WeaponID> = [StarterWeapons.warHammer.id, StarterWeapons.heavyAxe.id]
+        XCTAssertGreaterThan(claymore.baseDamage,
+                             melee.filter { !heaviestHitters.contains($0.id) }.map(\.baseDamage).max() ?? 0)
         if case .meleeArc(let arc) = claymore.delivery {
             let wider = melee.compactMap { weapon -> Double? in
                 if case .meleeArc(let degrees) = weapon.delivery, degrees < 200 { return degrees }

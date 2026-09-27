@@ -161,6 +161,13 @@ final class CombatFeedback {
                     // the hand until it is caught again.
                     if own { player.playThrow(screenDirection: screenDirection) }
                     audio.play(.swordSwing)
+                case .projectileCrossbowBolt:
+                    if own { player.playAttack(screenDirection: screenDirection, isMelee: false) }
+                    audio.play(.bowShot)
+                case .projectileShuriken:
+                    // Thrown, not shot: the same visible release as the boomerang.
+                    if own { player.playThrow(screenDirection: screenDirection) }
+                    audio.play(.swordSwing)
                 default:
                     // Wand bolts and the rest: the arm still goes out.
                     if own { player.playAttack(screenDirection: screenDirection, isMelee: false) }

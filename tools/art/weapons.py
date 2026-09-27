@@ -12,6 +12,7 @@ Weapons are drawn pointing up, tip at the top, with the grip near the
 bottom: the anchor is the hand. A thrown weapon and the bolts the wands
 throw are anchored at their middle instead, because they spin about it.
 """
+import math
 import os
 import sys
 
@@ -139,6 +140,16 @@ def katana():
     return s
 
 
+def handClaws():
+    s = held("handClaws", 20, 22, "Hand claws: four curved blades strapped over the knuckles.", grip=0.86)
+    for x, tip in ((4.5, 8), (9, 3), (13.5, 3), (18, 8)):
+        s.taper([(x, 17), (x, tip)], STEEL, 2.0, 0.5, outline=INK, width=0.5)
+        s.curve([(x - 0.5, 15), (x + 0.5, tip + 3)], STEEL_LIGHT, 0.35)
+    s.poly([(2, 17), (18, 17), (18, 21), (2, 21)], IRON, outline=INK, width=0.6)
+    s.line((2.6, 18), (17.4, 18), _light(IRON, 0.3), 0.5)
+    return s
+
+
 def dualDaggers():
     s = Sprite("dualDaggers", 24, 34, anchor=(0.5, 0.3),
                doc="Two daggers, crossed: nothing here is meant to be parried.")
@@ -156,6 +167,66 @@ def dualDaggers():
 # ---------------------------------------------------------------------------
 # Hafted things
 # ---------------------------------------------------------------------------
+
+def spear():
+    s = held("spear", 12, 62, "A spear: reach over anything that wants to get close.", grip=0.2)
+    s.taper([(6, 58), (6, 30), (6, 4)], WOOD_LIGHT, 2.6, 2.0, outline=INK, width=0.6)
+    s.curve([(5.3, 55), (5.3, 8)], WOOD_DARK, 0.4)
+    s.taper([(6, 8), (6, 1)], STEEL, 3.4, 0.4, outline=INK, width=0.7)
+    s.poly([(3.6, 9), (6, 3), (8.4, 9)], STEEL_LIGHT)
+    s.taper([(4.2, 10.5), (7.8, 10.5)], IRON, 2.6, 2.6, outline=INK, width=0.5)
+    _wrapped_grip(s, 6, 40, 52, width=2.6)
+    return s
+
+
+def lance():
+    s = held("lance", 14, 64, "A lance: everything it hits, it hits once.", grip=0.18)
+    s.taper([(7, 60), (7, 29), (7, 6)], WOOD_LIGHT, 3.2, 2.2, outline=INK, width=0.7)
+    s.curve([(6.2, 56), (6.2, 10)], WOOD_DARK, 0.5)
+    s.taper([(7, 8), (7, 1)], STEEL, 3.6, 0.5, outline=INK, width=0.7)
+    s.taper([(4, 11), (10, 11)], STEEL_DARK, 2.4, 2.4, outline=INK, width=0.5)
+    # Vamplate: a broad cone guard between hand and blade.
+    s.poly([(1.5, 20), (12.5, 20), (9.5, 27), (4.5, 27)], IRON, outline=INK, width=0.7)
+    s.poly([(2.6, 20.6), (11.4, 20.6), (9, 25.4), (5, 25.4)], _shade(IRON, 0.15))
+    _wrapped_grip(s, 7, 44, 56, width=3.4)
+    return s
+
+
+def halberd():
+    s = held("halberd", 22, 64, "A halberd: an axe, a hook and a spike, all at the reach of a spear.", grip=0.16)
+    s.taper([(11, 60), (11, 30), (11, 6)], WOOD_LIGHT, 3.0, 2.4, outline=INK, width=0.7)
+    s.curve([(10.2, 56), (10.2, 10)], WOOD_DARK, 0.5)
+    s.taper([(11, 6), (11, 1)], STEEL, 3.0, 0.5, outline=INK, width=0.6)
+    s.poly([(11, 8), (20, 6), (19, 15), (11, 15.5)], IRON, outline=INK, width=0.7)
+    s.poly([(11, 9), (18.2, 7.4), (17.4, 13.8), (11, 14.3)], _light(IRON, 0.2))
+    s.curve([(11, 9), (4.5, 10), (3.5, 16.5)], STEEL_DARK, 2.0)
+    _wrapped_grip(s, 11, 40, 52, width=3.2)
+    return s
+
+
+def scythe():
+    s = held("scythe", 28, 64, "A scythe: whatever a wide, low sweep can reach.", grip=0.14)
+    s.taper([(10, 60), (10, 30), (10, 10)], WOOD_DARK, 3.0, 2.4, outline=INK, width=0.7)
+    s.curve([(9.2, 56), (9.2, 14)], _shade(WOOD_DARK, 0.3), 0.4)
+    s.curve([(10, 9), (18, 3), (26, 8)], STEEL_DARK, 5.2)
+    s.curve([(10, 10.5), (17, 5.5), (24.5, 9.5)], STEEL_LIGHT, 0.9)
+    s.taper([(10, 7), (17, 4)], IRON, 2.6, 1.2, outline=INK, width=0.5)
+    _wrapped_grip(s, 10, 34, 46, width=3.2)
+    s.taper([(8, 58), (12, 58)], IRON, 2.2, 2.2, outline=INK, width=0.5)
+    return s
+
+
+def heavyAxe():
+    s = held("heavyAxe", 26, 54, "A heavy axe: it does not ask twice.", grip=0.2)
+    s.taper([(13, 50), (13, 26), (13, 8)], WOOD, 3.4, 2.8, outline=INK, width=0.7)
+    s.curve([(12, 46), (12, 12)], WOOD_DARK, 0.5)
+    s.poly([(13, 6), (25, 2), (24, 16), (13, 20)], IRON, outline=INK, width=0.8)
+    s.poly([(13, 7.5), (22.4, 4.4), (21.6, 14.4), (13, 18)], _light(IRON, 0.2))
+    s.curve([(24.4, 3), (25.6, 9), (23.8, 15.4)], STEEL_LIGHT, 0.6)
+    s.poly([(9, 8), (13, 6), (13, 20), (9, 18)], IRON_DARK, outline=INK, width=0.6)
+    _wrapped_grip(s, 13, 36, 48, width=3.6)
+    return s
+
 
 def warHammer():
     s = held("warHammer", 24, 48, "A war hammer: one flat face, one beak, and no subtlety.")
@@ -203,6 +274,58 @@ def flail():
     s.ellipse(12, 6, 4.4, 4, _light(IRON, 0.22))
     s.dot(13.4, 7.2, 1.0, _light(IRON, 0.5))
     return s
+
+
+def whip():
+    s = held("whip", 18, 40, "A whip: reach without ever closing the distance.", grip=0.82)
+    _wrapped_grip(s, 9, 30, 39, width=3.0)
+    s.taper([(9, 30), (9, 22)], WRAP, 2.2, 1.4, outline=INK, width=0.5)
+    s.curve([(9, 22), (14, 16), (6, 10), (15, 5), (10, 1)], WRAP_LIGHT, 1.1)
+    return s
+
+
+def nunchaku():
+    s = Sprite("nunchaku", 26, 32, anchor=(0.5, 0.6),
+               doc="Nunchaku: two sticks and a chain between them, never quite where you think.")
+    s.taper([(6, 30), (6, 14)], WOOD, 3.2, 3.2, outline=INK, width=0.7)
+    s.line((4.8, 28), (4.8, 16), WOOD_DARK, 0.5)
+    for cx, cy in ((9, 12), (12, 9.4), (15.5, 8)):
+        s.ellipse(cx - 1.2, cy - 1.6, 2.4, 3.2, IRON, outline=INK, width=0.5)
+    s.taper([(20, 18), (20, 2)], WOOD, 3.2, 3.2, outline=INK, width=0.7)
+    s.line((18.8, 16), (18.8, 4), WOOD_DARK, 0.5)
+    return s
+
+
+def crossbow():
+    s = held("crossbow", 26, 30, "A crossbow, cocked and waiting.", grip=0.75)
+    s.taper([(13, 6), (13, 16), (13, 26)], WOOD, 3.2, 3.6, outline=INK, width=0.7)
+    s.curve([(12, 8), (12, 24)], WOOD_DARK, 0.4)
+    s.curve([(3, 9), (13, 5), (23, 9)], STEEL_DARK, 2.2)
+    s.curve([(3, 9), (7, 7), (13, 6.4)], STEEL, 1.0)
+    s.curve([(23, 9), (19, 7), (13, 6.4)], STEEL, 1.0)
+    s.line((3, 9), (13, 13), CORD, 0.5)
+    s.line((23, 9), (13, 13), CORD, 0.5)
+    s.taper([(13, 4), (13, 13)], IRON, 1.0, 1.6, outline=INK, width=0.4)
+    _wrapped_grip(s, 13, 16, 25, width=3.0)
+    s.ellipse(10.6, 24, 4.8, 3.2, IRON, outline=INK, width=0.5)
+    return s
+
+
+def _throwingStar(name, doc):
+    s = spun(name, 20, 20, doc)
+    s.glow(10, 10, 9, STEEL_LIGHT, 0.2)
+    for angle in (0, 90, 180, 270):
+        rad = math.radians(angle)
+        tip = (10 + 8.5 * math.cos(rad), 10 + 8.5 * math.sin(rad))
+        left = (10 + 3 * math.cos(rad - 0.9), 10 + 3 * math.sin(rad - 0.9))
+        right = (10 + 3 * math.cos(rad + 0.9), 10 + 3 * math.sin(rad + 0.9))
+        s.poly([left, tip, right], STEEL, outline=INK, width=0.6)
+    s.ellipse(8.2, 8.2, 3.6, 3.6, IRON_DARK, outline=INK, width=0.5)
+    return s
+
+
+def shuriken():
+    return _throwingStar("shuriken", "A shuriken: four points, thrown to bite whatever it reaches.")
 
 
 def boomerang():
@@ -293,12 +416,23 @@ def stormBolt():
     return _bolt("projectileStormBolt", "A charge thrown from the storm wand.", STORM, STORM_HOT)
 
 
+def crossbowBolt():
+    return _bolt("projectileCrossbowBolt", "A crossbow bolt, loosed and flying true.", IRON, STEEL_LIGHT)
+
+
+def projectileShuriken():
+    return _throwingStar("projectileShuriken", "The shuriken, spinning mid-flight.")
+
+
 def all_sprites():
     return [
-        sai(), katana(), claymore(), dualDaggers(),
-        warHammer(), boStaff(), flail(), boomerang(),
+        sai(), katana(), claymore(), dualDaggers(), handClaws(),
+        warHammer(), boStaff(), flail(), boomerang(), whip(), nunchaku(),
+        spear(), lance(), halberd(), scythe(), heavyAxe(),
+        crossbow(), shuriken(),
         emberWand(), rimeWand(), stormWand(),
         projectileBoomerang(), emberBolt(), frostBolt(), stormBolt(),
+        crossbowBolt(), projectileShuriken(),
     ]
 
 

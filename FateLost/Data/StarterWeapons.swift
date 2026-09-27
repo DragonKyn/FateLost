@@ -202,6 +202,192 @@ enum StarterWeapons {
         spriteID: .weaponBoomerang
     )
 
+    /// A long thrust with real reach and a narrow arc: fewer enemies in the
+    /// cone than a sword, but caught at a distance nothing else here matches
+    /// this early.
+    static let spear = WeaponDefinition(
+        id: "starter.spear",
+        name: "Spear",
+        summary: "A thrust with real reach. Keeps whatever it hits at arm's length.",
+        baseDamage: 10,
+        attackSpeed: 1.15,
+        range: 2.6,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 45),
+        targeting: .nearest,
+        rarity: .uncommon,
+        spriteID: .weaponSpear
+    )
+
+    /// A heavier, slower spear with the longest reach and narrowest arc of
+    /// any melee weapon: one target, hit hard, from further away than
+    /// anything gets close enough to answer.
+    static let lance = WeaponDefinition(
+        id: "starter.lance",
+        name: "Lance",
+        summary: "The longest reach in the rack, and the least room for error.",
+        baseDamage: 23,
+        attackSpeed: 0.55,
+        range: 2.8,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 45),
+        targeting: .nearest,
+        rarity: .epic,
+        spriteID: .weaponLance
+    )
+
+    /// An axe blade, a hook and a spike on one long haft: the reach of a
+    /// spear with a wider bite than either a spear or an axe manages alone.
+    static let halberd = WeaponDefinition(
+        id: "starter.halberd",
+        name: "Halberd",
+        summary: "An axe, a hook and a spike, all at the reach of a spear.",
+        baseDamage: 16.5,
+        attackSpeed: 0.78,
+        range: 2.5,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 150),
+        targeting: .nearest,
+        rarity: .rare,
+        spriteID: .weaponHalberd
+    )
+
+    /// A wide, low sweep that reaps everything in its arc, dealt in the
+    /// unlikeliest damage type on the rack.
+    static let scythe = WeaponDefinition(
+        id: "starter.scythe",
+        name: "Scythe",
+        summary: "A wide, low sweep. It does not distinguish between one enemy and several.",
+        baseDamage: 13,
+        attackSpeed: 0.78,
+        range: 2.2,
+        damageType: .shadow,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 220),
+        targeting: .densestCluster,
+        rarity: .rare,
+        spriteID: .weaponScythe
+    )
+
+    /// The single hardest-hitting weapon in the rack, at the cost of the
+    /// slowest attack speed and a plain arc.
+    static let heavyAxe = WeaponDefinition(
+        id: "starter.heavyAxe",
+        name: "Heavy Axe",
+        summary: "It does not ask twice.",
+        baseDamage: 27,
+        attackSpeed: 0.48,
+        range: 2.0,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical, .twoHanded],
+        delivery: .meleeArc(arcDegrees: 140),
+        targeting: .nearest,
+        rarity: .epic,
+        spriteID: .weaponHeavyAxe
+    )
+
+    /// The longest reach of any weapon that isn't thrown or shot, and the
+    /// narrowest hitbox: a thin line rather than an arc or a cone.
+    static let whip = WeaponDefinition(
+        id: "starter.whip",
+        name: "Whip",
+        summary: "Reach without ever closing the distance.",
+        baseDamage: 6,
+        attackSpeed: 1.9,
+        range: 3.2,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 30),
+        targeting: .nearest,
+        rarity: .uncommon,
+        spriteID: .weaponWhip
+    )
+
+    /// A blurring flurry at the shortest range in the rack: nothing hits
+    /// faster, and nothing asks to be this close.
+    static let nunchaku = WeaponDefinition(
+        id: "starter.nunchaku",
+        name: "Nunchaku",
+        summary: "Never quite where you'd expect. Blindingly fast, up close.",
+        baseDamage: 6.5,
+        attackSpeed: 2.0,
+        range: 1.5,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 100),
+        targeting: .nearest,
+        rarity: .rare,
+        spriteID: .weaponNunchaku
+    )
+
+    /// Four curved blades over the knuckles: fast, close, and at its best in
+    /// a shapeshifted form, where the claws are hardly the strangest thing
+    /// about the hand wearing them.
+    static let handClaws = WeaponDefinition(
+        id: "starter.handClaws",
+        name: "Hand Claws",
+        summary: "Fast, close, and at their best mid-transformation.",
+        baseDamage: 5,
+        attackSpeed: 2.5,
+        range: 1.3,
+        damageType: .physical,
+        tags: [.melee, .weapon, .physical],
+        delivery: .meleeArc(arcDegrees: 70),
+        targeting: .nearest,
+        rarity: .rare,
+        spriteID: .weaponHandClaws
+    )
+
+    /// A slow, hard bolt with real pierce: fewer shots than the bow, each
+    /// one worth more, and able to run a whole rank through.
+    static let crossbow = WeaponDefinition(
+        id: "starter.crossbow",
+        name: "Crossbow",
+        summary: "Fewer bolts than the bow loosed, and each one worth more.",
+        baseDamage: 15,
+        attackSpeed: 0.7,
+        range: 8.2,
+        damageType: .physical,
+        tags: [.projectile, .ranged, .weapon, .physical],
+        delivery: .projectile(ProjectileProfile(
+            speed: 20,
+            count: 1,
+            pierce: 2,
+            splashRadius: 0,
+            spriteID: .projectileCrossbowBolt
+        )),
+        targeting: .nearestInRange,
+        rarity: .uncommon,
+        spriteID: .weaponCrossbow
+    )
+
+    /// A pair of stars thrown at once, fast and low-damage but built to pass
+    /// clean through a crowd: what a hand full of pierce and crit turns into
+    /// a real weapon.
+    static let shuriken = WeaponDefinition(
+        id: "starter.shuriken",
+        name: "Shuriken",
+        summary: "Thrown in pairs, fast, and built to pass clean through a crowd.",
+        baseDamage: 4.5,
+        attackSpeed: 2.2,
+        range: 5.5,
+        damageType: .physical,
+        tags: [.projectile, .ranged, .weapon, .physical],
+        delivery: .projectile(ProjectileProfile(
+            speed: 16,
+            count: 2,
+            pierce: 3,
+            splashRadius: 0,
+            spriteID: .projectileShuriken
+        )),
+        targeting: .densestCluster,
+        rarity: .rare,
+        spriteID: .weaponShuriken
+    )
+
     static let emberWand = WeaponDefinition(
         id: "starter.emberWand",
         name: "Ember Wand",
@@ -271,6 +457,8 @@ enum StarterWeapons {
         sai, dualDaggers, katana,
         boStaff, flail, warHammer,
         claymore, boomerang, emberWand, rimeWand, stormWand,
+        spear, whip, nunchaku, handClaws, crossbow, shuriken,
+        halberd, scythe, heavyAxe, lance,
     ]
 
     /// Starters available with no Legacy unlocks.

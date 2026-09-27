@@ -52,6 +52,16 @@ enum WeaponMastery {
         case StarterWeapons.emberWand.id: return StatModifier(.fireDamage, .increased, 0.04)
         case StarterWeapons.rimeWand.id: return StatModifier(.coldDamage, .increased, 0.04)
         case StarterWeapons.stormWand.id: return StatModifier(.lightningDamage, .increased, 0.04)
+        case StarterWeapons.spear.id: return StatModifier(.knockback, .increased, 0.06)
+        case StarterWeapons.lance.id: return StatModifier(.knockback, .increased, 0.08)
+        case StarterWeapons.halberd.id: return StatModifier(.areaSize, .increased, 0.05)
+        case StarterWeapons.scythe.id: return StatModifier(.lifeSteal, .flat, 0.006)
+        case StarterWeapons.heavyAxe.id: return StatModifier(.critDamage, .flat, 0.08)
+        case StarterWeapons.whip.id: return StatModifier(.effectDuration, .increased, 0.05)
+        case StarterWeapons.nunchaku.id: return StatModifier(.attackSpeed, .increased, 0.03)
+        case StarterWeapons.handClaws.id: return StatModifier(.critChance, .flat, 0.015)
+        case StarterWeapons.crossbow.id: return StatModifier(.projectileDamage, .increased, 0.04)
+        case StarterWeapons.shuriken.id: return StatModifier(.critChance, .flat, 0.02)
         default: return StatModifier(.damage, .increased, 0.02)
         }
     }

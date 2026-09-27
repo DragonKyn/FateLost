@@ -133,6 +133,30 @@ extension PlaceholderArt {
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.3))
     }
 
+    // MARK: - handClaws
+
+    /// Hand claws: four curved blades strapped over the knuckles.
+    static func handClaws() -> Sprite {
+        let image = render(CGSize(width: 20, height: 22)) { ctx in
+            fillPolygon(ctx, [P(5.5, 17), P(4.75, 8), P(4.25, 8), P(3.5, 17)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(5.5, 17), P(4.75, 8), P(4.25, 8), P(3.5, 17)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            strokeCurve(ctx, [P(4, 15), P(5, 11)], UIColor(rgb: 0xE6EAEE), width: 0.35)
+            fillPolygon(ctx, [P(10, 17), P(9.25, 3), P(8.75, 3), P(8, 17)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(10, 17), P(9.25, 3), P(8.75, 3), P(8, 17)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            strokeCurve(ctx, [P(8.5, 15), P(9.5, 6)], UIColor(rgb: 0xE6EAEE), width: 0.35)
+            fillPolygon(ctx, [P(14.5, 17), P(13.75, 3), P(13.25, 3), P(12.5, 17)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(14.5, 17), P(13.75, 3), P(13.25, 3), P(12.5, 17)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            strokeCurve(ctx, [P(13, 15), P(14, 6)], UIColor(rgb: 0xE6EAEE), width: 0.35)
+            fillPolygon(ctx, [P(19, 17), P(18.25, 8), P(17.75, 8), P(17, 17)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(19, 17), P(18.25, 8), P(17.75, 8), P(17, 17)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            strokeCurve(ctx, [P(17.5, 15), P(18.5, 11)], UIColor(rgb: 0xE6EAEE), width: 0.35)
+            fillPolygon(ctx, [P(2, 17), P(18, 17), P(18, 21), P(2, 21)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(2, 17), P(18, 17), P(18, 21), P(2, 21)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(2.6, 18), to: P(17.4, 18), UIColor(rgb: 0x8E8B87), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.86))
+    }
+
     // MARK: - warHammer
 
     /// A war hammer: one flat face, one beak, and no subtlety.
@@ -260,6 +284,217 @@ extension PlaceholderArt {
             strokePolygon(ctx, [P(5.4, 1.8), P(10, 4.4), P(6.4, 6.2)], UIColor(rgb: 0x0E0C08), width: 0.5)
             fillPolygon(ctx, [P(5.4, 28.2), P(10, 25.6), P(6.4, 23.8)], UIColor(rgb: 0x48311E))
             strokePolygon(ctx, [P(5.4, 28.2), P(10, 25.6), P(6.4, 23.8)], UIColor(rgb: 0x0E0C08), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    // MARK: - whip
+
+    /// A whip: reach without ever closing the distance.
+    static func whip() -> Sprite {
+        let image = render(CGSize(width: 18, height: 40)) { ctx in
+            fillPolygon(ctx, [P(7.5, 30), P(7.5, 39), P(10.5, 39), P(10.5, 30)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(7.5, 30), P(7.5, 39), P(10.5, 39), P(10.5, 30)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(7.7, 31.4), to: P(10.3, 32.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(7.7, 33.6), to: P(10.3, 34.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(7.7, 35.8), to: P(10.3, 36.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(7.7, 38), to: P(10.3, 38.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            fillPolygon(ctx, [P(10.1, 30), P(9.7, 22), P(8.3, 22), P(7.9, 30)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(10.1, 30), P(9.7, 22), P(8.3, 22), P(7.9, 30)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            strokeCurve(ctx, [P(9, 22), P(14, 16), P(6, 10), P(15, 5), P(10, 1)], UIColor(rgb: 0x5E4040), width: 1.1)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.82))
+    }
+
+    // MARK: - nunchaku
+
+    /// Nunchaku: two sticks and a chain between them, never quite where you think.
+    static func nunchaku() -> Sprite {
+        let image = render(CGSize(width: 26, height: 32)) { ctx in
+            fillPolygon(ctx, [P(7.6, 30), P(7.6, 14), P(4.4, 14), P(4.4, 30)], UIColor(rgb: 0x5A3E26))
+            strokePolygon(ctx, [P(7.6, 30), P(7.6, 14), P(4.4, 14), P(4.4, 30)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            stroke(ctx, from: P(4.8, 28), to: P(4.8, 16), UIColor(rgb: 0x33220F), width: 0.5)
+            fillOval(ctx, CGRect(x: 7.8, y: 10.4, width: 2.4, height: 3.2), UIColor(rgb: 0x5E5A54))
+            strokeOval(ctx, CGRect(x: 7.8, y: 10.4, width: 2.4, height: 3.2), UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillOval(ctx, CGRect(x: 10.8, y: 7.8, width: 2.4, height: 3.2), UIColor(rgb: 0x5E5A54))
+            strokeOval(ctx, CGRect(x: 10.8, y: 7.8, width: 2.4, height: 3.2), UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillOval(ctx, CGRect(x: 14.3, y: 6.4, width: 2.4, height: 3.2), UIColor(rgb: 0x5E5A54))
+            strokeOval(ctx, CGRect(x: 14.3, y: 6.4, width: 2.4, height: 3.2), UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(21.6, 18), P(21.6, 2), P(18.4, 2), P(18.4, 18)], UIColor(rgb: 0x5A3E26))
+            strokePolygon(ctx, [P(21.6, 18), P(21.6, 2), P(18.4, 2), P(18.4, 18)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            stroke(ctx, from: P(18.8, 16), to: P(18.8, 4), UIColor(rgb: 0x33220F), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.6))
+    }
+
+    // MARK: - spear
+
+    /// A spear: reach over anything that wants to get close.
+    static func spear() -> Sprite {
+        let image = render(CGSize(width: 12, height: 62)) { ctx in
+            fillPolygon(ctx, [P(7.3, 58), P(7.25, 48.72), P(7.2, 39.56), P(7.15, 30.5), P(7.1, 21.56), P(7.05, 12.72), P(7, 4), P(5, 4), P(4.95, 12.72), P(4.9, 21.56), P(4.85, 30.5), P(4.8, 39.56), P(4.75, 48.72), P(4.7, 58)], UIColor(rgb: 0x7E5C36))
+            strokePolygon(ctx, [P(7.3, 58), P(7.25, 48.72), P(7.2, 39.56), P(7.15, 30.5), P(7.1, 21.56), P(7.05, 12.72), P(7, 4), P(5, 4), P(4.95, 12.72), P(4.9, 21.56), P(4.85, 30.5), P(4.8, 39.56), P(4.75, 48.72), P(4.7, 58)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            strokeCurve(ctx, [P(5.3, 55), P(5.3, 8)], UIColor(rgb: 0x33220F), width: 0.4)
+            fillPolygon(ctx, [P(7.7, 8), P(6.2, 1), P(5.8, 1), P(4.3, 8)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(7.7, 8), P(6.2, 1), P(5.8, 1), P(4.3, 8)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(3.6, 9), P(6, 3), P(8.4, 9)], UIColor(rgb: 0xE6EAEE))
+            fillPolygon(ctx, [P(4.2, 11.8), P(7.8, 11.8), P(7.8, 9.2), P(4.2, 9.2)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(4.2, 11.8), P(7.8, 11.8), P(7.8, 9.2), P(4.2, 9.2)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(4.7, 40), P(4.7, 52), P(7.3, 52), P(7.3, 40)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(4.7, 40), P(4.7, 52), P(7.3, 52), P(7.3, 40)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(4.9, 41.4), to: P(7.1, 42.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(4.9, 43.6), to: P(7.1, 44.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(4.9, 45.8), to: P(7.1, 46.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(4.9, 48), to: P(7.1, 48.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(4.9, 50.2), to: P(7.1, 51.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.2))
+    }
+
+    // MARK: - lance
+
+    /// A lance: everything it hits, it hits once.
+    static func lance() -> Sprite {
+        let image = render(CGSize(width: 14, height: 64)) { ctx in
+            fillPolygon(ctx, [P(8.6, 60), P(8.52, 49.89), P(8.43, 40.22), P(8.35, 31), P(8.27, 22.22), P(8.18, 13.89), P(8.1, 6), P(5.9, 6), P(5.82, 13.89), P(5.73, 22.22), P(5.65, 31), P(5.57, 40.22), P(5.48, 49.89), P(5.4, 60)], UIColor(rgb: 0x7E5C36))
+            strokePolygon(ctx, [P(8.6, 60), P(8.52, 49.89), P(8.43, 40.22), P(8.35, 31), P(8.27, 22.22), P(8.18, 13.89), P(8.1, 6), P(5.9, 6), P(5.82, 13.89), P(5.73, 22.22), P(5.65, 31), P(5.57, 40.22), P(5.48, 49.89), P(5.4, 60)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(6.2, 56), P(6.2, 10)], UIColor(rgb: 0x33220F), width: 0.5)
+            fillPolygon(ctx, [P(8.8, 8), P(7.25, 1), P(6.75, 1), P(5.2, 8)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(8.8, 8), P(7.25, 1), P(6.75, 1), P(5.2, 8)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(4, 12.2), P(10, 12.2), P(10, 9.8), P(4, 9.8)], UIColor(rgb: 0x767C86))
+            strokePolygon(ctx, [P(4, 12.2), P(10, 12.2), P(10, 9.8), P(4, 9.8)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(1.5, 20), P(12.5, 20), P(9.5, 27), P(4.5, 27)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(1.5, 20), P(12.5, 20), P(9.5, 27), P(4.5, 27)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(2.6, 20.6), P(11.4, 20.6), P(9, 25.4), P(5, 25.4)], UIColor(rgb: 0x4F4C47))
+            fillPolygon(ctx, [P(5.3, 44), P(5.3, 56), P(8.7, 56), P(8.7, 44)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(5.3, 44), P(5.3, 56), P(8.7, 56), P(8.7, 44)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(5.5, 45.4), to: P(8.5, 46.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(5.5, 47.6), to: P(8.5, 48.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(5.5, 49.8), to: P(8.5, 50.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(5.5, 52), to: P(8.5, 52.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(5.5, 54.2), to: P(8.5, 55.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.18))
+    }
+
+    // MARK: - halberd
+
+    /// A halberd: an axe, a hook and a spike, all at the reach of a spear.
+    static func halberd() -> Sprite {
+        let image = render(CGSize(width: 22, height: 64)) { ctx in
+            fillPolygon(ctx, [P(12.5, 60), P(12.45, 50.17), P(12.4, 40.67), P(12.35, 31.5), P(12.3, 22.67), P(12.25, 14.17), P(12.2, 6), P(9.8, 6), P(9.75, 14.17), P(9.7, 22.67), P(9.65, 31.5), P(9.6, 40.67), P(9.55, 50.17), P(9.5, 60)], UIColor(rgb: 0x7E5C36))
+            strokePolygon(ctx, [P(12.5, 60), P(12.45, 50.17), P(12.4, 40.67), P(12.35, 31.5), P(12.3, 22.67), P(12.25, 14.17), P(12.2, 6), P(9.8, 6), P(9.75, 14.17), P(9.7, 22.67), P(9.65, 31.5), P(9.6, 40.67), P(9.55, 50.17), P(9.5, 60)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(10.2, 56), P(10.2, 10)], UIColor(rgb: 0x33220F), width: 0.5)
+            fillPolygon(ctx, [P(12.5, 6), P(11.25, 1), P(10.75, 1), P(9.5, 6)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(12.5, 6), P(11.25, 1), P(10.75, 1), P(9.5, 6)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(11, 8), P(20, 6), P(19, 15), P(11, 15.5)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(11, 8), P(20, 6), P(19, 15), P(11, 15.5)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillPolygon(ctx, [P(11, 9), P(18.2, 7.4), P(17.4, 13.8), P(11, 14.3)], UIColor(rgb: 0x7E7B76))
+            strokeCurve(ctx, [P(11, 9), P(4.5, 10), P(3.5, 16.5)], UIColor(rgb: 0x767C86), width: 2)
+            fillPolygon(ctx, [P(9.4, 40), P(9.4, 52), P(12.6, 52), P(12.6, 40)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(9.4, 40), P(9.4, 52), P(12.6, 52), P(12.6, 40)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(9.6, 41.4), to: P(12.4, 42.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.6, 43.6), to: P(12.4, 44.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.6, 45.8), to: P(12.4, 46.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.6, 48), to: P(12.4, 48.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(9.6, 50.2), to: P(12.4, 51.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.16))
+    }
+
+    // MARK: - scythe
+
+    /// A scythe: whatever a wide, low sweep can reach.
+    static func scythe() -> Sprite {
+        let image = render(CGSize(width: 28, height: 64)) { ctx in
+            fillPolygon(ctx, [P(11.5, 60), P(11.45, 50.28), P(11.4, 41.11), P(11.35, 32.5), P(11.3, 24.44), P(11.25, 16.94), P(11.2, 10), P(8.8, 10), P(8.75, 16.94), P(8.7, 24.44), P(8.65, 32.5), P(8.6, 41.11), P(8.55, 50.28), P(8.5, 60)], UIColor(rgb: 0x33220F))
+            strokePolygon(ctx, [P(11.5, 60), P(11.45, 50.28), P(11.4, 41.11), P(11.35, 32.5), P(11.3, 24.44), P(11.25, 16.94), P(11.2, 10), P(8.8, 10), P(8.75, 16.94), P(8.7, 24.44), P(8.65, 32.5), P(8.6, 41.11), P(8.55, 50.28), P(8.5, 60)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(9.2, 56), P(9.2, 14)], UIColor(rgb: 0x23170A), width: 0.4)
+            strokeCurve(ctx, [P(10, 9), P(18, 3), P(26, 8)], UIColor(rgb: 0x767C86), width: 5.2)
+            strokeCurve(ctx, [P(10, 10.5), P(17, 5.5), P(24.5, 9.5)], UIColor(rgb: 0xE6EAEE), width: 0.9)
+            fillPolygon(ctx, [P(10.51, 8.19), P(17.24, 4.55), P(16.76, 3.45), P(9.49, 5.81)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(10.51, 8.19), P(17.24, 4.55), P(16.76, 3.45), P(9.49, 5.81)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(8.4, 34), P(8.4, 46), P(11.6, 46), P(11.6, 34)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(8.4, 34), P(8.4, 46), P(11.6, 46), P(11.6, 34)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(8.6, 35.4), to: P(11.4, 36.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(8.6, 37.6), to: P(11.4, 38.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(8.6, 39.8), to: P(11.4, 40.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(8.6, 42), to: P(11.4, 42.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(8.6, 44.2), to: P(11.4, 45.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            fillPolygon(ctx, [P(8, 59.1), P(12, 59.1), P(12, 56.9), P(8, 56.9)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(8, 59.1), P(12, 59.1), P(12, 56.9), P(8, 56.9)], UIColor(rgb: 0x0E0C08), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.14))
+    }
+
+    // MARK: - heavyAxe
+
+    /// A heavy axe: it does not ask twice.
+    static func heavyAxe() -> Sprite {
+        let image = render(CGSize(width: 26, height: 54)) { ctx in
+            fillPolygon(ctx, [P(14.7, 50), P(14.65, 42.17), P(14.6, 34.67), P(14.55, 27.5), P(14.5, 20.67), P(14.45, 14.17), P(14.4, 8), P(11.6, 8), P(11.55, 14.17), P(11.5, 20.67), P(11.45, 27.5), P(11.4, 34.67), P(11.35, 42.17), P(11.3, 50)], UIColor(rgb: 0x5A3E26))
+            strokePolygon(ctx, [P(14.7, 50), P(14.65, 42.17), P(14.6, 34.67), P(14.55, 27.5), P(14.5, 20.67), P(14.45, 14.17), P(14.4, 8), P(11.6, 8), P(11.55, 14.17), P(11.5, 20.67), P(11.45, 27.5), P(11.4, 34.67), P(11.35, 42.17), P(11.3, 50)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(12, 46), P(12, 12)], UIColor(rgb: 0x33220F), width: 0.5)
+            fillPolygon(ctx, [P(13, 6), P(25, 2), P(24, 16), P(13, 20)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(13, 6), P(25, 2), P(24, 16), P(13, 20)], UIColor(rgb: 0x0E0C08), width: 0.8)
+            fillPolygon(ctx, [P(13, 7.5), P(22.4, 4.4), P(21.6, 14.4), P(13, 18)], UIColor(rgb: 0x7E7B76))
+            strokeCurve(ctx, [P(24.4, 3), P(25.6, 9), P(23.8, 15.4)], UIColor(rgb: 0xE6EAEE), width: 0.6)
+            fillPolygon(ctx, [P(9, 8), P(13, 6), P(13, 20), P(9, 18)], UIColor(rgb: 0x3A3833))
+            strokePolygon(ctx, [P(9, 8), P(13, 6), P(13, 20), P(9, 18)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(11.2, 36), P(11.2, 48), P(14.8, 48), P(14.8, 36)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(11.2, 36), P(11.2, 48), P(14.8, 48), P(14.8, 36)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(11.4, 37.4), to: P(14.6, 38.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.4, 39.6), to: P(14.6, 40.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.4, 41.8), to: P(14.6, 42.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.4, 44), to: P(14.6, 44.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.4, 46.2), to: P(14.6, 47.1), UIColor(rgb: 0x6B5F5F), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.2))
+    }
+
+    // MARK: - crossbow
+
+    /// A crossbow, cocked and waiting.
+    static func crossbow() -> Sprite {
+        let image = render(CGSize(width: 26, height: 30)) { ctx in
+            fillPolygon(ctx, [P(11.4, 6), P(11.37, 9.33), P(11.33, 12.67), P(11.3, 16), P(11.27, 19.33), P(11.23, 22.67), P(11.2, 26), P(14.8, 26), P(14.77, 22.67), P(14.73, 19.33), P(14.7, 16), P(14.67, 12.67), P(14.63, 9.33), P(14.6, 6)], UIColor(rgb: 0x5A3E26))
+            strokePolygon(ctx, [P(11.4, 6), P(11.37, 9.33), P(11.33, 12.67), P(11.3, 16), P(11.27, 19.33), P(11.23, 22.67), P(11.2, 26), P(14.8, 26), P(14.77, 22.67), P(14.73, 19.33), P(14.7, 16), P(14.67, 12.67), P(14.63, 9.33), P(14.6, 6)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            strokeCurve(ctx, [P(12, 8), P(12, 24)], UIColor(rgb: 0x33220F), width: 0.4)
+            strokeCurve(ctx, [P(3, 9), P(13, 5), P(23, 9)], UIColor(rgb: 0x767C86), width: 2.2)
+            strokeCurve(ctx, [P(3, 9), P(7, 7), P(13, 6.4)], UIColor(rgb: 0xC4CAD2), width: 1)
+            strokeCurve(ctx, [P(23, 9), P(19, 7), P(13, 6.4)], UIColor(rgb: 0xC4CAD2), width: 1)
+            stroke(ctx, from: P(3, 9), to: P(13, 13), UIColor(rgb: 0xB8A88C), width: 0.5)
+            stroke(ctx, from: P(23, 9), to: P(13, 13), UIColor(rgb: 0xB8A88C), width: 0.5)
+            fillPolygon(ctx, [P(12.5, 4), P(12.2, 13), P(13.8, 13), P(13.5, 4)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(12.5, 4), P(12.2, 13), P(13.8, 13), P(13.5, 4)], UIColor(rgb: 0x0E0C08), width: 0.4)
+            fillPolygon(ctx, [P(11.5, 16), P(11.5, 25), P(14.5, 25), P(14.5, 16)], UIColor(rgb: 0x3A2A2A))
+            strokePolygon(ctx, [P(11.5, 16), P(11.5, 25), P(14.5, 25), P(14.5, 16)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            stroke(ctx, from: P(11.7, 17.4), to: P(14.3, 18.3), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.7, 19.6), to: P(14.3, 20.5), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.7, 21.8), to: P(14.3, 22.7), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            stroke(ctx, from: P(11.7, 24), to: P(14.3, 24.9), UIColor(rgb: 0x6B5F5F), width: 0.5)
+            fillOval(ctx, CGRect(x: 10.6, y: 24, width: 4.8, height: 3.2), UIColor(rgb: 0x5E5A54))
+            strokeOval(ctx, CGRect(x: 10.6, y: 24, width: 4.8, height: 3.2), UIColor(rgb: 0x0E0C08), width: 0.5)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.75))
+    }
+
+    // MARK: - shuriken
+
+    /// A shuriken: four points, thrown to bite whatever it reaches.
+    static func shuriken() -> Sprite {
+        let image = render(CGSize(width: 20, height: 20)) { ctx in
+            radialGradient(ctx, center: P(10, 10), radius: 9, inner: UIColor(rgb: 0xE6EAEE, alpha: 0.2), outer: UIColor(rgb: 0xE6EAEE, alpha: 0))
+            fillPolygon(ctx, [P(11.86, 7.65), P(18.5, 10), P(11.86, 12.35)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(11.86, 7.65), P(18.5, 10), P(11.86, 12.35)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(12.35, 11.86), P(10, 18.5), P(7.65, 11.86)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(12.35, 11.86), P(10, 18.5), P(7.65, 11.86)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(8.14, 12.35), P(1.5, 10), P(8.14, 7.65)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(8.14, 12.35), P(1.5, 10), P(8.14, 7.65)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(7.65, 8.14), P(10, 1.5), P(12.35, 8.14)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(7.65, 8.14), P(10, 1.5), P(12.35, 8.14)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 8.2, y: 8.2, width: 3.6, height: 3.6), UIColor(rgb: 0x3A3833))
+            strokeOval(ctx, CGRect(x: 8.2, y: 8.2, width: 3.6, height: 3.6), UIColor(rgb: 0x0E0C08), width: 0.5)
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
     }
@@ -402,6 +637,40 @@ extension PlaceholderArt {
             strokePolygon(ctx, [P(1.5, 6.8), P(3.72, 7.1), P(6.06, 7.4), P(8.5, 7.7), P(11.06, 8), P(13.72, 8.3), P(16.5, 8.6), P(16.5, 3.4), P(13.72, 3.7), P(11.06, 4), P(8.5, 4.3), P(6.06, 4.6), P(3.72, 4.9), P(1.5, 5.2)], UIColor(rgb: 0x0E0C08), width: 0.5)
             fillOval(ctx, CGRect(x: 9.5, y: 3.2, width: 5.6, height: 5.6), UIColor(rgb: 0xE1CEFF))
             fillOval(ctx, CGRect(x: 10.3, y: 4.2, width: 2.4, height: 2.4), UIColor(rgb: 0xFFFFFF))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    // MARK: - projectileCrossbowBolt
+
+    /// A crossbow bolt, loosed and flying true.
+    static func projectileCrossbowBolt() -> Sprite {
+        let image = render(CGSize(width: 18, height: 12)) { ctx in
+            radialGradient(ctx, center: P(9, 6), radius: 9, inner: UIColor(rgb: 0xE6EAEE, alpha: 0.75), outer: UIColor(rgb: 0xE6EAEE, alpha: 0))
+            fillPolygon(ctx, [P(1.5, 6.8), P(3.72, 7.1), P(6.06, 7.4), P(8.5, 7.7), P(11.06, 8), P(13.72, 8.3), P(16.5, 8.6), P(16.5, 3.4), P(13.72, 3.7), P(11.06, 4), P(8.5, 4.3), P(6.06, 4.6), P(3.72, 4.9), P(1.5, 5.2)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(1.5, 6.8), P(3.72, 7.1), P(6.06, 7.4), P(8.5, 7.7), P(11.06, 8), P(13.72, 8.3), P(16.5, 8.6), P(16.5, 3.4), P(13.72, 3.7), P(11.06, 4), P(8.5, 4.3), P(6.06, 4.6), P(3.72, 4.9), P(1.5, 5.2)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillOval(ctx, CGRect(x: 9.5, y: 3.2, width: 5.6, height: 5.6), UIColor(rgb: 0xA6A4A0))
+            fillOval(ctx, CGRect(x: 10.3, y: 4.2, width: 2.4, height: 2.4), UIColor(rgb: 0xFFFFFF))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    // MARK: - projectileShuriken
+
+    /// The shuriken, spinning mid-flight.
+    static func projectileShuriken() -> Sprite {
+        let image = render(CGSize(width: 20, height: 20)) { ctx in
+            radialGradient(ctx, center: P(10, 10), radius: 9, inner: UIColor(rgb: 0xE6EAEE, alpha: 0.2), outer: UIColor(rgb: 0xE6EAEE, alpha: 0))
+            fillPolygon(ctx, [P(11.86, 7.65), P(18.5, 10), P(11.86, 12.35)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(11.86, 7.65), P(18.5, 10), P(11.86, 12.35)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(12.35, 11.86), P(10, 18.5), P(7.65, 11.86)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(12.35, 11.86), P(10, 18.5), P(7.65, 11.86)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(8.14, 12.35), P(1.5, 10), P(8.14, 7.65)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(8.14, 12.35), P(1.5, 10), P(8.14, 7.65)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(7.65, 8.14), P(10, 1.5), P(12.35, 8.14)], UIColor(rgb: 0xC4CAD2))
+            strokePolygon(ctx, [P(7.65, 8.14), P(10, 1.5), P(12.35, 8.14)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillOval(ctx, CGRect(x: 8.2, y: 8.2, width: 3.6, height: 3.6), UIColor(rgb: 0x3A3833))
+            strokeOval(ctx, CGRect(x: 8.2, y: 8.2, width: 3.6, height: 3.6), UIColor(rgb: 0x0E0C08), width: 0.5)
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
     }
