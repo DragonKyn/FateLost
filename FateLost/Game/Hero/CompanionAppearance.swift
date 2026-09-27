@@ -130,7 +130,7 @@ enum CompanionExtra: String, Codable, CaseIterable, Identifiable {
 /// One target's chosen look. A `nil` tint keeps whatever the catalogue
 /// already gives it — some summons come pre-tinted on purpose, like the
 /// spirit wolf's chill blue — so never having made a choice can't look wrong.
-struct CompanionLook: Codable, Equatable {
+struct CompanionLook: Codable, Equatable, Hashable {
     var tint: String?
     var scale: CompanionScale = .standard
     var extra: CompanionExtra = .none
@@ -138,7 +138,7 @@ struct CompanionLook: Codable, Equatable {
 
 /// Every companion's chosen look, keyed by target. Saved alongside the
 /// hero's own look, and restricted to what is owned the same way.
-struct CompanionCustomization: Codable, Equatable {
+struct CompanionCustomization: Codable, Equatable, Hashable {
     private var looks: [String: CompanionLook] = [:]
 
     init() {}
