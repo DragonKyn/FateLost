@@ -47,6 +47,7 @@ final class GameSession {
 
     @ObservationIgnored let scene: GameScene
     @ObservationIgnored private let audio: AudioManager
+    @ObservationIgnored private let settings: SettingsStore
     @ObservationIgnored private var levelUpTask: Task<Void, Never>?
     @ObservationIgnored private var statusTask: Task<Void, Never>?
 
@@ -61,6 +62,7 @@ final class GameSession {
         let starter = StarterWeapons.definition(for: run.starterWeaponID) ?? StarterWeapons.sword
         weapon = starter
         audio = services.audio
+        settings = services.settings
         scene = GameScene(run: run, dependencies: GameScene.Dependencies(
             tuning: tuning,
             settings: services.settings,
@@ -180,7 +182,8 @@ final class GameSession {
         if pauseReason == .offer {
             resume()
         }
-        if !isParty, progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+        if !isParty, settings.settings.pauseOnLevelUp, progression.unspentPoints > 0, pendingLevelUps > 0,
+           pauseReason == nil {
             openSkillTree()
         }
     }
@@ -192,7 +195,8 @@ final class GameSession {
         if pauseReason == .offer {
             resume()
         }
-        if !isParty, progression.unspentPoints > 0, pendingLevelUps > 0, pauseReason == nil {
+        if !isParty, settings.settings.pauseOnLevelUp, progression.unspentPoints > 0, pendingLevelUps > 0,
+           pauseReason == nil {
             openSkillTree()
         }
     }
@@ -210,7 +214,9 @@ final class GameSession {
         pendingLevelUps += 1
         // In a party the world does not stop for one player's menu, so a level
         // never throws the tree open mid-fight: the button glows instead.
-        guard !isParty, levelUpTask == nil else { return }
+        // Off `pauseOnLevelUp`, a solo run gets the same treatment: points
+        // bank up and the button glows until the player opens the tree.
+        guard !isParty, settings.settings.pauseOnLevelUp, levelUpTask == nil else { return }
         levelUpTask = Task { [weak self] in
             try? await Task.sleep(for: Self.levelUpTreeDelay)
             guard let self, !Task.isCancelled else { return }

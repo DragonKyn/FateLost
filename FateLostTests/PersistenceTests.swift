@@ -83,6 +83,16 @@ final class GameSettingsTests: XCTestCase {
         XCTAssertEqual(settings.musicVolume, 0.25)
         XCTAssertEqual(settings.hapticsEnabled, GameSettings.defaults.hapticsEnabled)
         XCTAssertEqual(settings.cameraShakeEnabled, GameSettings.defaults.cameraShakeEnabled)
+        XCTAssertEqual(settings.pauseOnLevelUp, GameSettings.defaults.pauseOnLevelUp)
+    }
+
+    func testHapticsAndCameraShakeDefaultOff() {
+        XCTAssertFalse(GameSettings.defaults.hapticsEnabled)
+        XCTAssertFalse(GameSettings.defaults.cameraShakeEnabled)
+    }
+
+    func testPauseOnLevelUpDefaultsOn() {
+        XCTAssertTrue(GameSettings.defaults.pauseOnLevelUp)
     }
 
     func testEffectiveVolumeAppliesMaster() {

@@ -9,8 +9,12 @@ struct GameSettings: Codable, Equatable {
     var masterVolume: Double = 0.9
     var musicVolume: Double = 0.7
     var effectsVolume: Double = 0.9
-    var hapticsEnabled: Bool = true
-    var cameraShakeEnabled: Bool = true
+    var hapticsEnabled: Bool = false
+    var cameraShakeEnabled: Bool = false
+    /// Whether a solo run stops for the skill tree the moment a level is
+    /// gained. Off lets points bank up over several levels instead, spent
+    /// whenever the player opens the tree themselves.
+    var pauseOnLevelUp: Bool = true
     /// Whether the developer code has been entered. Only ever set in a build
     /// that has developer tools at all.
     var developerUnlocked: Bool = false
@@ -28,6 +32,7 @@ struct GameSettings: Codable, Equatable {
         hapticsEnabled = try container.decodeIfPresent(Bool.self, forKey: .hapticsEnabled) ?? fallback.hapticsEnabled
         cameraShakeEnabled = try container.decodeIfPresent(Bool.self, forKey: .cameraShakeEnabled)
             ?? fallback.cameraShakeEnabled
+        pauseOnLevelUp = try container.decodeIfPresent(Bool.self, forKey: .pauseOnLevelUp) ?? fallback.pauseOnLevelUp
         developerUnlocked = try container.decodeIfPresent(Bool.self, forKey: .developerUnlocked)
             ?? fallback.developerUnlocked
     }

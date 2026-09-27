@@ -326,6 +326,9 @@ final class EffectsRenderer {
         let spread = max(0.4, radius * 0.6)
         let count = min(20, 5 + Int(radius * 4))
         let pale = UIColor.white.blended(with: color, 0.35)
+        // A bright instant at the centre of every flourish, so the moment an
+        // effect lands reads first as a flash and only then as its flavour.
+        spark(at: position, isCritical: radius > 1.4, color: pale)
         switch visual {
         case .fire:
             motes(at: position, count: count, color: UIColor(rgb: 0xFFB040), spread: spread, lifetime: 1.1)

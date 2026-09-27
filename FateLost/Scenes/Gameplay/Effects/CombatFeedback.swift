@@ -13,6 +13,10 @@ final class CombatFeedback {
         /// Seconds the game freezes when the player is hit, to sell the blow.
         var playerHitStop: TimeInterval = 0.07
         var criticalHitStop: TimeInterval = 0.03
+        /// A champion landing, falling, or a realm won: sold with a beat of
+        /// stillness the way a critical hit already is.
+        var bossImpactHitStop: TimeInterval = 0.09
+        var explosionHitStop: TimeInterval = 0.05
         var playerHitTrauma: CGFloat = 0.42
         var criticalTrauma: CGFloat = 0.14
         var burstTrauma: CGFloat = 0.1
@@ -214,7 +218,11 @@ final class CombatFeedback {
                 if let definition = EnemyCatalog.definition(for: kind), definition.rank >= .elite {
                     effects.grandDeath(at: position, rank: definition.rank,
                                        color: VisualStyle.matching(definition.damageType).color)
-                    if definition.rank == .elite { camera.addTrauma(0.15) }
+                    if definition.rank == .elite {
+                        camera.addTrauma(0.15)
+                    } else if definition.rank == .boss {
+                        pendingHitStop = max(pendingHitStop, tuning.bossImpactHitStop)
+                    }
                 }
                 audio.play(.goblinDeath)
 
@@ -253,9 +261,12 @@ final class CombatFeedback {
                 audio.play(.dash)
 
             case let .abilityCast(_, visual):
-                effects.motes(at: playerPosition, count: 8, color: visual.color, spread: 0.5, lifetime: 0.7)
-                // A ring at the caster's feet: the cast is visible even when its effect is elsewhere.
+                // The same flourish every burst/cone/bolt gets, sized down to
+                // a cast rather than an impact, plus a flare on the caster's
+                // own body so the ability reads as coming from them.
+                effects.flare(visual, at: playerPosition, radius: 1.1)
                 effects.ring(at: playerPosition, radius: 1.3, color: visual.color, lifetime: 0.35)
+                player.playCast(color: visual.color)
                 audio.play(visual.sound)
                 haptics.play(.uiTap)
 
@@ -279,11 +290,13 @@ final class CombatFeedback {
             case .bossArrived:
                 // A champion landing is felt before it is read.
                 camera.addTrauma(0.9)
+                pendingHitStop = max(pendingHitStop, tuning.bossImpactHitStop)
                 haptics.play(.criticalHit)
                 audio.play(.abilityImpact)
 
             case .bossDefeated, .realmConquered:
                 camera.addTrauma(0.6)
+                pendingHitStop = max(pendingHitStop, tuning.bossImpactHitStop)
                 audio.play(.levelUp)
 
             case let .enemyExploded(position, radius):
@@ -293,6 +306,7 @@ final class CombatFeedback {
                 effects.splat(at: position, color: UIColor(rgb: 0x1A1612))
                 audio.play(.kegBlast)
                 camera.addTrauma(tuning.explosionTrauma)
+                pendingHitStop = max(pendingHitStop, tuning.explosionHitStop)
 
             case .playerHit:
                 hurtFlash = 1

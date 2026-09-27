@@ -40,6 +40,8 @@ final class PlayerView: SKNode {
         static let settleDuration: CGFloat = 0.14
         static let hurtFlashDuration: CGFloat = 0.18
         static let hurtColor = UIColor(red: 1, green: 0.2, blue: 0.15, alpha: 1)
+        /// Seconds the cast glow pulses and fades.
+        static let castGlowDuration: CGFloat = 0.3
     }
 
     private var facingSign: CGFloat = 1
@@ -57,6 +59,11 @@ final class PlayerView: SKNode {
     private let barrierGlow: SKSpriteNode
     /// Licking flame while a burn is ticking.
     private let burnGlow: SKSpriteNode
+    /// A brief flare in the ability's own colour the instant it is cast.
+    private let castGlow: SKSpriteNode
+    /// Seconds since the last cast; large when idle.
+    private var castAge: CGFloat = 10
+    private var castColor = UIColor.white
     private var currentForm: FormID?
     private var formScale: CGFloat = 1
     private var formTint: UIColor?
@@ -81,6 +88,7 @@ final class PlayerView: SKNode {
         self.weaponSprite = weaponSprite
         barrierGlow = catalog.makeSprite(.fxGlow)
         burnGlow = catalog.makeSprite(.fxGlow)
+        castGlow = catalog.makeSprite(.fxGlow)
         restAngle = weaponSprite == .weaponBow ? -0.1 : Style.weaponRestAngle
         super.init()
 
@@ -118,6 +126,14 @@ final class PlayerView: SKNode {
         burnGlow.zPosition = 0.32
         burnGlow.alpha = 0
         addChild(burnGlow)
+
+        castGlow.blendMode = .add
+        castGlow.colorBlendFactor = 1
+        castGlow.size = CGSize(width: 62, height: 72)
+        castGlow.position = CGPoint(x: 0, y: 24)
+        castGlow.zPosition = 0.31
+        castGlow.alpha = 0
+        addChild(castGlow)
     }
 
     /// Puts a different weapon in the hand, as when one is found mid-run.
@@ -188,6 +204,13 @@ final class PlayerView: SKNode {
         levelUpAge = 0
     }
 
+    /// A brief flare in the ability's own colour, so a cast reads as coming
+    /// from the caster even when its effect lands somewhere else.
+    func playCast(color: UIColor) {
+        castAge = 0
+        castColor = color
+    }
+
     @available(*, unavailable)
     required init?(coder aDecoder: NSCoder) {
         fatalError("PlayerView is created in code")
@@ -216,6 +239,7 @@ final class PlayerView: SKNode {
     func apply(_ state: PlayerState, screenVelocity: CGPoint, dt: CGFloat) {
         attackAge += dt
         levelUpAge += dt
+        castAge += dt
         weaponAway = max(0, weaponAway - dt)
         weapon.alpha = weaponAway > 0 ? 0 : 1
 
@@ -301,6 +325,16 @@ final class PlayerView: SKNode {
         let flicker = 0.7 + 0.3 * sin(CGFloat(state.strideTime + Double(attackAge)) * 11)
         burnGlow.alpha = state.isBurning ? 0.55 + 0.45 * flicker : 0
         burnGlow.setScale(state.isBurning ? 1 + 0.12 * flicker : 1)
+
+        // A quick outward pulse in the ability's colour at the moment of cast.
+        if castAge < Style.castGlowDuration {
+            let fade = 1 - castAge / Style.castGlowDuration
+            castGlow.color = castColor
+            castGlow.alpha = fade * 0.7
+            castGlow.setScale(1 + 0.5 * (1 - fade))
+        } else {
+            castGlow.alpha = 0
+        }
 
         // The shadow tightens slightly as the body rises.
         shadowSprite.setScale(1 - bob * 0.015)

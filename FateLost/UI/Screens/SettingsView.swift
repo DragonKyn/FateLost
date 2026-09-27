@@ -26,6 +26,15 @@ struct SettingsView: View {
                     Text("Camera shake adds weight to critical hits, explosions and boss attacks.")
                 }
 
+                Section {
+                    Toggle("Pause for Skill Points", isOn: binding(\.pauseOnLevelUp))
+                } header: {
+                    Text("Gameplay")
+                } footer: {
+                    Text("Off, a solo run keeps going when you level up — points bank up and wait for you to "
+                         + "open the skill tree yourself, whenever you're ready to spend them.")
+                }
+
                 if DeveloperOptions.isAvailable {
                     developerSection
                 }
