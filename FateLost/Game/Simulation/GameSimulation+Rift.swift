@@ -25,7 +25,8 @@ extension GameSimulation {
 
     private mutating func maybeOpenPortal(at spot: CGPoint) {
         guard combat.rift == nil, combat.portals.isEmpty,
-              combat.lootRandom.chance(tuning.simulation.riftChance + combat.sheet[.riftChance]) else { return }
+              combat.lootRandom.chance(tuning.simulation.riftChance + combat.sheet[.riftChance]
+                                        + max(0, riftChanceBonus)) else { return }
         let kinds = RiftKind.allCases
         let kind = kinds[Int(combat.lootRandom.unit() * Double(kinds.count)) % kinds.count]
         openPortal(kind, at: spot)

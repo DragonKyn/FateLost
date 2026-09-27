@@ -17,6 +17,8 @@ struct GameplayScreen: View {
     /// it first appears, so it cannot change under them mid-reading).
     @State private var endingDismissed = false
     @State private var endingIsRepeat: Bool?
+    /// The boons panel, opened from the run summary.
+    @State private var showBoons = false
 
     var body: some View {
         ZStack {
@@ -69,6 +71,7 @@ struct GameplayScreen: View {
                             realm: session.realm,
                             weapon: session.weapon,
                             echoes: echoesEarned ?? 0,
+                            boonBonus: session.boonEchoBonus,
                             onRetry: {
                                 services.audio.play(.uiConfirm)
                                 router.restartRun(services: services)
@@ -76,12 +79,25 @@ struct GameplayScreen: View {
                             onMenu: {
                                 services.audio.play(.uiBack)
                                 router.endRun()
-                            }
+                            },
+                            onBoons: { showBoons = true }
                         )
                     }
                 }
                 .transition(.opacity)
                 .onAppear { recordOnce(summary) }
+            } else if session.isSecondChancePresented, let state = session.secondChance {
+                SecondChanceView(state: state,
+                                 onWatch: {
+                                     services.audio.play(.uiConfirm)
+                                     services.haptics.play(.uiTap)
+                                     session.watchAdToRevive()
+                                 },
+                                 onAccept: {
+                                     services.audio.play(.uiBack)
+                                     session.acceptFate()
+                                 })
+                    .transition(.opacity)
             } else if session.isEchoOfferPresented, let offer = session.echoOffer {
                 EchoOfferView(offer: offer, echoesAtRisk: session.echoesAtRisk,
                               onCollect: {
@@ -135,6 +151,16 @@ struct GameplayScreen: View {
                 .transition(.opacity)
             }
         }
+        .overlay {
+            if showBoons {
+                BoonsPanel(onClose: {
+                    services.audio.play(.uiBack)
+                    showBoons = false
+                })
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.2), value: showBoons)
         .animation(.easeInOut(duration: 0.25), value: session.pauseReason)
         .animation(.easeInOut(duration: 0.8), value: session.summary)
         .onAppear { session.beginPresentation() }
@@ -169,7 +195,7 @@ struct GameplayScreen: View {
             endingIsRepeat = services.realmProgress.endingsSeen > 0
             services.realmProgress.endingsSeen += 1
         }
-        echoesEarned = services.record(summary)
+        echoesEarned = session.payOut(summary)
     }
 
     private func openDeveloperPanel() {
@@ -210,6 +236,7 @@ private struct GameplayHUDOverlay: View {
                     .shadow(color: .black, radius: 2)
                     RelicStrip(relics: session.progression.relics)
                     AfflictionStrip(afflictions: session.hud.afflictions)
+                    BoonHUDStrip(seconds: session.boonSeconds)
                     if session.hud.curseSeconds > 0 {
                         Label("Cursed \(formatTime(session.hud.curseSeconds))", systemImage: "moon.stars.fill")
                             .font(FLTheme.Typeface.number(12))

@@ -135,6 +135,9 @@ final class GameScene: SKScene {
         var party: PartyRunDriver?
         /// Everyone in the party, host first, when this phone is the host.
         var partyConfigs: [PartyHeroConfig] = []
+        /// A lone hero's fall waits for the player to choose a second chance
+        /// (paid for with an advert) or to accept it. Never in a party.
+        var offersSecondChance = false
     }
 
     private enum Timing {
@@ -162,6 +165,12 @@ final class GameScene: SKScene {
     private var conqueredAt: CFTimeInterval?
     var onEchoOfferChange: ((EchoOffer?) -> Void)?
     private var lastEchoOffer: EchoOffer?
+    /// Called when a lone hero's fall starts, or stops, waiting on a choice.
+    var onSecondChanceChange: ((Bool) -> Void)?
+    private var lastAwaitingSecondChance = false
+    /// Called each frame with the seconds of play actually simulated, so
+    /// time-limited boons run down with play and never with menus.
+    var onPlayTime: ((TimeInterval) -> Void)?
     /// Scene time used for idle animation, advanced only while unpaused.
     private var animationTime: TimeInterval = 0
     /// Ability buttons pressed since the last simulation step.
@@ -259,6 +268,7 @@ final class GameScene: SKScene {
                 simulation.beginMirroring(slot: UInt8(clamping: driver.mySlot))
             }
         }
+        simulation.offersSecondChance = dependencies.party == nil && dependencies.offersSecondChance
         self.simulation = simulation
 
         // Collaborators are built from locals: `self` cannot be read until
@@ -456,7 +466,10 @@ final class GameScene: SKScene {
             var intent = currentIntent()
             let started = CACurrentMediaTime()
             partyDriver?.hostWillStep(&simulation, dt: frameDelta)
+            var stepsTaken = 0
             for _ in 0..<steps {
+                // A fall waiting on the second-chance choice holds everything.
+                if simulation.awaitingSecondChance != nil { break }
                 // A find that has just opened holds a lone run still; a party
                 // plays on around the player who is choosing.
                 if partyDriver == nil, simulation.offer != nil || simulation.echoOffer != nil { break }
@@ -467,11 +480,15 @@ final class GameScene: SKScene {
                 intent.abilityPresses = pendingAbilityPresses
                 intent.interact = pendingInteract
                 simulation.step(dt: timestep.step, intent: intent)
+                stepsTaken += 1
                 // A press is used by the first step that sees it.
                 pendingAbilityPresses = 0
                 pendingInteract = false
             }
             recordSimulationTime(CACurrentMediaTime() - started)
+            if stepsTaken > 0 {
+                onPlayTime?(Double(stepsTaken) * timestep.step)
+            }
 
             // Events are presented before renderers update, so a killed enemy's
             // view still exists to spawn its falling body from.
@@ -500,6 +517,7 @@ final class GameScene: SKScene {
         publishProgressionIfChanged()
         publishOfferIfChanged()
         publishEchoOfferIfChanged()
+        publishSecondChanceIfChanged()
         reportLevelUps(in: events)
         deliverSummaryIfDue()
     }
@@ -799,6 +817,39 @@ final class GameScene: SKScene {
         case .chest: return ItemRarity.rare.color.uiColor
         case .hoard, .rift: return ItemRarity.legendary.color.uiColor
         }
+    }
+
+    // MARK: - A second chance
+
+    private func publishSecondChanceIfChanged() {
+        let awaiting = simulation.awaitingSecondChance != nil
+        guard awaiting != lastAwaitingSecondChance else { return }
+        lastAwaitingSecondChance = awaiting
+        if awaiting { resetInput() }
+        onSecondChanceChange?(awaiting)
+    }
+
+    /// Added to a fallen champion's chance to open a rift, while Rift's
+    /// Calling runs. Solo runs only.
+    var riftChanceBonus: Double {
+        get { simulation.riftChanceBonus }
+        set { simulation.riftChanceBonus = partyDriver == nil ? max(0, newValue) : 0 }
+    }
+
+    /// Raises the fallen hero where they fell. Returns false if no fall was
+    /// waiting (already answered), so a repeated answer does nothing.
+    @discardableResult
+    func takeSecondChance() -> Bool {
+        guard simulation.takeSecondChance() else { return false }
+        resetInput()
+        lastAwaitingSecondChance = false
+        return true
+    }
+
+    /// Lets the fall stand; the run ends as it always has.
+    func acceptFate() {
+        simulation.acceptFate()
+        lastAwaitingSecondChance = simulation.awaitingSecondChance != nil
     }
 
     // MARK: - Fate's Echo: bank or go on

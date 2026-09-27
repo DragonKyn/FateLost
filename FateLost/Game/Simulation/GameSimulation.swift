@@ -122,6 +122,17 @@ struct GameSimulation {
     /// Fate's Echo asking whether to bank and leave or go on, after every
     /// tenth wave. While it is set the scene holds the game still.
     var echoOffer: EchoOffer?
+    /// Whether a lone hero's fall waits for the player to choose between a
+    /// second chance and accepting it (see `GameSimulation+SecondChance`).
+    var offersSecondChance = false
+    /// A second chance has been taken or turned down this run: any later
+    /// fall is final.
+    var secondChanceSpent = false
+    /// Set while a lone hero lies fallen and the run holds still for the
+    /// player's choice. Nothing steps until it is answered.
+    var awaitingSecondChance: SecondChance?
+    /// Added to the chance a fallen champion opens a rift (Rift's Calling).
+    var riftChanceBonus: Double = 0
 
     let movement: MovementSystem
     var spawner: SpawnSystem
@@ -253,6 +264,14 @@ struct GameSimulation {
     /// clock and the spawner run once for everyone. A party's turns rotate, so
     /// no hero always gets first pick of what lies on the ground.
     mutating func step(dt: TimeInterval) {
+        // A lone hero's fall that is waiting on a choice holds the whole run
+        // exactly as it stood: nothing moves, nothing is torn down.
+        if awaitingSecondChance != nil { return }
+        if holdsForSecondChance, player.isDefeated, members[0].stepAlive {
+            // Fell after this step's check last time round: held here instead.
+            awaitingSecondChance = SecondChance(position: player.position)
+            return
+        }
         let count = heroCount
         let party = count > 1
         elapsed += dt

@@ -11,8 +11,12 @@ struct RunSummaryView: View {
     let weapon: WeaponDefinition
     /// Echoes this run left behind, for the Legacy board.
     let echoes: Int
+    /// Of those, how many Double Echoes added.
+    var boonBonus = 0
     let onRetry: () -> Void
     let onMenu: () -> Void
+    /// Opens the boons panel, between runs. Nil hides the button.
+    var onBoons: (() -> Void)?
 
     var body: some View {
         ZStack {
@@ -156,6 +160,11 @@ struct RunSummaryView: View {
                     .font(FLTheme.Typeface.label(11))
                     .tracking(2)
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
+                if boonBonus > 0 {
+                    Label("+\(boonBonus) from Double Echoes", systemImage: "sparkles")
+                        .font(FLTheme.Typeface.label(11))
+                        .foregroundStyle(FLTheme.Palette.emberBright)
+                }
                 if LegacyProfile.forfeitsEchoes(summary) {
                     Text("Fell in Fate's Echo before banking: what this run earned was lost.")
                         .font(FLTheme.Typeface.body(11))
@@ -170,6 +179,9 @@ struct RunSummaryView: View {
                 .buttonStyle(.flPrimary)
             Button("Return to Menu", action: onMenu)
                 .buttonStyle(.flSecondary)
+            if let onBoons {
+                BoonsButton(action: onBoons)
+            }
         }
     }
 

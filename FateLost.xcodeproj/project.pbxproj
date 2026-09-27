@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		FA0000000000000000AD0001 /* GoogleMobileAds in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000AD0002 /* GoogleMobileAds */; };
+		FA0000000000000000AD0011 /* GoogleUserMessagingPlatform in Frameworks */ = {isa = PBXBuildFile; productRef = FA0000000000000000AD0012 /* GoogleUserMessagingPlatform */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		FA0000000000000000009100 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -31,6 +36,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				FA0000000000000000AD0001 /* GoogleMobileAds in Frameworks */,
+				FA0000000000000000AD0011 /* GoogleUserMessagingPlatform in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -82,6 +89,8 @@
 			);
 			name = FateLost;
 			packageProductDependencies = (
+				FA0000000000000000AD0002 /* GoogleMobileAds */,
+				FA0000000000000000AD0012 /* GoogleUserMessagingPlatform */,
 			);
 			productName = FateLost;
 			productReference = FA000000000000000000E100 /* FateLost.app */;
@@ -137,6 +146,10 @@
 				Base,
 			);
 			mainGroup = FA000000000000000000D100;
+			packageReferences = (
+				FA0000000000000000AD0003 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */,
+				FA0000000000000000AD0013 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */,
+			);
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FA000000000000000000D200 /* Products */;
@@ -361,6 +374,38 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FA0000000000000000AD0003 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-mobile-ads.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 13.0.0;
+			};
+		};
+		FA0000000000000000AD0013 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		FA0000000000000000AD0002 /* GoogleMobileAds */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000000000000000AD0003 /* XCRemoteSwiftPackageReference "swift-package-manager-google-mobile-ads" */;
+			productName = GoogleMobileAds;
+		};
+		FA0000000000000000AD0012 /* GoogleUserMessagingPlatform */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FA0000000000000000AD0013 /* XCRemoteSwiftPackageReference "swift-package-manager-google-user-messaging-platform" */;
+			productName = GoogleUserMessagingPlatform;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = FA00000000000000000000AA /* Project object */;
 }

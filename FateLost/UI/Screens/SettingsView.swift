@@ -35,6 +35,18 @@ struct SettingsView: View {
                          + "open the skill tree yourself, whenever you're ready to spend them.")
                 }
 
+                if services.ads.privacyOptionsRequired {
+                    Section {
+                        Button("Privacy Choices") {
+                            Task { await services.ads.presentPrivacyOptions() }
+                        }
+                    } header: {
+                        Text("Ads & Privacy")
+                    } footer: {
+                        Text("Review or change how the optional reward ads may use your data.")
+                    }
+                }
+
                 if DeveloperOptions.isAvailable {
                     developerSection
                 }

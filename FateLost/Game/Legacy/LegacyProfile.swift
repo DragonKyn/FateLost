@@ -286,8 +286,11 @@ struct LegacyProfile: Codable, Equatable {
 
     /// Folds a finished run into the lifetime record and pays out its echoes.
     /// A party's run passes what the party's shared pool pays this hero.
-    mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) {
-        let earned = payout(for: summary, realm: realm, echoes: fixed)
+    /// `extra` is added on top of the payout (Double Echoes' share), and only
+    /// to a run that paid something.
+    mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil, extra: Int = 0) {
+        let paid = payout(for: summary, realm: realm, echoes: fixed)
+        let earned = paid > 0 ? paid + max(0, extra) : paid
         echoes += earned
         lifetime.add(summary, realm: realm, echoes: earned)
         if summary.outcome == .conquered {

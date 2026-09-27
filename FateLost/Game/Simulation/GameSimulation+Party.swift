@@ -419,6 +419,12 @@ extension GameSimulation {
             } else {
                 // A lone hero's fall is dealt with once: on the step it happens.
                 guard members[hero].stepAlive else { continue }
+                if holdsForSecondChance {
+                    // Nothing is torn down yet: the run holds as it stands
+                    // until the player takes the second chance or refuses it.
+                    awaitingSecondChance = SecondChance(position: player.position)
+                    continue
+                }
             }
             activate(hero)
             dismissPlayerForces()

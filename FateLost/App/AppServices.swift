@@ -18,6 +18,12 @@ final class AppServices {
     /// profile so nothing that happens to one can cost the other.
     private(set) var hero: HeroAppearance
 
+    /// Time left on each advert-funded boon, in seconds of play.
+    private(set) var boons: BoonTimers
+
+    /// Rewarded adverts: optional, and only ever shown when the player asks.
+    let ads: RewardedAds
+
     var realmProgress: RealmProgress {
         get { profile.realms }
         set {
@@ -30,14 +36,21 @@ final class AppServices {
     @ObservationIgnored let audio: AudioManager
     @ObservationIgnored private let legacyStore: LegacyStore
     @ObservationIgnored private let heroStore: HeroStore
+    @ObservationIgnored private let boonStore: BoonStore
+    /// Seconds of play since boons were last written to disk.
+    @ObservationIgnored private var unsavedBoonSeconds: Double = 0
     @ObservationIgnored private var storedMultiplayer: MultiplayerHub?
 
     init(settings: SettingsStore = SettingsStore(), developer: DeveloperOptions = DeveloperOptions(),
-         legacyStore: LegacyStore = LegacyStore(), heroStore: HeroStore = HeroStore()) {
+         legacyStore: LegacyStore = LegacyStore(), heroStore: HeroStore = HeroStore(),
+         boonStore: BoonStore = BoonStore()) {
         self.settings = settings
         self.developer = developer
         self.legacyStore = legacyStore
         self.heroStore = heroStore
+        self.boonStore = boonStore
+        boons = boonStore.load()
+        ads = RewardedAds()
         let loaded = legacyStore.load()
         profile = loaded
         // Whatever the saved look, it may only wear what has been paid for.
@@ -95,6 +108,8 @@ final class AppServices {
         multiplayer.eraseEverything()
         legacyStore.erase()
         heroStore.erase()
+        boonStore.erase()
+        boons = BoonTimers()
         settings.reset()
         profile = LegacyProfile()
         hero = .standard
@@ -190,10 +205,12 @@ final class AppServices {
 
     /// Folds a finished run into the record and pays out its echoes.
     /// Returns what the run was worth, for the summary screen.
+    /// `boonBonus` is what Double Echoes adds on top, already worked out
+    /// from the echoes earned while it ran.
     @discardableResult
-    func record(_ summary: RunSummary, echoes: Int? = nil) -> Int {
+    func record(_ summary: RunSummary, echoes: Int? = nil, boonBonus: Int = 0) -> Int {
         let before = profile.echoes
-        profile.record(summary, realm: RealmCatalog.realm(summary.realm), echoes: echoes)
+        profile.record(summary, realm: RealmCatalog.realm(summary.realm), echoes: echoes, extra: boonBonus)
         saveProfile()
         return profile.echoes - before
     }
@@ -229,6 +246,31 @@ final class AppServices {
         guard profile.buy(option) else { return false }
         saveProfile()
         return true
+    }
+
+    // MARK: Boons
+
+    /// Adds one advert's worth of a boon. Call only for an advert whose
+    /// reward the SDK confirmed.
+    func grant(_ boon: Boon) {
+        boons.grant(boon)
+        saveBoons()
+    }
+
+    /// Runs boons down by seconds of solo play. Written to disk every few
+    /// seconds of play and whenever one runs out, not every frame.
+    func consumeBoons(_ seconds: Double) {
+        guard seconds > 0, Boon.allCases.contains(where: { boons.isActive($0) }) else { return }
+        let before = boons
+        boons.consume(seconds)
+        unsavedBoonSeconds += seconds
+        let ranOut = Boon.allCases.contains { before.isActive($0) && !boons.isActive($0) }
+        if ranOut || unsavedBoonSeconds >= 5 { saveBoons() }
+    }
+
+    func saveBoons() {
+        unsavedBoonSeconds = 0
+        boonStore.save(boons)
     }
 
     private func saveProfile() {

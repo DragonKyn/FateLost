@@ -78,6 +78,21 @@ jobs:
           echo "exit_code=$status" >> "$GITHUB_OUTPUT"
           exit "$status"
 
+      # The advert SDK stops the app at launch if the application id is
+      # missing from the built Info.plist, so a build without it is a failure.
+      - name: Verify advert configuration
+        if: steps.build.outcome == 'success'
+        run: |
+          set -euo pipefail
+          plist="build/Build/Products/Release-iphoneos/FateLost.app/Info.plist"
+          id=$(plutil -extract GADApplicationIdentifier raw "$plist")
+          echo "GADApplicationIdentifier: $id"
+          test "$id" = "ca-app-pub-6085748649825153~2883746766"
+          count=$(plutil -extract SKAdNetworkItems raw "$plist" || true)
+          echo "SKAdNetworkItems: $count"
+          test -f "build/Build/Products/Release-iphoneos/FateLost.app/PrivacyInfo.xcprivacy"
+          grep -q "GoogleMobileAds" xcodebuild.log
+
       - name: Package into an IPA
         if: steps.build.outcome == 'success'
         run: |
@@ -146,6 +161,11 @@ jobs:
             plutil -extract MinimumOSVersion raw "$products/FateLost.app/Info.plist" 2>&1
             echo "=== orientations"
             plutil -extract UISupportedInterfaceOrientations xml1 -o - "$products/FateLost.app/Info.plist" 2>&1
+            echo "=== adverts"
+            plutil -extract GADApplicationIdentifier raw "$products/FateLost.app/Info.plist" 2>&1
+            plutil -extract SKAdNetworkItems raw "$products/FateLost.app/Info.plist" 2>&1
+            ls -la "$products/FateLost.app/PrivacyInfo.xcprivacy" 2>&1
+            grep -m5 -E "Resolved source packages|swift-package-manager-google" xcodebuild.log 2>&1
             echo "=== build errors"
             grep -nE "(error:|\*\* BUILD FAILED|The following build commands failed)" xcodebuild.log 2>&1 | head -200
             echo "=== build warnings in project sources (first 80)"

@@ -3,16 +3,23 @@ import SwiftUI
 struct RealmSelectView: View {
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
+    @State private var showBoons = false
 
     var body: some View {
         ZStack {
             EmberBackground(emberCount: 20)
 
             VStack(alignment: .leading, spacing: 10) {
-                FLScreenHeader(title: "Choose a Realm",
-                               subtitle: "Each conquered realm opens the way to the next.") {
-                    services.audio.play(.uiBack)
-                    router.show(.mainMenu)
+                HStack(alignment: .center, spacing: 12) {
+                    FLScreenHeader(title: "Choose a Realm",
+                                   subtitle: "Each conquered realm opens the way to the next.") {
+                        services.audio.play(.uiBack)
+                        router.show(.mainMenu)
+                    }
+                    BoonsButton {
+                        services.audio.play(.uiConfirm)
+                        showBoons = true
+                    }
                 }
 
                 // The cards take whatever height the screen leaves, so they
@@ -47,7 +54,16 @@ struct RealmSelectView: View {
             }
             .padding(.horizontal, FLTheme.Metrics.screenPadding)
             .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
+
+            if showBoons {
+                BoonsPanel(onClose: {
+                    services.audio.play(.uiBack)
+                    showBoons = false
+                })
+                .transition(.opacity)
+            }
         }
+        .animation(.easeInOut(duration: 0.2), value: showBoons)
     }
 }
 

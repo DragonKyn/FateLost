@@ -18,6 +18,19 @@ final class GameSession {
         case offer
         /// Fate's Echo is asking whether to bank and leave or go on.
         case echoOffer
+        /// The lone hero has fallen: watch an advert to rise, or accept fate.
+        case secondChance
+    }
+
+    /// Where the second-chance choice stands.
+    enum SecondChanceState: Equatable {
+        /// Both choices on screen.
+        case offered
+        /// The player chose the advert; it is loading or playing.
+        case watching
+        /// The advert could not be shown or was closed before its reward.
+        /// Both choices stay: try again, or accept fate.
+        case failed(String)
     }
 
     let run: RunConfiguration
@@ -52,12 +65,26 @@ final class GameSession {
     private(set) var echoesAtRisk = 0
     var isEchoOfferPresented: Bool { pauseReason == .echoOffer && echoOffer != nil }
 
+    /// The second-chance choice, while a lone hero's fall waits on it.
+    private(set) var secondChance: SecondChanceState?
+    var isSecondChancePresented: Bool { pauseReason == .secondChance && secondChance != nil }
+
+    /// Whole seconds left on each boon, for the HUD. Updated only when a
+    /// whole second changes, so the HUD is not redrawn every frame.
+    private(set) var boonSeconds: [Boon: Int] = [:]
+    /// Echoes Double Echoes added to this run, once it has been paid out.
+    private(set) var boonEchoBonus = 0
+    @ObservationIgnored private var echoTally = EchoBoostTally()
+
     @ObservationIgnored let scene: GameScene
     @ObservationIgnored private let audio: AudioManager
     @ObservationIgnored private let settings: SettingsStore
     @ObservationIgnored private let services: AppServices
     @ObservationIgnored private var levelUpTask: Task<Void, Never>?
     @ObservationIgnored private var statusTask: Task<Void, Never>?
+    /// An advert for the second chance is in flight: further taps do nothing.
+    @ObservationIgnored private var secondChanceInFlight = false
+    @ObservationIgnored private var paidOut: Int?
 
     /// Seconds the level-up burst plays before the tree opens.
     private static let levelUpTreeDelay: Duration = .milliseconds(650)
@@ -83,7 +110,9 @@ final class GameSession {
             bonusRerolls: party == nil ? services.bonusRerolls : 0,
             hero: services.hero,
             party: party,
-            partyConfigs: party?.role == .host ? party?.info.partyConfigs() ?? [] : []
+            partyConfigs: party?.role == .host ? party?.info.partyConfigs() ?? [] : [],
+            // A second chance is solo only, and only where adverts can exist.
+            offersSecondChance: party == nil && services.ads.isSupported
         ))
         party?.scene = scene
         scene.onHUDStateChange = { [weak self] state in
@@ -105,11 +134,143 @@ final class GameSession {
             self?.levelUpTask?.cancel()
             self?.summary = summary
         }
+        scene.onSecondChanceChange = { [weak self] awaiting in
+            self?.secondChanceChanged(awaiting)
+        }
+        scene.onPlayTime = { [weak self] seconds in
+            self?.played(seconds)
+        }
+        refreshBoons()
         party?.onResults = { [weak self] results in
             self?.levelUpTask?.cancel()
             self?.partyResults = results
             self?.scene.resetInput()
         }
+    }
+
+    // MARK: - Boons
+
+    /// Boons only run in solo play, and only while the run is being fought:
+    /// this is called with seconds actually simulated, never while paused,
+    /// backgrounded, in a menu or behind an advert.
+    private func played(_ seconds: TimeInterval) {
+        guard !isParty, summary == nil else { return }
+        let echoesWereDoubled = services.boons.isActive(.doubleEchoes)
+        services.consumeBoons(seconds)
+        if echoesWereDoubled, !services.boons.isActive(.doubleEchoes) {
+            // Ran out mid-run: what was earned up to here is doubled, and
+            // nothing after.
+            echoTally.close(at: payoutSoFar())
+        }
+        refreshBoons()
+    }
+
+    private func refreshBoons() {
+        if isParty {
+            if !boonSeconds.isEmpty { boonSeconds = [:] }
+            scene.riftChanceBonus = 0
+            return
+        }
+        var seconds: [Boon: Int] = [:]
+        for boon in Boon.allCases where services.boons.isActive(boon) {
+            seconds[boon] = services.boons.wholeSeconds(boon)
+        }
+        if seconds != boonSeconds { boonSeconds = seconds }
+        scene.riftChanceBonus = services.boons.isActive(.riftCalling) ? BoonTuning.riftChanceBonus : 0
+        if services.boons.isActive(.doubleEchoes), !echoTally.isOpen, summary == nil {
+            echoTally.open(at: payoutSoFar())
+        }
+    }
+
+    /// What the run would pay if it were banked now (before any boon).
+    private func payoutSoFar() -> Int {
+        services.profile.payout(for: scene.summarySoFar(outcome: .collected), realm: realm)
+    }
+
+    /// Pays the finished run out, once, with Double Echoes' share of what it
+    /// earned while the boon ran. Returns the total paid.
+    @discardableResult
+    func payOut(_ summary: RunSummary) -> Int {
+        if let paidOut { return paidOut }
+        let base = services.profile.payout(for: summary, realm: realm)
+        let bonus = isParty ? 0 : echoTally.bonus(finalPayout: base)
+        boonEchoBonus = bonus
+        let total = services.record(summary, boonBonus: bonus)
+        services.saveBoons()
+        paidOut = total
+        return total
+    }
+
+    // MARK: - A second chance
+
+    private func secondChanceChanged(_ awaiting: Bool) {
+        guard !isParty else { return }
+        if awaiting {
+            levelUpTask?.cancel()
+            levelUpTask = nil
+            secondChance = .offered
+            // Nothing can be open while the hero is falling, but make sure.
+            if pauseReason != nil { pauseReason = nil }
+            pause(for: .secondChance)
+            // Get an advert on its way while the player reads the choice.
+            let ads = services.ads
+            Task { await ads.load() }
+        } else if secondChance != nil {
+            secondChance = nil
+            if pauseReason == .secondChance { resume() }
+        }
+    }
+
+    /// The player chose to watch an advert to rise again. The advert is only
+    /// shown now, on their say-so; the hero only rises if the SDK confirms
+    /// the reward. Repeated taps do nothing.
+    func watchAdToRevive() {
+        guard pauseReason == .secondChance, !secondChanceInFlight else { return }
+        switch secondChance {
+        case .offered, .failed: break
+        default: return
+        }
+        secondChanceInFlight = true
+        secondChance = .watching
+        let ads = services.ads
+        Task { [weak self] in
+            let outcome = await ads.show()
+            guard let self else { return }
+            self.secondChanceInFlight = false
+            // Accepted fate meanwhile, or the run is over: nothing to grant.
+            guard self.pauseReason == .secondChance, self.secondChance == .watching else { return }
+            switch outcome {
+            case .earned:
+                self.rise()
+            case .closedEarly:
+                self.secondChance = .failed("The ad was closed before it finished, so no revive was earned.")
+            case .failed(let reason):
+                self.secondChance = .failed(reason)
+            case .busy:
+                self.secondChance = .offered
+            }
+        }
+    }
+
+    private func rise() {
+        guard scene.takeSecondChance() else {
+            secondChance = nil
+            if pauseReason == .secondChance { resume() }
+            return
+        }
+        secondChance = nil
+        // The fall silenced the fight; it comes back with the hero.
+        audio.playMusic(MusicDirector.battleTheme(for: realm.id), fadeDuration: 0.8)
+        audio.playAmbience(MusicDirector.ambience(for: realm.id))
+        if pauseReason == .secondChance { resume() }
+    }
+
+    /// The player lets the fall stand: the run ends as it always has.
+    func acceptFate() {
+        guard pauseReason == .secondChance, !secondChanceInFlight else { return }
+        scene.acceptFate()
+        secondChance = nil
+        resume()
     }
 
     /// Starts the realm's music and ambience. Called when the run appears.
@@ -168,6 +329,11 @@ final class GameSession {
         } else {
             scene.isGameplayPaused = false
             audio.setMusicDucked(false)
+        }
+        // A fall still waiting on its choice keeps the screen.
+        if !isParty, secondChance != nil, summary == nil {
+            pause(for: .secondChance)
+            return
         }
         // A bank-or-go-on question that arrived while something else had the
         // screen (the skill tree, say) is still waiting: ask it now.

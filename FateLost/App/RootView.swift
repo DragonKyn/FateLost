@@ -68,11 +68,17 @@ struct RootView: View {
             updateMusic(for: router.screen)
             services.multiplayer.attach(router: router)
         }
+        .task {
+            // Consent (where the law asks for it), then the advert SDK, then a
+            // first advert preloaded. Nothing is shown until the player asks.
+            services.ads.start()
+        }
         .onChange(of: router.screen) { _, screen in updateMusic(for: screen) }
         .onChange(of: scenePhase) { _, phase in
             // Never let the run continue unattended in the background.
             if phase != .active {
                 router.activeSession?.pause()
+                services.saveBoons()
             } else {
                 // Back from the background: make sure the party connection is alive.
                 services.multiplayer.client.resume()
