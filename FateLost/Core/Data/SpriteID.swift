@@ -223,6 +223,8 @@ extension SpriteID {
     static let fxVignette: SpriteID = "fx.vignette"
     /// Crescent sweep of a melee swing, drawn pointing along +x.
     static let fxSlash: SpriteID = "fx.slash"
+    /// A straight jab of light for a thrust weapon, drawn pointing along +x.
+    static let fxThrust: SpriteID = "fx.thrust"
     /// Small four-point star for hit sparks.
     static let fxSpark: SpriteID = "fx.spark"
     /// Circle outline, for hitboxes and shockwaves.

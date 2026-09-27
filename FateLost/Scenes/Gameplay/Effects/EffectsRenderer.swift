@@ -12,6 +12,7 @@ import SpriteKit
 final class EffectsRenderer {
     private enum Kind {
         case slash
+        case thrust
         case spark
         case number
         case corpse
@@ -91,6 +92,20 @@ final class EffectsRenderer {
         blade.size = CGSize(width: diameter, height: diameter)
         container.alpha = 1
         add(Effect(kind: .slash, node: container, worldPosition: position, lifetime: 0.2,
+                   variant: angle, magnitude: range), layer: overlayLayer)
+    }
+
+    /// A straight jab of light along `direction`, for a thrust weapon: no arc,
+    /// so it doesn't read as a swing the way `slash` does.
+    func thrust(at position: CGPoint, direction: CGPoint, range: CGFloat) {
+        guard let container = acquire(.thrust), let blade = container.children.first as? SKSpriteNode else { return }
+        let angle = atan2(direction.y, direction.x)
+        blade.zRotation = angle + .pi / 4
+        blade.setScale(1)
+        let diameter = range * 2
+        blade.size = CGSize(width: diameter, height: diameter)
+        container.alpha = 1
+        add(Effect(kind: .thrust, node: container, worldPosition: position, lifetime: 0.16,
                    variant: angle, magnitude: range), layer: overlayLayer)
     }
 
@@ -438,6 +453,13 @@ final class EffectsRenderer {
                 blade.setScale(0.85 + 0.2 * t)
             }
             node.alpha = t < 0.25 ? 1 : 1 - (t - 0.25) / 0.75
+        case .thrust:
+            // Lunges straight out and back: a fixed angle, no arc sweep.
+            if let blade = node.children.first {
+                blade.zRotation = effect.variant + .pi / 4
+                blade.setScale(0.7 + 0.3 * sin(.pi * min(1, t)))
+            }
+            node.alpha = t < 0.2 ? 1 : 1 - (t - 0.2) / 0.8
         case .spark:
             node.setScale((0.6 + 0.8 * t) * effect.variant)
             node.alpha = 1 - t
@@ -549,6 +571,8 @@ final class EffectsRenderer {
         switch kind {
         case .slash:
             return groundContainer(holding: catalog.makeSprite(.fxSlash), zPosition: 1)
+        case .thrust:
+            return groundContainer(holding: catalog.makeSprite(.fxThrust), zPosition: 1)
         case .shockwave:
             return groundContainer(holding: catalog.makeSprite(.fxRing), zPosition: 1)
         case .cone:

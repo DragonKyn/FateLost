@@ -158,6 +158,6 @@ enum GameplaySprites {
         .shrineBlood, .shrineFortune, .shrineRuin,
         .decorPlagueBell, .decorMoltenChain, .decorBrokenStair,
         .decorSiegeRam, .decorRuinedArch, .decorHollowThrone,
-        .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxSpark, .fxRing, .fxSplat,
+        .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxThrust, .fxSpark, .fxRing, .fxSplat,
     ]
 }

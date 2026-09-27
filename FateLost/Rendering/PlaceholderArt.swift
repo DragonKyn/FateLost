@@ -209,6 +209,7 @@ enum PlaceholderArt {
         case .fxAshFlake: return radialDot(size: 8)
         case .fxFlame: return flame()
         case .fxSlash: return slash()
+        case .fxThrust: return thrust()
         case .fxSpark: return spark()
         case .fxRing: return ring()
         case .fxSplat: return splat()
@@ -612,6 +613,28 @@ enum PlaceholderArt {
                             clockwise: true)
                 path.addArc(withCenter: center, radius: outer * band.inner, startAngle: .pi / 3,
                             endAngle: -.pi / 3, clockwise: false)
+                path.close()
+                ctx.setFillColor(UIColor(rgb: 0xFFF3DC, alpha: band.alpha).cgColor)
+                ctx.addPath(path.cgPath)
+                ctx.fillPath()
+            }
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    /// A bright needle pointing along +x, tapering to a point at each end:
+    /// a straight jab of light for a thrust weapon, where `slash` is a swing.
+    private static func thrust() -> Sprite {
+        let dimension: CGFloat = 128
+        let cy = dimension / 2
+        let image = render(CGSize(width: dimension, height: dimension)) { ctx in
+            let bands: [(halfWidth: CGFloat, alpha: CGFloat)] = [(16, 0.10), (10, 0.22), (5.5, 0.45), (2.8, 0.85)]
+            for band in bands {
+                let path = UIBezierPath()
+                path.move(to: CGPoint(x: 8, y: cy))
+                path.addLine(to: CGPoint(x: dimension * 0.6, y: cy - band.halfWidth))
+                path.addLine(to: CGPoint(x: dimension - 4, y: cy))
+                path.addLine(to: CGPoint(x: dimension * 0.6, y: cy + band.halfWidth))
                 path.close()
                 ctx.setFillColor(UIColor(rgb: 0xFFF3DC, alpha: band.alpha).cgColor)
                 ctx.addPath(path.cgPath)

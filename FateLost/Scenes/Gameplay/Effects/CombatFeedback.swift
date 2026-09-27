@@ -119,6 +119,10 @@ final class CombatFeedback {
     /// Swings at least this long are heavy enough to shake the camera a little.
     static let heavySwingRange: CGFloat = 2.3
 
+    /// A melee arc this narrow is a stab (spear, lance), not a swing: it gets
+    /// a straight thrust effect instead of the crescent every other blade uses.
+    static let thrustArcDegrees: Double = 25
+
     /// Whether something that happened at `point` was this phone's own hero
     /// (an attack starts at the hero's feet).
     private func isOwn(_ point: CGPoint) -> Bool {
@@ -136,11 +140,16 @@ final class CombatFeedback {
         var critFlares = 0
         for event in events {
             switch event {
-            case let .meleeSwing(origin, direction, range, _):
-                effects.slash(at: origin, direction: direction, range: range)
-                // Sparks off the edge of the blade at the end of its sweep.
+            case let .meleeSwing(origin, direction, range, arcDegrees):
+                let isThrust = arcDegrees <= CombatFeedback.thrustArcDegrees
+                if isThrust {
+                    effects.thrust(at: origin, direction: direction, range: range)
+                } else {
+                    effects.slash(at: origin, direction: direction, range: range)
+                }
+                // Sparks off the point or the edge of the blade, at the end of its reach.
                 effects.motes(at: origin + direction * (range * 0.85), count: range >= CombatFeedback.heavySwingRange ? 6 : 3,
-                              color: UIColor(rgb: 0xFFF0D0), spread: 0.35, lifetime: 0.35)
+                              color: UIColor(rgb: 0xFFF0D0), spread: isThrust ? 0.12 : 0.35, lifetime: 0.35)
                 if isOwn(origin) {
                     player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
                     // A long, heavy blade (the claymore) is felt in the camera.
