@@ -270,20 +270,41 @@ struct LegacyProfile: Codable, Equatable {
 
     // MARK: Runs
 
-    /// Folds a finished run into the lifetime record and pays out its echoes.
-    /// A party's run passes what the party's shared pool pays this hero.
-    mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) {
+    /// What `record` would pay for this summary, without paying it: the
+    /// number a Fate's Echo run shows as at risk before its player chooses.
+    func payout(for summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) -> Int {
+        // A party's run arrives with its pooled share already fixed, and a
+        // party is never offered the chance to bank: it pays as it always has.
+        guard fixed != nil || !Self.forfeitsEchoes(summary) else { return 0 }
         let base = fixed ?? LegacyEchoes.earned(from: summary.stats, wave: summary.wave, level: summary.level,
                                                 realmMultiplier: realm.legacyMultiplier,
                                                 conquered: summary.outcome == .conquered)
         let gainBonus = modifiers.filter { $0.stat == .echoGain }.reduce(0.0) { $0 + $1.value }
         let totalBonus = gainBonus + max(0, summary.difficultyBonus)
-        let earned = totalBonus > 0 ? max(1, Int((Double(base) * (1 + totalBonus)).rounded())) : base
+        return totalBonus > 0 ? max(1, Int((Double(base) * (1 + totalBonus)).rounded())) : base
+    }
+
+    /// Folds a finished run into the lifetime record and pays out its echoes.
+    /// A party's run passes what the party's shared pool pays this hero.
+    mutating func record(_ summary: RunSummary, realm: RealmDefinition, echoes fixed: Int? = nil) {
+        let earned = payout(for: summary, realm: realm, echoes: fixed)
         echoes += earned
         lifetime.add(summary, realm: realm, echoes: earned)
         if summary.outcome == .conquered {
             realms.conquered.insert(summary.realm)
+            // Conquering the Abyss is defeating Fate. Saved here, with the
+            // payout, so it is on disk the moment the summary appears —
+            // before the ending is even read, let alone dismissed.
+            if summary.realm == .abyss { realms.hasEverDefeatedFate = true }
         }
+    }
+
+    /// Fate's Echo is the one realm where falling costs what the run had not
+    /// yet banked: its whole point is the choice to bank or push on, and
+    /// that choice means nothing if falling pays the same as leaving.
+    /// Everywhere else a death pays out as it always has.
+    static func forfeitsEchoes(_ summary: RunSummary) -> Bool {
+        summary.realm == .fatesEcho && summary.outcome == .defeated
     }
 }
 
@@ -368,10 +389,10 @@ struct LifetimeStats: Codable, Equatable {
 
     mutating func add(_ summary: RunSummary, realm: RealmDefinition, echoes: Int) {
         runs += 1
-        if summary.outcome == .conquered {
-            conquests += 1
-        } else {
-            deaths += 1
+        switch summary.outcome {
+        case .conquered: conquests += 1
+        case .defeated: deaths += 1
+        case .collected: break
         }
         kills += summary.stats.kills
         eliteKills += summary.stats.eliteKills

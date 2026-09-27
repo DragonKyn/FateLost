@@ -102,6 +102,8 @@ struct CombatState {
     var partyEffects: [PartyEffect] = []
     /// Ground champions have marked and are about to strike.
     var hazards: [Hazard] = []
+    /// The Encroaching Abyss, while Fate holds it over the arena.
+    var darkness: DarknessState?
     /// What each champion on the field is up to, by enemy id.
     var bossBrains: [Int: BossBrain] = [:]
     /// What each rare elite on the field is up to, by enemy id.
@@ -235,8 +237,8 @@ extension CombatState {
         "world", "tuning", "enemies", "orbs", "drops", "shrines", "curseRemaining", "grid", "lootRandom", "nearby",
         "nearbySecondary", "nextEntityID", "enemyHealthScale", "enemyDamageScale", "playerDamageTakenScale",
         "hostileProjectiles",
-        "worldAnchors", "incidents", "partyEffects", "hazards", "bossBrains", "eliteBrains", "portals", "rift",
-        "reviveMarkers", "activeHero", "isParty",
+        "worldAnchors", "incidents", "partyEffects", "hazards", "darkness", "bossBrains", "eliteBrains", "portals",
+        "rift", "reviveMarkers", "activeHero", "isParty",
     ]
 
     /// Swaps this hero's fields with `other`'s. Moves references and copies

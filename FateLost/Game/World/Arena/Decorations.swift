@@ -42,6 +42,7 @@ enum DecorationKind: String, Codable, CaseIterable {
     case siegeRam
     case ruinedArch
     case hollowThrone
+    case fallenScythe
 }
 
 /// How a decoration is layered.
@@ -220,6 +221,10 @@ enum DecorationCatalog {
             return DecorationSpec(kind: kind, spriteID: .decorHollowThrone, layer: .standing,
                                   footprintRadius: 1.0, blocksMovement: true, animation: .pulse,
                                   scaleRange: 0.95...1.15)
+        case .fallenScythe:
+            return DecorationSpec(kind: kind, spriteID: .decorFallenScythe, layer: .standing,
+                                  footprintRadius: 0.9, blocksMovement: false, animation: .pulse,
+                                  scaleRange: 0.9...1.2)
         }
     }
 }

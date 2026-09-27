@@ -575,13 +575,18 @@ final class PartyRunController: PartyRunDriver {
 extension RunSummary.Outcome {
     /// The words the service uses for how a run ended.
     init(serviceOutcome: String) {
-        self = serviceOutcome == "conquered" ? .conquered : .defeated
+        switch serviceOutcome {
+        case "conquered": self = .conquered
+        case "collected": self = .collected
+        default: self = .defeated
+        }
     }
 
     var serviceValue: String {
         switch self {
         case .conquered: return "conquered"
         case .defeated: return "defeated"
+        case .collected: return "collected"
         }
     }
 }

@@ -75,14 +75,16 @@ final class ArenaGeneratorTests: XCTestCase {
 }
 
 final class RealmCatalogTests: XCTestCase {
-    func testCampaignHasTenRealmsInOrder() {
-        XCTAssertEqual(RealmCatalog.all.count, 10)
-        XCTAssertEqual(RealmCatalog.all.map(\.order), Array(1...10))
+    func testCampaignHasTenRealmsInOrderThenFatesEcho() {
+        XCTAssertEqual(RealmCatalog.all.count, 11)
+        XCTAssertEqual(RealmCatalog.all.map(\.order), Array(1...11))
+        XCTAssertEqual(RealmCatalog.all.last?.id, .fatesEcho)
     }
 
-    func testOnlyTheAbyssIsEndless() {
+    func testOnlyFatesEchoIsEndless() {
+        // The Abyss ends now: its last champion is Fate.
         let endless = RealmCatalog.all.filter(\.isEndless)
-        XCTAssertEqual(endless.map(\.id), [.abyss])
+        XCTAssertEqual(endless.map(\.id), [.fatesEcho])
     }
 
     func testConquestWavesAndLegacyMultipliersEscalate() {
@@ -135,6 +137,32 @@ final class RealmUnlockTests: XCTestCase {
         XCTAssertNil(RealmUnlockRules.prerequisite(for: RealmCatalog.realm(.ashenWilds), catalog: catalog))
         XCTAssertEqual(RealmUnlockRules.prerequisite(for: RealmCatalog.realm(.abyss), catalog: catalog)?.id,
                        .gateOfRuin)
+    }
+
+    func testFatesEchoOpensOnlyOnceFateHasFallen() {
+        let echo = RealmCatalog.realm(.fatesEcho)
+        // Every other realm conquered is still not enough on its own.
+        var progress = RealmProgress(conquered: Set(RealmID.allCases.filter { $0 != .abyss && $0 != .fatesEcho }))
+        XCTAssertFalse(RealmUnlockRules.isUnlocked(echo, progress: progress, catalog: catalog))
+        progress.hasEverDefeatedFate = true
+        XCTAssertTrue(RealmUnlockRules.isUnlocked(echo, progress: progress, catalog: catalog))
+    }
+
+    func testTheFateUnlockSurvivesASaveAndAReload() throws {
+        let progress = RealmProgress(hasEverDefeatedFate: true, endingsSeen: 2)
+        let restored = try JSONDecoder().decode(RealmProgress.self, from: JSONEncoder().encode(progress))
+        XCTAssertTrue(restored.hasEverDefeatedFate)
+        XCTAssertEqual(restored.endingsSeen, 2)
+        XCTAssertTrue(RealmUnlockRules.isUnlocked(RealmCatalog.realm(.fatesEcho), progress: restored,
+                                                  catalog: catalog))
+    }
+
+    func testAnOlderSaveThatConqueredTheAbyssHasBeatenFate() throws {
+        // Written before the flag existed: only the conquest is on record.
+        let old = #"{"conquered": ["abyss"]}"#
+        let progress = try JSONDecoder().decode(RealmProgress.self, from: Data(old.utf8))
+        XCTAssertTrue(progress.hasEverDefeatedFate)
+        XCTAssertEqual(progress.endingsSeen, 0)
     }
 }
 

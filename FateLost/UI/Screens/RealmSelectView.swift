@@ -125,6 +125,10 @@ private struct RealmCard: View {
                     stat(label: "Conquest", value: realm.conquestWave.map { "Wave \($0)" } ?? "Endless")
                     stat(label: "Legacy", value: String(format: "×%.2f", realm.legacyMultiplier))
                 }
+            } else if realm.id == .fatesEcho {
+                Text("Defeat Fate to unlock")
+                    .font(FLTheme.Typeface.body(12))
+                    .foregroundStyle(FLTheme.Palette.locked)
             } else if let prerequisite {
                 Text("Conquer \(prerequisite.name) to unlock")
                     .font(FLTheme.Typeface.body(12))
@@ -150,7 +154,7 @@ private struct RealmCard: View {
     }
 
     private func romanNumeral(_ number: Int) -> String {
-        let numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+        let numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI"]
         return number >= 1 && number <= numerals.count ? numerals[number - 1] : "\(number)"
     }
 }

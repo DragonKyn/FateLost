@@ -9,6 +9,14 @@ struct GameplayScreen: View {
     @State private var showRealmTitle = true
     /// Echoes this run paid out, worked out once when it ends.
     @State private var echoesEarned: Int?
+    /// Fate's name across the screen as it arrives, shown once per run.
+    @State private var showFateTitle = false
+    @State private var fateTitleShown = false
+    /// Whether the player has gone on past Fate's ending to the summary, and
+    /// whether this was not the first time they had seen it (read once, as
+    /// it first appears, so it cannot change under them mid-reading).
+    @State private var endingDismissed = false
+    @State private var endingIsRepeat: Bool?
 
     var body: some View {
         ZStack {
@@ -31,30 +39,62 @@ struct GameplayScreen: View {
                     .allowsHitTesting(false)
             }
 
+            if showFateTitle {
+                FateTitleCard()
+                    .transition(.opacity.combined(with: .scale(scale: 1.08)))
+                    .allowsHitTesting(false)
+            }
+
             if let results = session.partyResults {
                 PartyResultsView(results: results)
                     .transition(.opacity)
             } else if let summary = session.summary {
-                RunSummaryView(
-                    summary: summary,
-                    realm: session.realm,
-                    weapon: session.weapon,
-                    echoes: echoesEarned ?? 0,
-                    onRetry: {
-                        services.audio.play(.uiConfirm)
-                        router.restartRun(services: services)
-                    },
-                    onMenu: {
-                        services.audio.play(.uiBack)
-                        router.endRun()
+                Group {
+                    if showsFateEnding(summary) {
+                        FateEndingView(
+                            isRepeat: endingIsRepeat ?? false,
+                            onEnterEcho: {
+                                services.audio.play(.uiConfirm)
+                                router.endRun()
+                                router.show(.weaponSelect(.fatesEcho))
+                            },
+                            onContinue: {
+                                services.audio.play(.uiConfirm)
+                                withAnimation(.easeInOut(duration: 0.5)) { endingDismissed = true }
+                            }
+                        )
+                    } else {
+                        RunSummaryView(
+                            summary: summary,
+                            realm: session.realm,
+                            weapon: session.weapon,
+                            echoes: echoesEarned ?? 0,
+                            onRetry: {
+                                services.audio.play(.uiConfirm)
+                                router.restartRun(services: services)
+                            },
+                            onMenu: {
+                                services.audio.play(.uiBack)
+                                router.endRun()
+                            }
+                        )
                     }
-                )
-                .transition(.opacity)
-                .onAppear {
-                    // Written down once: a redraw must not pay twice.
-                    guard echoesEarned == nil else { return }
-                    echoesEarned = services.record(summary)
                 }
+                .transition(.opacity)
+                .onAppear { recordOnce(summary) }
+            } else if session.isEchoOfferPresented, let offer = session.echoOffer {
+                EchoOfferView(offer: offer, echoesAtRisk: session.echoesAtRisk,
+                              onCollect: {
+                                  services.audio.play(.uiConfirm)
+                                  services.haptics.play(.uiTap)
+                                  session.collectEchoes()
+                              },
+                              onContinue: {
+                                  services.audio.play(.uiConfirm)
+                                  services.haptics.play(.uiTap)
+                                  session.continueEchoes()
+                              })
+                    .transition(.opacity.combined(with: .scale(scale: 0.98)))
             } else if session.isOfferPresented, let offer = session.offer {
                 RelicOfferView(offer: offer, inventory: session.progression.relics,
                                onChoose: { index in
@@ -102,6 +142,34 @@ struct GameplayScreen: View {
             try? await Task.sleep(for: .seconds(3))
             withAnimation(.easeOut(duration: 1.2)) { showRealmTitle = false }
         }
+        .onChange(of: session.hud.bossBarrierFraction != nil) { _, fateArrived in
+            guard fateArrived, !fateTitleShown else { return }
+            fateTitleShown = true
+            withAnimation(.easeOut(duration: 0.9)) { showFateTitle = true }
+            Task {
+                try? await Task.sleep(for: .seconds(3.2))
+                withAnimation(.easeIn(duration: 1.1)) { showFateTitle = false }
+            }
+        }
+    }
+
+    /// Fate's ending comes before the ordinary summary, the first time it is
+    /// reached and every time after, until the player goes on past it.
+    private func showsFateEnding(_ summary: RunSummary) -> Bool {
+        summary.outcome == .conquered && summary.realm == .abyss && !endingDismissed
+    }
+
+    /// Pays the run out once, however many times the end screens redraw. It
+    /// runs the moment the first end screen appears — so Fate's defeat and
+    /// Fate's Echo are saved before the ending is even read, and a player who
+    /// closes the game mid-ending loses neither.
+    private func recordOnce(_ summary: RunSummary) {
+        guard echoesEarned == nil else { return }
+        if showsFateEnding(summary) {
+            endingIsRepeat = services.realmProgress.endingsSeen > 0
+            services.realmProgress.endingsSeen += 1
+        }
+        echoesEarned = services.record(summary)
     }
 
     private func openDeveloperPanel() {
@@ -163,9 +231,18 @@ private struct GameplayHUDOverlay: View {
                 hudButton(systemImage: "pause.fill", label: "Pause", action: onPause)
             }
             if let title = session.hud.bossTitle {
-                BossBanner(title: title, fraction: session.hud.bossHealthFraction)
+                BossBanner(title: title, fraction: session.hud.bossHealthFraction,
+                           barrierFraction: session.hud.bossBarrierFraction)
                     .padding(.top, 6)
                     .transition(.move(edge: .top).combined(with: .opacity))
+            }
+            if session.hud.darknessWarningSeconds != nil || session.hud.darknessActiveSeconds != nil {
+                DarknessWarning(warningSeconds: session.hud.darknessWarningSeconds,
+                                activeSeconds: session.hud.darknessActiveSeconds,
+                                inSafeCircle: session.hud.inSafeCircle)
+                    .padding(.top, 8)
+                    .transition(.opacity)
+                    .allowsHitTesting(false)
             }
             Spacer()
         }
@@ -292,35 +369,99 @@ struct ExperienceBar: View {
 }
 
 /// The champion holding the wave open: its name, and how much of it is left.
+/// A champion with a barrier (Fate) shows it as its own grey bar directly
+/// above its health: the grey empties first, then the red.
 private struct BossBanner: View {
     let title: String
     let fraction: Double
+    var barrierFraction: Double?
+
+    private var isFinal: Bool { barrierFraction != nil }
 
     var body: some View {
         VStack(spacing: 4) {
             Text(title.uppercased())
-                .font(FLTheme.Typeface.heading(15))
-                .tracking(3)
+                .font(FLTheme.Typeface.heading(isFinal ? 18 : 15))
+                .tracking(isFinal ? 5 : 3)
                 .foregroundStyle(FLTheme.Palette.parchment)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .shadow(color: .black, radius: 3)
-            GeometryReader { proxy in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.black.opacity(0.7))
-                    Capsule()
-                        .fill(LinearGradient(colors: [FLTheme.Palette.blood, Color(red: 0.42, green: 0.05, blue: 0.05)],
-                                             startPoint: .top, endPoint: .bottom))
-                        .frame(width: proxy.size.width * min(1, max(0, fraction)))
-                        .animation(.easeOut(duration: 0.2), value: fraction)
-                    Capsule().strokeBorder(FLTheme.Palette.ember.opacity(0.8), lineWidth: 1)
+            if let barrierFraction {
+                HStack(spacing: 6) {
+                    Image(systemName: barrierFraction > 0 ? "shield.fill" : "shield.slash.fill")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(Color(white: barrierFraction > 0 ? 0.85 : 0.45))
+                    bar(fraction: barrierFraction,
+                        fill: LinearGradient(colors: [Color(white: 0.82), Color(white: 0.52)],
+                                             startPoint: .top, endPoint: .bottom),
+                        border: Color(white: 0.9).opacity(0.7))
+                        .frame(height: 8)
+                        .opacity(barrierFraction > 0 ? 1 : 0.35)
                 }
             }
-            .frame(height: 12)
+            bar(fraction: fraction,
+                fill: LinearGradient(colors: [FLTheme.Palette.blood, Color(red: 0.42, green: 0.05, blue: 0.05)],
+                                     startPoint: .top, endPoint: .bottom),
+                border: FLTheme.Palette.ember.opacity(0.8))
+                .frame(height: isFinal ? 14 : 12)
         }
-        .frame(maxWidth: 420)
+        .frame(maxWidth: isFinal ? 520 : 420)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title), \(Int(fraction * 100)) percent health")
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        guard let barrierFraction, barrierFraction > 0 else {
+            return "\(title), \(Int(fraction * 100)) percent health"
+        }
+        return "\(title), barrier \(Int(barrierFraction * 100)) percent, health \(Int(fraction * 100)) percent"
+    }
+
+    private func bar(fraction: Double, fill: LinearGradient, border: Color) -> some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .leading) {
+                Capsule().fill(Color.black.opacity(0.7))
+                Capsule()
+                    .fill(fill)
+                    .frame(width: proxy.size.width * min(1, max(0, fraction)))
+                    .animation(.easeOut(duration: 0.2), value: fraction)
+                Capsule().strokeBorder(border, lineWidth: 1)
+            }
+        }
+    }
+}
+
+/// The Encroaching Abyss's warning: what is coming, how long until it
+/// hurts, and — once it does — whether the hero is where it is safe.
+private struct DarknessWarning: View {
+    let warningSeconds: Int?
+    let activeSeconds: Int?
+    let inSafeCircle: Bool
+
+    var body: some View {
+        VStack(spacing: 2) {
+            if let warningSeconds {
+                Text("THE ABYSS ENCROACHES")
+                    .font(FLTheme.Typeface.heading(16))
+                    .tracking(4)
+                Text("Reach the light — \(warningSeconds)")
+                    .font(FLTheme.Typeface.number(14))
+            } else if let activeSeconds {
+                Text(inSafeCircle ? "IN THE LIGHT" : "THE DARK IS TAKING YOU")
+                    .font(FLTheme.Typeface.heading(16))
+                    .tracking(4)
+                Text(inSafeCircle ? "Hold here — \(activeSeconds)" : "5% of your life each second — reach the light")
+                    .font(FLTheme.Typeface.number(13))
+            }
+        }
+        .foregroundStyle(inSafeCircle || warningSeconds != nil
+                         ? Color(red: 0.88, green: 0.84, blue: 1) : Color(red: 1, green: 0.45, blue: 0.45))
+        .shadow(color: .black, radius: 4)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(Color.black.opacity(0.45)))
+        .accessibilityElement(children: .combine)
     }
 }
 

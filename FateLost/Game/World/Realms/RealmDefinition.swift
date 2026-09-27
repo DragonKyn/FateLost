@@ -11,6 +11,10 @@ enum RealmID: String, Codable, CaseIterable {
     case fallenCitadel
     case gateOfRuin
     case abyss
+    /// Endless, and reached only by defeating Fate — see
+    /// `RealmProgress.hasEverDefeatedFate` and `AppServices.isRealmUnlocked`,
+    /// not the ordinary conquered-the-previous-realm rule every other realm uses.
+    case fatesEcho
 }
 
 /// Static definition of a realm.

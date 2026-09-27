@@ -21,6 +21,15 @@ struct GameplayHUDState: Equatable {
     /// The champion holding the wave open, if any.
     var bossTitle: String?
     var bossHealthFraction: Double = 0
+    /// What is left of the champion's barrier, against what it started
+    /// with; nil for a champion that never had one (every one but Fate).
+    var bossBarrierFraction: Double?
+    /// The Encroaching Abyss: whole seconds until it starts to hurt (a
+    /// warning), or that it has left to hurt; nil while the arena is clear.
+    var darknessWarningSeconds: Int?
+    var darknessActiveSeconds: Int?
+    /// Whether this hero is standing in the one safe circle.
+    var inSafeCircle = true
     /// Whole seconds left on a Shrine of Ruin's curse; zero when none.
     var curseSeconds: Int = 0
     /// Timed afflictions on this hero (a bat's bite, a stalker's cut), soonest to fade first.
@@ -79,10 +88,13 @@ struct ProgressionSnapshot: Equatable {
 
 /// How a run ended, for the summary screen.
 struct RunSummary: Equatable {
-    /// Whether the realm took the player, or the player took the realm.
+    /// Whether the realm took the player, the player took the realm, or —
+    /// in an endless realm that offers it — the player chose to bank what
+    /// they had earned and leave while still standing.
     enum Outcome: Equatable {
         case defeated
         case conquered
+        case collected
     }
 
     let realm: RealmID
@@ -146,6 +158,10 @@ final class GameScene: SKScene {
     /// Real seconds of hit-stop remaining; the simulation holds still.
     private var hitStopRemaining: TimeInterval = 0
     private var summaryDelivered = false
+    /// When the realm was first seen conquered, for the pause before Fate's ending.
+    private var conqueredAt: CFTimeInterval?
+    var onEchoOfferChange: ((EchoOffer?) -> Void)?
+    private var lastEchoOffer: EchoOffer?
     /// Scene time used for idle animation, advanced only while unpaused.
     private var animationTime: TimeInterval = 0
     /// Ability buttons pressed since the last simulation step.
@@ -204,6 +220,7 @@ final class GameScene: SKScene {
     private let zoneRenderer: ZoneRenderer
     private let chargeLanes: ChargeLaneRenderer
     private let hazardRenderer: HazardRenderer
+    private let darknessRenderer: DarknessRenderer
     private let portalRenderer: PortalRenderer
     private let effects: EffectsRenderer
     private let feedback: CombatFeedback
@@ -294,6 +311,7 @@ final class GameScene: SKScene {
                                     layer: decals)
         chargeLanes = ChargeLaneRenderer(projection: projection, layer: decals)
         hazardRenderer = HazardRenderer(projection: projection, layer: decals)
+        darknessRenderer = DarknessRenderer(projection: projection, layer: decals)
         portalRenderer = PortalRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
                                         layer: standing)
         let effects = EffectsRenderer(catalog: catalog, projection: projection, pointsPerWorldUnit: pointsPerWorldUnit,
@@ -441,7 +459,11 @@ final class GameScene: SKScene {
             for _ in 0..<steps {
                 // A find that has just opened holds a lone run still; a party
                 // plays on around the player who is choosing.
-                if partyDriver == nil, simulation.offer != nil { break }
+                if partyDriver == nil, simulation.offer != nil || simulation.echoOffer != nil { break }
+                // Fate has fallen: the world holds its breath. Nothing left
+                // on the field can reach the player in the quiet before the
+                // ending, while the last of Fate's death still plays out.
+                if partyDriver == nil, simulation.isRealmConquered, simulation.run.realmID == .abyss { break }
                 intent.abilityPresses = pendingAbilityPresses
                 intent.interact = pendingInteract
                 simulation.step(dt: timestep.step, intent: intent)
@@ -477,6 +499,7 @@ final class GameScene: SKScene {
         publishHUDStateIfChanged()
         publishProgressionIfChanged()
         publishOfferIfChanged()
+        publishEchoOfferIfChanged()
         reportLevelUps(in: events)
         deliverSummaryIfDue()
     }
@@ -530,6 +553,7 @@ final class GameScene: SKScene {
         chargeLanes.update(enemies: simulation.combat.enemies, playerRadius: tuning.combat.playerRadius,
                            frame: renderFrame, time: animationTime)
         hazardRenderer.update(hazards: simulation.allHazards, frame: renderFrame, time: animationTime)
+        darknessRenderer.update(simulation.combat.darkness, frame: renderFrame, dt: frameDelta)
         portalRenderer.update(portals: simulation.allPortals, frame: renderFrame, time: animationTime)
         feedback.riftKind = simulation.activeRiftKind
         pickupRenderer.update(orbs: simulation.combat.orbs, frame: renderFrame, time: animationTime)
@@ -613,6 +637,7 @@ final class GameScene: SKScene {
                                      bossHealthFraction: wave.bossHealthFraction,
                                      curseSeconds: Int(simulation.curseRemaining.rounded(.up)))
         var state = base
+        applyFateHUD(to: &state, wave: wave, player: player)
         state.afflictions = player.buffs.compactMap { buff in
             EnemyOnHit.forBuff(buff.id).map { HUDAffliction(effect: $0, seconds: Int(buff.remaining.rounded(.up))) }
         }.sorted { $0.seconds < $1.seconds }
@@ -621,6 +646,26 @@ final class GameScene: SKScene {
         guard state != lastHUDState else { return }
         lastHUDState = state
         onHUDStateChange?(state)
+    }
+
+    /// Fate's two-layer bar, and the Encroaching Abyss's warning.
+    private func applyFateHUD(to state: inout GameplayHUDState, wave: WaveState, player: PlayerState) {
+        let combat = simulation.combat
+        if wave.isBossActive, let id = wave.bossID, let index = combat.index(ofEnemy: id) {
+            let definition = combat.enemies.definition(at: index)
+            if let fraction = definition.kit?.barrierFraction, fraction > 0 {
+                let starting = combat.enemies.maxHealth[index] * fraction
+                state.bossBarrierFraction = starting > 0 ? min(1, max(0, combat.enemies.barrier[index] / starting)) : 0
+            }
+        }
+        if let darkness = combat.darkness {
+            if darkness.isWarning {
+                state.darknessWarningSeconds = Int(darkness.warningRemaining.rounded(.up))
+            } else {
+                state.darknessActiveSeconds = Int(darkness.activeRemaining.rounded(.up))
+            }
+            state.inSafeCircle = combat.world.distance(player.position, darkness.safeCenter) <= darkness.safeRadius
+        }
     }
 
     private func publishProgressionIfChanged(force: Bool = false) {
@@ -665,8 +710,14 @@ final class GameScene: SKScene {
             }
             return
         }
-        // Taking the realm ends the run as surely as falling does.
+        // Taking the realm ends the run as surely as falling does. Fate's
+        // fall gets a moment of quiet first, before the ending is shown.
         if simulation.isRealmConquered {
+            let pause = simulation.run.realmID == .abyss ? FateTuning.endingPause : 0
+            let now = CACurrentMediaTime()
+            let since = conqueredAt.map { now - $0 } ?? 0
+            if conqueredAt == nil { conqueredAt = now }
+            guard since >= pause else { return }
             deliverSummary(outcome: .conquered, seconds: Int(simulation.elapsed))
             return
         }
@@ -748,6 +799,54 @@ final class GameScene: SKScene {
         case .chest: return ItemRarity.rare.color.uiColor
         case .hoard, .rift: return ItemRarity.legendary.color.uiColor
         }
+    }
+
+    // MARK: - Fate's Echo: bank or go on
+
+    var currentEchoOffer: EchoOffer? { simulation.echoOffer }
+
+    private func publishEchoOfferIfChanged() {
+        guard simulation.echoOffer != lastEchoOffer else { return }
+        lastEchoOffer = simulation.echoOffer
+        onEchoOfferChange?(lastEchoOffer)
+    }
+
+    /// The run as it stands, as a summary that has not ended: what banking
+    /// now would pay, shown before the player chooses.
+    func summarySoFar(outcome: RunSummary.Outcome) -> RunSummary {
+        RunSummary(realm: simulation.run.realmID, weapon: simulation.run.starterWeaponID,
+                   secondsSurvived: Int(simulation.elapsed), stats: simulation.stats,
+                   level: simulation.progression.level, allocation: simulation.allocation,
+                   outcome: outcome, wave: simulation.wave.index, relics: simulation.relics,
+                   difficultyBonus: simulation.difficultyEffects.payoutBonus)
+    }
+
+    /// Go on: the echoes stay unbanked, and the next wave begins.
+    func continueFromEchoOffer() {
+        guard simulation.echoOffer != nil else { return }
+        simulation.echoOffer = nil
+        publishEchoOfferIfChanged()
+    }
+
+    /// What banking now would record: the last completed wave is what was
+    /// earned, since the one just begun never got going.
+    func collectedSummary() -> RunSummary {
+        var summary = summarySoFar(outcome: .collected)
+        summary.wave = max(1, summary.wave - 1)
+        return summary
+    }
+
+    /// Bank what this run has earned and leave through the ordinary summary.
+    func collectEchoes() {
+        guard simulation.echoOffer != nil, !summaryDelivered else { return }
+        let summary = collectedSummary()
+        summaryDelivered = true
+        resetInput()
+        // The summary is in place before the offer is withdrawn, so the run
+        // is never un-paused for even a frame on its way out.
+        onRunEnded?(summary)
+        simulation.echoOffer = nil
+        publishEchoOfferIfChanged()
     }
 
     // MARK: - Finds

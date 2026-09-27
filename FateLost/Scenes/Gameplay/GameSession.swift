@@ -16,6 +16,8 @@ final class GameSession {
         case developer
         /// A find is waiting to be answered.
         case offer
+        /// Fate's Echo is asking whether to bank and leave or go on.
+        case echoOffer
     }
 
     let run: RunConfiguration
@@ -45,9 +47,15 @@ final class GameSession {
     var isSkillTreePresented: Bool { pauseReason == .skillTree }
     var isOfferPresented: Bool { pauseReason == .offer && offer != nil }
 
+    /// Fate's Echo waiting on bank-or-go-on, and what banking now would pay.
+    private(set) var echoOffer: EchoOffer?
+    private(set) var echoesAtRisk = 0
+    var isEchoOfferPresented: Bool { pauseReason == .echoOffer && echoOffer != nil }
+
     @ObservationIgnored let scene: GameScene
     @ObservationIgnored private let audio: AudioManager
     @ObservationIgnored private let settings: SettingsStore
+    @ObservationIgnored private let services: AppServices
     @ObservationIgnored private var levelUpTask: Task<Void, Never>?
     @ObservationIgnored private var statusTask: Task<Void, Never>?
 
@@ -63,6 +71,7 @@ final class GameSession {
         weapon = starter
         audio = services.audio
         settings = services.settings
+        self.services = services
         scene = GameScene(run: run, dependencies: GameScene.Dependencies(
             tuning: tuning,
             settings: services.settings,
@@ -88,6 +97,9 @@ final class GameSession {
         }
         scene.onOfferChange = { [weak self] offer in
             self?.offerChanged(offer)
+        }
+        scene.onEchoOfferChange = { [weak self] offer in
+            self?.echoOfferChanged(offer)
         }
         scene.onRunEnded = { [weak self] summary in
             self?.levelUpTask?.cancel()
@@ -157,6 +169,42 @@ final class GameSession {
             scene.isGameplayPaused = false
             audio.setMusicDucked(false)
         }
+        // A bank-or-go-on question that arrived while something else had the
+        // screen (the skill tree, say) is still waiting: ask it now.
+        if !isParty, echoOffer != nil, summary == nil {
+            pause(for: .echoOffer)
+        }
+    }
+
+    // MARK: - Fate's Echo
+
+    private func echoOfferChanged(_ offer: EchoOffer?) {
+        echoOffer = offer
+        if offer != nil {
+            echoesAtRisk = services.profile.payout(for: scene.collectedSummary(), realm: realm)
+        }
+        if offer == nil, pauseReason == .echoOffer {
+            // Banked and leaving: stay still behind the summary.
+            if summary == nil { resume() }
+            return
+        }
+        guard offer != nil, summary == nil, pauseReason == nil else { return }
+        levelUpTask?.cancel()
+        levelUpTask = nil
+        pause(for: .echoOffer)
+    }
+
+    /// Keeps the echoes at risk and goes on to the next wave.
+    func continueEchoes() {
+        scene.continueFromEchoOffer()
+        echoOffer = scene.currentEchoOffer
+        if pauseReason == .echoOffer { resume() }
+    }
+
+    /// Banks what the run has earned and ends it through the ordinary summary.
+    func collectEchoes() {
+        scene.collectEchoes()
+        echoOffer = nil
     }
 
     // MARK: - Finds

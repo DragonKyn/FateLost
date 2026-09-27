@@ -47,13 +47,14 @@ struct RunSummaryView: View {
 
     private var record: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(isConquest ? "REALM CONQUERED" : "FATE SEALED")
+            Text(headline)
                 .font(FLTheme.Typeface.title(40))
                 .tracking(6)
                 .foregroundStyle(FLTheme.Palette.parchment)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
-                .shadow(color: (isConquest ? FLTheme.Palette.ember : FLTheme.Palette.blood).opacity(0.8),
+                .shadow(color: (summary.outcome == .defeated ? FLTheme.Palette.blood : FLTheme.Palette.ember)
+                            .opacity(0.8),
                         radius: 16)
             Text("\(title.name), level \(summary.level)")
                 .font(FLTheme.Typeface.heading(16))
@@ -151,21 +152,34 @@ struct RunSummaryView: View {
                 Text("\(echoes)")
                     .font(FLTheme.Typeface.number(30))
                     .foregroundStyle(FLTheme.Palette.emberBright)
-                Text(echoes == 1 ? "echo earned" : "echoes earned")
+                Text(summary.outcome == .collected ? "echoes banked" : (echoes == 1 ? "echo earned" : "echoes earned"))
                     .font(FLTheme.Typeface.label(11))
                     .tracking(2)
                     .foregroundStyle(FLTheme.Palette.parchmentDim)
+                if LegacyProfile.forfeitsEchoes(summary) {
+                    Text("Fell in Fate's Echo before banking: what this run earned was lost.")
+                        .font(FLTheme.Typeface.body(11))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
             }
             .accessibilityElement(children: .combine)
 
-            Button(isConquest ? "Run It Again" : "Rise Again", action: onRetry)
+            Button(summary.outcome == .defeated ? "Rise Again" : "Run It Again", action: onRetry)
                 .buttonStyle(.flPrimary)
             Button("Return to Menu", action: onMenu)
                 .buttonStyle(.flSecondary)
         }
     }
 
-    private var isConquest: Bool { summary.outcome == .conquered }
+    private var headline: String {
+        switch summary.outcome {
+        case .defeated: return "FATE SEALED"
+        case .collected: return "ECHOES BANKED"
+        case .conquered: return summary.realm == .abyss ? "FATE HAS FALLEN" : "REALM CONQUERED"
+        }
+    }
 
     private var title: BuildTitle.Title { BuildTitle.title(for: summary.allocation) }
 

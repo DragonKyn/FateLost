@@ -119,6 +119,9 @@ struct GameSimulation {
     /// A find waiting for the player to choose from. While it is set the
     /// scene holds the game still and shows the cards.
     var offer: RelicOffer?
+    /// Fate's Echo asking whether to bank and leave or go on, after every
+    /// tenth wave. While it is set the scene holds the game still.
+    var echoOffer: EchoOffer?
 
     let movement: MovementSystem
     var spawner: SpawnSystem
@@ -409,6 +412,13 @@ struct GameSimulation {
             let anchor = randomStandingPlayer()
             ShrineSystem.waveBegan(shrineWave, isBossWave: realm.waves.isBossWave(shrineWave), &combat,
                                    player: anchor)
+            // Fate's Echo stops before the next wave gets going to ask
+            // whether to bank and leave. A lone hero only: a party can't all
+            // be held still for one player's choice, so a party plays on.
+            let completed = shrineWave - 1
+            if realm.id == .fatesEcho, heroCount == 1, FateTuning.offersChoice(afterWave: completed) {
+                echoOffer = EchoOffer(completedWave: completed)
+            }
         }
         spawner.wave = waves.state.index
         spawner.rateMultiplier = waves.pressure * waves.spawnShare * partySpawnFactor()
@@ -478,10 +488,21 @@ struct GameSimulation {
     }
 
     mutating func updateEnemyScaling() {
-        let minutes = elapsed / 60
-        let scaling = tuning.progression
         let curse = combat.curseRemaining > 0 ? ShrineTuning.curseStrength : 1
         let crowd = 1 + tuning.party.enemyHealthPerExtraHero * Double(max(0, heroCount - 1))
+        // Fate's Echo climbs in steps, not by the clock: flat within a
+        // five-wave tier, and a fixed compounding jump at the start of each
+        // new one, so a player always knows exactly when it gets harder.
+        if realm.id == .fatesEcho {
+            let wave = max(1, waves.state.index)
+            combat.enemyHealthScale = FateTuning.echoBaseHealth * FateTuning.echoHealthMultiplier(atWave: wave)
+                * curse * crowd * (1 + difficultyEffects.enemyHealthBonus)
+            combat.enemyDamageScale = FateTuning.echoBaseDamage * FateTuning.echoDamageMultiplier(atWave: wave)
+                * curse * (1 + difficultyEffects.enemyDamageBonus)
+            return
+        }
+        let minutes = elapsed / 60
+        let scaling = tuning.progression
         combat.enemyHealthScale = (1 + scaling.enemyHealthPerMinute * minutes
             + scaling.enemyHealthPerMinuteSquared * minutes * minutes) * curse * crowd
             * (1 + difficultyEffects.enemyHealthBonus)

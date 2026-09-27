@@ -208,6 +208,9 @@ struct AITarget {
     /// cannot find a hidden hero, though a blast can still reach them.
     var isHidden: Bool
     var hero: Int
+    /// For damage that is a fraction of health rather than a flat amount
+    /// (the Encroaching Abyss); zero everywhere that never needs it.
+    var maxHealth: Double = 0
 }
 
 enum WorldIncidents {

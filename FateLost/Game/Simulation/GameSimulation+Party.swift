@@ -48,7 +48,7 @@ extension GameSimulation {
     static let sharedFieldNames: [String] = [
         "run", "realm", "arena", "tuning", "combat", "elapsed", "cheats", "slots", "activeHero", "members",
         "timeSinceWipe", "stepCounter", "spawnFocusScratch", "targetScratch", "mirror", "movement", "spawner", "enemyAI",
-        "waves", "projectileSystem", "statusSystem", "shrineWave", "difficultyEffects",
+        "waves", "projectileSystem", "statusSystem", "shrineWave", "difficultyEffects", "echoOffer",
     ]
 
     // MARK: - Building a party
@@ -341,7 +341,8 @@ extension GameSimulation {
         for hero in 0..<heroCount {
             let state = playerState(of: hero)
             targetScratch.append(AITarget(position: state.position, isAlive: !state.isDefeated,
-                                          isHidden: state.isStealthed || isSheltered(hero), hero: hero))
+                                          isHidden: state.isStealthed || isSheltered(hero), hero: hero,
+                                          maxHealth: state.maxHealth))
         }
     }
 

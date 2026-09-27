@@ -31,6 +31,10 @@ enum BossMove: UInt8, CaseIterable {
     case sweep
     /// A mark on every hero that follows them, then locks and lands.
     case hunt
+    /// Darkness spreads over the whole arena but for one small marked
+    /// circle: standing outside it costs health every second once the
+    /// warning passes. See `BossSystem.advanceDarkness`.
+    case eclipse
 
     var name: String {
         switch self {
@@ -46,6 +50,7 @@ enum BossMove: UInt8, CaseIterable {
         case .summon: return "Summon"
         case .sweep: return "Sweep"
         case .hunt: return "Hunt"
+        case .eclipse: return "Eclipse"
         }
     }
 }
@@ -66,13 +71,49 @@ struct BossKit: Equatable {
     var adds: EnemyKindID?
     /// The move it favours (twice as likely to be chosen); the last in `moves` if not set.
     var signature: BossMove?
+    /// A shield over its health, as a share of it, that must be broken
+    /// before health itself starts moving (see `EnemyStore.barrier`). Zero
+    /// for every ordinary champion; only Fate starts a fight this way.
+    var barrierFraction: Double = 0
+    /// Multiplies the reach of `.cleave`, `.lanes` and `.sweep`, for a boss
+    /// whose attacks should threaten more of the arena than intensity alone
+    /// would give it.
+    var reachScale: Double = 1
+    /// What `.summon` calls from, weighted, instead of always `adds`: a mix
+    /// of elites and (rarely) a returning boss. Empty means `.summon` falls
+    /// back to `adds` as normal.
+    var summonPool: [(kind: EnemyKindID, weight: Double)] = []
+    /// The most of `summonPool`'s kinds allowed alive at once, so summons
+    /// never crowd the fight past reading.
+    var maxSimultaneousSummons: Int = 2
+    /// `.meteors` falls as the Powder Fiend's firebombs instead: one after
+    /// another rather than all at once, so there is always a way through,
+    /// and each leaving the Powder Fiend's own burn on whoever it catches.
+    var firebombs = false
 
-    init(moves: [BossMove], intensity: Int, tempo: Double, adds: EnemyKindID? = nil, signature: BossMove? = nil) {
+    init(moves: [BossMove], intensity: Int, tempo: Double, adds: EnemyKindID? = nil, signature: BossMove? = nil,
+        barrierFraction: Double = 0, reachScale: Double = 1, summonPool: [(kind: EnemyKindID, weight: Double)] = [],
+        maxSimultaneousSummons: Int = 2, firebombs: Bool = false) {
         self.moves = moves
         self.intensity = intensity
         self.tempo = tempo
         self.adds = adds
         self.signature = signature
+        self.barrierFraction = barrierFraction
+        self.reachScale = reachScale
+        self.summonPool = summonPool
+        self.maxSimultaneousSummons = maxSimultaneousSummons
+        self.firebombs = firebombs
+    }
+
+    /// Tuple arrays aren't `Equatable` for free; compared by kind and weight.
+    static func == (lhs: BossKit, rhs: BossKit) -> Bool {
+        lhs.moves == rhs.moves && lhs.intensity == rhs.intensity && lhs.tempo == rhs.tempo && lhs.adds == rhs.adds
+            && lhs.signature == rhs.signature && lhs.barrierFraction == rhs.barrierFraction
+            && lhs.reachScale == rhs.reachScale && lhs.maxSimultaneousSummons == rhs.maxSimultaneousSummons
+            && lhs.firebombs == rhs.firebombs
+            && lhs.summonPool.count == rhs.summonPool.count
+            && zip(lhs.summonPool, rhs.summonPool).allSatisfy { $0.kind == $1.kind && $0.weight == $1.weight }
     }
 }
 
@@ -104,6 +145,15 @@ struct BossBrain {
     var beats: [Beat] = []
     /// How far into the fight it is: 0, 1 or 2 (see `BossSystem.phase`).
     var phase = 0
+    /// Whether this champion has been seen carrying a barrier: set the
+    /// instant `EnemyStore.barrier` first reads positive, so its later
+    /// falling to zero can be told apart from simply never having had one.
+    var hadBarrier = false
+    /// Set the moment a barrier breaks, and carried until the champion is
+    /// next free to answer it with its own `shift` burst — a dramatic beat
+    /// of its own, independent of and never consuming a later health-based
+    /// phase change.
+    var pendingBarrierBreak = false
 
     var isBusy: Bool { lock > 0 }
 }
@@ -144,6 +194,7 @@ enum BossSystem {
 
     static func step(_ combat: inout CombatState, targets: [AITarget], dt: TimeInterval) {
         advanceHazards(&combat, targets: targets, dt: dt)
+        advanceDarkness(&combat, targets: targets, dt: dt)
         guard combat.enemies.count > 0 else {
             combat.bossBrains.removeAll()
             return
@@ -168,6 +219,19 @@ enum BossSystem {
     private static func run(_ brain: inout BossBrain, at index: Int, definition: EnemyDefinition, kit: BossKit,
                             combat: inout CombatState, targets: [AITarget], dt: TimeInterval) {
         // A stunned champion loses its pattern; the ground already marked stays.
+        // A barrier (Fate's, at the start of its fight) absorbs every blow
+        // before health moves at all; the instant it gives out is its own
+        // dramatic beat, and a clear step up in how the fight behaves from
+        // here — whether or not health has actually started falling yet.
+        if combat.enemies.barrier[index] > 0 {
+            brain.hadBarrier = true
+        } else if brain.hadBarrier {
+            brain.hadBarrier = false
+            brain.pendingBarrierBreak = true
+            combat.events.append(.shieldBroke(enemyID: combat.enemies.ids[index],
+                                              position: combat.enemies.positions[index]))
+        }
+
         if combat.enemies.statusMask[index] & StatusKind.incapacitating != 0 {
             brain.beats.removeAll()
             brain.lock = 0
@@ -197,6 +261,15 @@ enum BossSystem {
 
         let base = definition.attackDamage * combat.enemyDamageScale * combat.enemies.damageScale[index]
 
+        // A broken barrier gets its own burst the moment the champion is
+        // next free to answer it, ahead of and separate from any
+        // health-based phase change.
+        if brain.pendingBarrierBreak {
+            brain.pendingBarrierBreak = false
+            shift(&brain, at: index, definition: definition, kit: kit, base: base, target: nearest, combat: &combat)
+            return
+        }
+
         // Crossing into a new phase is an event: it stops, roars and lays a big
         // marked slam, with reinforcements, before anything else.
         if currentPhase > brain.phase {
@@ -208,7 +281,18 @@ enum BossSystem {
         guard brain.cooldown <= 0 else { return }
 
         var everything = availableMoves(kit, phase: currentPhase)
-        if kit.adds == nil { everything.removeAll { $0 == .summon } }
+        if kit.adds == nil, kit.summonPool.isEmpty { everything.removeAll { $0 == .summon } }
+        // The darkness lives on the host alone and is not sent to other
+        // phones, so a party's guests would be hurt by a dark they cannot
+        // see. Fate keeps it for a lone hero.
+        if combat.isParty { everything.removeAll { $0 == .eclipse } }
+        // While the dark is up the safe circle is the only safe ground, so
+        // nothing may be thrown at it that would leave no answer at all: no
+        // second eclipse, no sweeping or wide ground, no hunt chasing a hero
+        // out of it. Firebombs (which keep clear of the circle) and a summon only.
+        if combat.darkness != nil {
+            everything = everything.filter { $0 == .meteors || $0 == .summon }
+        }
         guard !everything.isEmpty else { return }
         var pool = everything.filter { $0 != brain.last }
         if pool.isEmpty { pool = everything }
@@ -239,7 +323,9 @@ enum BossSystem {
                   damage: base * 1.5, type: type, visual: VisualStyle.matching(type))
         brain.beats.append(BossBrain.Beat(delay: wait, action: .ring(count: 12, offset: combat.random.range(0, Double.pi)),
                                           damage: base * 0.55, speed: 5, spawn: radius + 0.8))
-        if let adds = kit.adds {
+        if !kit.summonPool.isEmpty {
+            callFromPool(kit.summonPool, limit: kit.maxSimultaneousSummons, around: origin, combat: &combat)
+        } else if let adds = kit.adds {
             call(adds, count: min(6, 2 + kit.intensity / 3), around: origin, combat: &combat)
         }
         brain.lock = wait + recovery + 0.4
@@ -277,7 +363,7 @@ enum BossSystem {
 
         case .cleave:
             let wait = warning(1.5, kit: kit)
-            let reach = CGFloat(3.8 + 0.08 * level)
+            let reach = CGFloat((3.8 + 0.08 * level) * kit.reachScale)
             addHazard(&combat, .cone, at: origin, direction: aim, size: reach, width: 0.85, warning: wait,
                       damage: base * 1.2, type: type, visual: visual)
             var committed = wait
@@ -325,6 +411,9 @@ enum BossSystem {
             }
             return 0.7 + seconds
 
+        case .meteors where kit.firebombs:
+            return firebombRain(kit: kit, base: base, aim: aim, heroes: heroes, combat: &combat)
+
         case .meteors:
             let wait = warning(1.5, kit: kit)
             let count = min(10, max(3, 2 + intensity / 2 + heroes.count))
@@ -359,10 +448,11 @@ enum BossSystem {
             let along = CGPoint(x: CGFloat(cos(angle)), y: CGFloat(sin(angle)))
             let across = CGPoint(x: -along.y, y: along.x)
             let spacing: CGFloat = 3.2
+            let length = CGFloat(16 * kit.reachScale)
             for lane in 0..<count {
                 let shift = (CGFloat(lane) - CGFloat(count - 1) / 2) * spacing
-                let start = target.position + across * shift - along * 8
-                addHazard(&combat, .lane, at: start, direction: along, size: 16, width: 0.75, warning: wait,
+                let start = target.position + across * shift - along * (length / 2)
+                addHazard(&combat, .lane, at: start, direction: along, size: length, width: 0.75, warning: wait,
                           damage: base * 1.15, type: type, visual: visual)
             }
             return 0.9
@@ -404,6 +494,10 @@ enum BossSystem {
             return wait + 0.2
 
         case .summon:
+            if !kit.summonPool.isEmpty {
+                callFromPool(kit.summonPool, limit: kit.maxSimultaneousSummons, around: origin, combat: &combat)
+                return 1.2
+            }
             guard let adds = kit.adds else { return 0.5 }
             call(adds, count: min(8, 3 + intensity / 2), around: origin, combat: &combat)
             return 1.0
@@ -412,7 +506,7 @@ enum BossSystem {
             let wait = warning(1.4, kit: kit)
             let arc: CGFloat = 1.9
             let active = 2.2 + 0.05 * level
-            let reach = CGFloat(9 + 0.2 * level)
+            let reach = CGFloat((9 + 0.2 * level) * kit.reachScale)
             let clockwise = combat.random.chance(0.5)
             let middle = atan2(aim.y, aim.x)
             let start = middle + (clockwise ? arc / 2 : -arc / 2)
@@ -443,7 +537,81 @@ enum BossSystem {
                 combat.hazards.append(mark)
             }
             return 0.6
+
+        case .eclipse:
+            // A long warning: the whole arena is about to matter, not just
+            // one patch of ground, so the player needs real time to notice
+            // and cross to the safe circle before it starts costing health.
+            // The circle opens away from Fate, so reaching it never means
+            // walking into the scythe; its distance is always well inside
+            // what a hero covers in the warning.
+            let warningTime = FateTuning.eclipseWarning
+            let awayFromFate = combat.world.delta(from: origin, to: target.position)
+            let away = awayFromFate.lengthSquared > 0.0001 ? awayFromFate.normalized : aim
+            let reach = FateTuning.eclipseSafeDistance * CGFloat(combat.random.range(0.55, 1))
+            let wobble = CGFloat(combat.random.range(-0.6, 0.6))
+            let bearing = CGPoint(x: away.x * cos(wobble) - away.y * sin(wobble),
+                                  y: away.x * sin(wobble) + away.y * cos(wobble))
+            let safeCenter = combat.world.wrap(target.position + bearing * reach)
+            combat.darkness = DarknessState(safeCenter: safeCenter, safeRadius: FateTuning.eclipseSafeRadius,
+                                            warningRemaining: warningTime,
+                                            activeRemaining: FateTuning.eclipseDuration,
+                                            damagePerSecond: FateTuning.eclipseDamagePerSecond)
+            // In its last phase Fate opens the dark with firebombs. They all
+            // land inside the warning, before the dark can hurt, and never on
+            // the circle — hard, but never without an answer.
+            if brain.phase >= 2, kit.firebombs {
+                _ = firebombRain(kit: kit, base: base, aim: aim, heroes: heroes, combat: &combat)
+            }
+            // Fate channels the dark, standing still for all of it: it can
+            // never walk into the safe circle and swing at whoever is in it.
+            return warningTime + FateTuning.eclipseDuration
         }
+    }
+
+    /// Fate's firebomb rain: the Powder Fiend's bomb — its marked disc, its
+    /// blast and its burn — dropped one after another. Staggered so no
+    /// moment has every one of them landing at once, and never on the one
+    /// safe circle while the Encroaching Abyss is up.
+    @discardableResult
+    static func firebombRain(kit: BossKit, base: Double, aim: CGPoint, heroes: [AITarget],
+                             combat: inout CombatState) -> Double {
+        guard !heroes.isEmpty else { return 0.4 }
+        let first = warning(FateTuning.firebombWarning, kit: kit)
+        var burn: (damage: Double, ticks: Int, every: Double) = (0, 0, 1)
+        if case let .explosive(bomb) = EnemyCatalog.explosiveElite.eliteKit {
+            burn = (bomb.burnTickDamage * combat.enemyDamageScale, bomb.burnTicks, bomb.burnTickEvery)
+        }
+        let clearance = (combat.darkness?.safeRadius ?? 0) + FateTuning.firebombRadius + 0.4
+        var placed = 0
+        var tries = 0
+        while placed < FateTuning.firebombCount, tries < FateTuning.firebombCount * 6 {
+            tries += 1
+            let hero = heroes[placed % heroes.count]
+            // The first falls where the hero stands, so it has to be moved
+            // for; the rest scatter around, in the order they will land.
+            var point = placed < heroes.count
+                ? hero.position
+                : combat.randomPoint(around: hero.position, within: FateTuning.firebombSpread)
+            if let darkness = combat.darkness {
+                // A hero already in the circle is not bombed there; that bomb
+                // scatters around them instead.
+                if combat.world.distance(point, darkness.safeCenter) < clearance {
+                    point = combat.randomPoint(around: hero.position, within: FateTuning.firebombSpread)
+                }
+                if combat.world.distance(point, darkness.safeCenter) < clearance { continue }
+            }
+            var bomb = Hazard(id: combat.makeEntityID(), shape: .circle, position: combat.world.wrap(point),
+                              direction: aim, size: FateTuning.firebombRadius, width: 0,
+                              warning: max(minimumWarning, first + FateTuning.firebombStagger * Double(placed)),
+                              damage: base * 1.0, type: .fire, visual: .fire)
+            bomb.burnTickDamage = burn.damage
+            bomb.burnTicks = burn.ticks
+            bomb.burnTickEvery = burn.every
+            combat.hazards.append(bomb)
+            placed += 1
+        }
+        return 0.6
     }
 
     private static func addHazard(_ combat: inout CombatState, _ shape: Hazard.Shape, at position: CGPoint,
@@ -468,6 +636,73 @@ enum BossSystem {
                                   healthScale: combat.enemyHealthScale)
             combat.events.append(.summoned(position: position, visual: .shadow))
         }
+    }
+
+    /// One thing from a weighted pool, called in — a mix of elites and,
+    /// rarely, a returning boss — never past `limit` of the pool's own
+    /// kinds standing at once, so summons never crowd the fight past reading.
+    private static func callFromPool(_ pool: [(kind: EnemyKindID, weight: Double)], limit: Int, around origin: CGPoint,
+                                     combat: inout CombatState) {
+        guard !pool.isEmpty, combat.enemies.count < crowdLimit else { return }
+        let poolIDs = Set(pool.map(\.kind))
+        let alreadyAlive = (0..<combat.enemies.count).filter { poolIDs.contains(combat.enemies.definition(at: $0).id) }
+            .count
+        guard alreadyAlive < limit else { return }
+        let totalWeight = pool.reduce(0) { $0 + $1.weight }
+        guard totalWeight > 0 else { return }
+        var roll = combat.random.unit() * totalWeight
+        var chosen = pool[0].kind
+        for entry in pool {
+            if roll <= entry.weight {
+                chosen = entry.kind
+                break
+            }
+            roll -= entry.weight
+        }
+        guard let definition = EnemyCatalog.definition(for: chosen) else { return }
+        let index = combat.enemies.kindIndex(for: definition)
+        let angle = combat.random.range(0, 2 * Double.pi)
+        let offset = CGPoint(x: CGFloat(cos(angle)), y: CGFloat(sin(angle))) * CGFloat(combat.random.range(3, 4.5))
+        let position = combat.world.wrap(origin + offset)
+        combat.events.append(.burst(position: origin, radius: 1.6, visual: .shadow))
+        combat.enemies.append(id: combat.makeEntityID(), kind: index, position: position, speedScale: 1,
+                              healthScale: combat.enemyHealthScale)
+        combat.events.append(.summoned(position: position, visual: .shadow))
+    }
+
+    // MARK: Ground — Fate's darkness
+
+    /// Ages the Encroaching Abyss and, once its warning passes, costs
+    /// health to whoever stands outside its one safe circle — through the
+    /// same `strikeHero` incident a hazard's tick uses, so armor, barrier
+    /// and invulnerability all apply exactly as they would to a hazard.
+    private static func advanceDarkness(_ combat: inout CombatState, targets: [AITarget], dt: TimeInterval) {
+        guard var state = combat.darkness else { return }
+        // The dark is Fate's own; with nothing left on the field that can
+        // cast it, it lifts at once rather than outliving its maker.
+        let caster = (0..<combat.enemies.count).contains { index in
+            combat.enemies.health[index] > 0
+                && (combat.enemies.definition(at: index).kit?.moves.contains(.eclipse) ?? false)
+        }
+        guard caster else {
+            combat.darkness = nil
+            return
+        }
+        if state.warningRemaining > 0 {
+            state.warningRemaining -= dt
+        } else {
+            state.activeRemaining -= dt
+            for target in targets where target.isAlive {
+                let distance = combat.world.distance(target.position, state.safeCenter)
+                guard distance > state.safeRadius else { continue }
+                let amount = target.maxHealth * state.damagePerSecond * dt
+                guard amount > 0 else { continue }
+                let direction = combat.world.delta(from: state.safeCenter, to: target.position)
+                let away = direction.lengthSquared > 0.0001 ? direction.normalized : CGPoint(x: 1, y: 0)
+                combat.incidents.append(.strikeHero(hero: target.hero, amount: amount, direction: away))
+            }
+        }
+        combat.darkness = state.isFinished ? nil : state
     }
 
     // MARK: Shots

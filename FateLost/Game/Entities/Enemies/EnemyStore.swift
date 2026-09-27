@@ -127,6 +127,8 @@ struct EnemyStore {
         aim.append(.zero)
         if case let .shieldbreaker(kit) = definition.eliteKit {
             barrier.append(life * kit.barrierFraction)
+        } else if let bossFraction = definition.kit?.barrierFraction, bossFraction > 0 {
+            barrier.append(life * bossFraction)
         } else {
             barrier.append(0)
         }

@@ -90,12 +90,20 @@ enum RealmCatalog {
         ),
         RealmDefinition(
             id: .abyss, order: 10, name: "The Abyss",
-            tagline: "How far can you survive?",
-            introduces: ["No end", "Abyssal corruption"],
-            conquestWave: nil, legacyMultiplier: 3.75,
+            tagline: "Every champion you have beaten, and then Fate.",
+            introduces: ["Every champion returns", "Fate waits at the end"],
+            conquestWave: FateTuning.abyssFinalWave, legacyMultiplier: 3.75,
             arena: arena(ArenaThemes.abyss),
-            waves: WavePlan(waveSeconds: 40, bossEvery: 5,
+            waves: WavePlan(waveSeconds: 40, bossEvery: FateTuning.abyssBossEvery,
                             bosses: EnemyCatalog.bosses(for: .abyss))
+        ),
+        RealmDefinition(
+            id: .fatesEcho, order: 11, name: "Fate's Echo",
+            tagline: "What is left when Fate is gone.",
+            introduces: ["No end", "Stronger every five waves", "Bank your echoes, or risk them"],
+            conquestWave: nil, legacyMultiplier: 4.25,
+            arena: arena(ArenaThemes.fatesEcho),
+            waves: WavePlan(waveSeconds: 38, bossEvery: 5, bosses: EnemyCatalog.bosses(for: .fatesEcho))
         ),
     ]
 

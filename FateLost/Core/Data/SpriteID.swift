@@ -79,6 +79,7 @@ extension SpriteID {
     static let enemyBossIronSaint: SpriteID = "enemy.bossIronSaint"
     static let enemyBossGraveWarden: SpriteID = "enemy.bossGraveWarden"
     static let enemyBossAbyssalEcho: SpriteID = "enemy.bossAbyssalEcho"
+    static let enemyBossFate: SpriteID = "enemy.bossFate"
     static let enemyVampireBat: SpriteID = "enemy.vampireBat"
     static let enemyDuskStalker: SpriteID = "enemy.duskStalker"
     static let enemyBossPitBrute: SpriteID = "enemy.bossPitBrute"
@@ -219,6 +220,7 @@ extension SpriteID {
     static let decorSiegeRam: SpriteID = "decor.siegeRam"
     static let decorRuinedArch: SpriteID = "decor.ruinedArch"
     static let decorHollowThrone: SpriteID = "decor.hollowThrone"
+    static let decorFallenScythe: SpriteID = "decor.fallenScythe"
 
     // Effects
     static let fxGlow: SpriteID = "fx.glow"

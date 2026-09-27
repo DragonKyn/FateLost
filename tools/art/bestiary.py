@@ -386,9 +386,17 @@ def robed(name, robe, skin, eye, doc, hood=True, staff=None, trim=None, sigil=No
             s.dot(mid - 11.4, 8.2, 0.9, _light(eye, 0.6))
             s.line((mid - 14, 8.6), (mid - 7.6, 8.2), IRON_LIGHT, 0.5)
         elif staff == "blade":
-            s.taper([(mid - 12.5, 9), (mid - 13.4, 2), (mid - 13.8, -3)], STEEL, 3.2, 0.5,
+            # A scythe: the shaft rises to just above the hood — the canvas
+            # has almost no headroom past y=0 — and a wide crescent blade
+            # curves out to the side from its tip, rather than towering
+            # straight up where it would be clipped off the top of the sprite.
+            s.taper([(mid - 12.5, 9), (mid - 13.6, 4.5), (mid - 14.4, 0.6)], STEEL, 3.0, 0.6,
                     outline=INK, width=0.6)
-            s.curve([(mid - 12.8, 7.6), (mid - 13.6, -1.6)], IRON_LIGHT, 0.5)
+            s.curve([(mid - 12.8, 7.6), (mid - 13.9, 2)], IRON_LIGHT, 0.5)
+            blade = [(mid - 14.4, 0.8), (mid - 20, 0.2), (mid - 27.5, 1.4), (mid - 31, 4.6),
+                     (mid - 25.5, 4.2), (mid - 18.5, 3.4), (mid - 13.6, 6.6)]
+            s.poly(blade, STEEL, outline=INK, width=0.7)
+            s.curve([(mid - 20.5, 0.6), (mid - 27, 1.8), (mid - 30.5, 4.4)], IRON_LIGHT, 0.6)
             s.poly([(mid - 15.4, 9.6), (mid - 9.8, 9), (mid - 9.6, 10.8), (mid - 15.2, 11.4)], GOLD_DARK,
                    outline=INK, width=0.5)
 
@@ -1327,8 +1335,21 @@ def rift_bosses():
     ]
 
 
+def fate():
+    """Fate itself: the last thing between a soul and the life it wants back.
+
+    Twice the size of an ordinary champion (set in Swift via drawScale, the
+    same way every other boss's scale is), so the canvas stays the archetype's
+    own default and only the in-game presentation is enlarged."""
+    return [
+        robed("bossFate", 0x18141C, 0xCBBFAE, 0xE8E8F0,
+              "Fate, robed and patient, carrying the only verdict that has never been appealed.",
+              staff="blade", trim=0x8A8496, sigil=0xB8A8FF, hood=True, width=64, height=86),
+    ]
+
+
 def all_sprites():
-    return rank_and_file() + champions() + warlords() + rift_bosses()
+    return rank_and_file() + champions() + warlords() + rift_bosses() + fate()
 
 
 HEADER = '''import UIKit

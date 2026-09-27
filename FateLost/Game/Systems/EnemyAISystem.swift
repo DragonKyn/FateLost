@@ -56,7 +56,7 @@ struct EnemyAISystem {
     /// carried out before returning.
     mutating func step(_ combat: inout CombatState, player: inout PlayerState, godMode: Bool, dt: TimeInterval) {
         let target = AITarget(position: player.position, isAlive: !player.isDefeated, isHidden: player.isStealthed,
-                              hero: 0)
+                              hero: 0, maxHealth: player.maxHealth)
         combat.worldAnchors = combat.allyAnchors
         step(&combat, targets: [target], godMode: godMode, dt: dt)
         WorldIncidents.applyToLoneHero(&combat, player: &player, godMode: godMode)

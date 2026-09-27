@@ -107,7 +107,7 @@ enum GameplaySprites {
         .enemyCultist, .enemyFlagellant, .enemyCultLeader, .enemyFrostShard, .enemyEmberWisp, .enemyIceGolem,
         .enemyBossWarchief, .enemyBossDrownedKing, .enemyBossHollowStag, .enemyBossRimeTyrant,
         .enemyBossPlagueMonarch, .enemyBossEmberLord, .enemyBossVoidmaw, .enemyBossIronSaint,
-        .enemyBossGraveWarden, .enemyBossAbyssalEcho,
+        .enemyBossGraveWarden, .enemyBossAbyssalEcho, .enemyBossFate,
         .enemyVampireBat,
         .enemyDuskStalker,
         .enemyBossPitBrute,
@@ -157,7 +157,7 @@ enum GameplaySprites {
         .dropVial, .dropMagnet, .dropChestCache, .dropChestChest, .dropChestHoard,
         .shrineBlood, .shrineFortune, .shrineRuin,
         .decorPlagueBell, .decorMoltenChain, .decorBrokenStair,
-        .decorSiegeRam, .decorRuinedArch, .decorHollowThrone,
+        .decorSiegeRam, .decorRuinedArch, .decorHollowThrone, .decorFallenScythe,
         .fxGlow, .fxFlame, .fxAshFlake, .fxSlash, .fxThrust, .fxSpark, .fxRing, .fxSplat,
     ]
 }

@@ -65,7 +65,8 @@ final class RealmTests: XCTestCase {
     }
 
     func testEveryRealmHasChampionsAndTheyExist() {
-        for realm in RealmCatalog.all {
+        // Fate's Echo is only the horde: it sends no champions by design.
+        for realm in RealmCatalog.all where realm.id != .fatesEcho {
             let bosses = EnemyCatalog.bosses(for: realm.id)
             XCTAssertFalse(bosses.isEmpty, "\(realm.name) has no champion")
             for id in bosses {

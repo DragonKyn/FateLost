@@ -633,6 +633,36 @@ def hollowThrone():
     return s
 
 
+def fallenScythe():
+    s = standing("fallenScythe", 44, 60,
+                 "Fate's scythe, driven into the ground where it fell, still leaking what it cut.")
+    ground = 58
+    s.ellipse(4, ground - 5, 36, 9, _shade(OBSIDIAN, 0.1))
+    s.glow(22, ground - 8, 16, VOID, 0.45)
+    # The crack it made going in, glowing.
+    for a, b in (((22, ground - 3), (12, ground - 1)), ((22, ground - 3), (33, ground - 2)),
+                 ((22, ground - 3), (27, ground + 0.5))):
+        s.line(a, b, VOID_HOT, 0.8)
+    # The broken-off end of the haft, lying where it dropped.
+    s.taper([(4, ground - 3), (17, ground - 6)], WOOD_DARK, 2.2, 2.0, outline=INK, width=0.7)
+    s.dot(17, ground - 6, 1.0, _light(WOOD_LIGHT, 0.1))
+    # The standing haft, snapped short, leaning a little.
+    s.taper([(22, ground - 2), (25, ground - 44)], WOOD_DARK, 3.0, 2.4, outline=INK, width=0.9)
+    s.line((23.2, ground - 6), (25.6, ground - 42), _light(WOOD, 0.1), 0.6)
+    s.poly([(23.6, ground - 44), (27, ground - 47), (25.6, ground - 43)], WOOD_LIGHT, outline=INK, width=0.6)
+    for band in (ground - 30, ground - 36):
+        s.taper([(22.4, band), (25.4, band - 0.6)], IRON, 2.0, 2.0, outline=INK, width=0.5)
+    # The blade, point buried: a long pale crescent sweeping down to the ground.
+    s.poly([(25, ground - 40), (34, ground - 38), (40, ground - 30), (41, ground - 20), (38, ground - 9),
+            (35, ground - 3), (36, ground - 12), (35, ground - 22), (31, ground - 31), (25, ground - 35)],
+           _light(IRON_LIGHT, 0.2), outline=INK, width=1.0)
+    s.curve([(27, ground - 37), (35, ground - 33), (38.5, ground - 21), (36.5, ground - 8)],
+            _shade(IRON_LIGHT, 0.2), 0.9)
+    s.curve([(33, ground - 37), (39, ground - 29), (40, ground - 19)], VOID_HOT, 0.6)
+    s.dot(26, ground - 38, 1.2, VOID_HOT)
+    return s
+
+
 def all_sprites():
     return [
         reeds(), standingWater(), bogStump(),
@@ -645,6 +675,7 @@ def all_sprites():
         skullPile(), blackObelisk(),
         plagueBell(), moltenChain(), brokenStair(),
         siegeRam(), ruinedArch(), hollowThrone(),
+        fallenScythe(),
     ]
 
 

@@ -788,4 +788,35 @@ extension PlaceholderArt {
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
     }
+
+    // MARK: - fallenScythe
+
+    /// Fate's scythe, driven into the ground where it fell, still leaking what it cut.
+    static func fallenScythe() -> Sprite {
+        let image = render(CGSize(width: 44, height: 60)) { ctx in
+            fillOval(ctx, CGRect(x: 4, y: 53, width: 36, height: 9), UIColor(rgb: 0x1B1720))
+            radialGradient(ctx, center: P(22, 50), radius: 16, inner: UIColor(rgb: 0x5A3F8C, alpha: 0.45), outer: UIColor(rgb: 0x5A3F8C, alpha: 0))
+            stroke(ctx, from: P(22, 55), to: P(12, 57), UIColor(rgb: 0xC79BFF), width: 0.8)
+            stroke(ctx, from: P(22, 55), to: P(33, 56), UIColor(rgb: 0xC79BFF), width: 0.8)
+            stroke(ctx, from: P(22, 55), to: P(27, 58.5), UIColor(rgb: 0xC79BFF), width: 0.8)
+            fillPolygon(ctx, [P(4.25, 56.07), P(17.22, 52.97), P(16.78, 51.03), P(3.75, 53.93)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(4.25, 56.07), P(17.22, 52.97), P(16.78, 51.03), P(3.75, 53.93)], UIColor(rgb: 0x0E0C08), width: 0.7)
+            fillOval(ctx, CGRect(x: 16, y: 51, width: 2, height: 2), UIColor(rgb: 0x78654B))
+            fillPolygon(ctx, [P(23.5, 56.11), P(26.2, 14.09), P(23.8, 13.91), P(20.5, 55.89)], UIColor(rgb: 0x2E2418))
+            strokePolygon(ctx, [P(23.5, 56.11), P(26.2, 14.09), P(23.8, 13.91), P(20.5, 55.89)], UIColor(rgb: 0x0E0C08), width: 0.9)
+            stroke(ctx, from: P(23.2, 52), to: P(25.6, 16), UIColor(rgb: 0x5C4D3D), width: 0.6)
+            fillPolygon(ctx, [P(23.6, 14), P(27, 11), P(25.6, 15)], UIColor(rgb: 0x6A5438))
+            strokePolygon(ctx, [P(23.6, 14), P(27, 11), P(25.6, 15)], UIColor(rgb: 0x0E0C08), width: 0.6)
+            fillPolygon(ctx, [P(22.6, 28.98), P(25.6, 28.38), P(25.2, 26.42), P(22.2, 27.02)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(22.6, 28.98), P(25.6, 28.38), P(25.2, 26.42), P(22.2, 27.02)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(22.6, 22.98), P(25.6, 22.38), P(25.2, 20.42), P(22.2, 21.02)], UIColor(rgb: 0x5E5A54))
+            strokePolygon(ctx, [P(22.6, 22.98), P(25.6, 22.38), P(25.2, 20.42), P(22.2, 21.02)], UIColor(rgb: 0x0E0C08), width: 0.5)
+            fillPolygon(ctx, [P(25, 18), P(34, 20), P(40, 28), P(41, 38), P(38, 49), P(35, 55), P(36, 46), P(35, 36), P(31, 27), P(25, 23)], UIColor(rgb: 0xA4A199))
+            strokePolygon(ctx, [P(25, 18), P(34, 20), P(40, 28), P(41, 38), P(38, 49), P(35, 55), P(36, 46), P(35, 36), P(31, 27), P(25, 23)], UIColor(rgb: 0x0E0C08), width: 1)
+            strokeCurve(ctx, [P(27, 21), P(35, 25), P(38.5, 37), P(36.5, 50)], UIColor(rgb: 0x716E66), width: 0.9)
+            strokeCurve(ctx, [P(33, 21), P(39, 29), P(40, 39)], UIColor(rgb: 0xC79BFF), width: 0.6)
+            fillOval(ctx, CGRect(x: 24.8, y: 18.8, width: 2.4, height: 2.4), UIColor(rgb: 0xC79BFF))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.03))
+    }
 }

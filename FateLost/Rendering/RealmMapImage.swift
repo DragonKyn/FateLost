@@ -122,6 +122,8 @@ enum RealmMapImage {
             return UIColor(red: 0.58, green: 0.56, blue: 0.52, alpha: 0.95)
         case .hollowThrone:
             return UIColor(red: 0.40, green: 0.28, blue: 0.62, alpha: 0.95)
+        case .fallenScythe:
+            return UIColor(red: 0.78, green: 0.70, blue: 0.95, alpha: 0.95)
         default:
             return UIColor(white: 0.3, alpha: 0.8)
         }

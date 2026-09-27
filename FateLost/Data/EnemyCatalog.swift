@@ -678,6 +678,34 @@ enum EnemyCatalog {
     /// The great ones behind the portals. Not part of any realm's list of champions.
     static let riftBosses: [EnemyDefinition] = [riftForge, riftMatriarch, riftSovereign, riftUnblinking]
 
+    /// The last thing between a soul and the life it wants back: the final
+    /// boss of the Abyss, met once every other champion has been. Six times
+    /// the health of the Abyss's own strongest champion, drawn twice the
+    /// size, and — alone among every champion in the game — starting the
+    /// fight behind a barrier that must break before its health even begins
+    /// to move. `barrierFraction` and `reachScale` are the two numbers most
+    /// worth retuning from playtesting.
+    static let fate = champion(
+        id: "boss.fate", name: "Fate", epithet: "What Was Written", family: .aberration,
+        health: bossAbyssalEcho.maxHealth * 6, speed: 1.6, radius: 1.8, damage: 70,
+        reach: 1.3, windup: 1.0, cooldown: 2.2, type: .shadow, behavior: .melee,
+        sprite: .enemyBossFate, scale: 3.2, experience: 1_000,
+        kit: BossKit(
+            moves: [.cleave, .meteors, .eclipse, .sweep, .summon, .hunt],
+            intensity: 10, tempo: 3.0, signature: .cleave,
+            // 20% of six times a normal boss's health is itself about 1.2x
+            // a normal boss's whole life — a full opening phase on its own.
+            barrierFraction: 0.2, reachScale: 1.6,
+            summonPool: [
+                (kind: shieldbreaker.id, weight: 3), (kind: explosiveElite.id, weight: 3),
+                (kind: bossWarchief.id, weight: 0.8), (kind: bossVoidmaw.id, weight: 0.6),
+                (kind: bossPlagueMonarch.id, weight: 0.6),
+            ],
+            maxSimultaneousSummons: 2,
+            firebombs: true
+        )
+    )
+
     // MARK: - Lookup
 
     static let goblinWarband: [EnemyDefinition] = [
@@ -711,7 +739,7 @@ enum EnemyCatalog {
 
     static let all: [EnemyDefinition] = goblinWarband + undeadHost + wildBeasts + demonLegion
         + citadelConstructs + aberrations + cultists + elementals + nightHunters
-        + rareElitesFromRealm3 + rareElitesFromRealm4 + champions + riftBosses
+        + rareElitesFromRealm3 + rareElitesFromRealm4 + champions + riftBosses + [fate]
 
     static func definition(for id: EnemyKindID) -> EnemyDefinition? {
         all.first { $0.id == id }
@@ -757,13 +785,14 @@ enum EnemyCatalog {
         case .fallenCitadel:
             return citadelConstructs + cultists + [skeletonWarrior, skeletonArcher, hobgoblin] + nightHunters
                 + rareElitesFromRealm3 + rareElitesFromRealm4
-        case .gateOfRuin, .abyss:
+        case .gateOfRuin, .abyss, .fatesEcho:
             return all.filter { $0.rank != .boss }
         }
     }
 
     /// The champions a realm sends, in order: one for each boss wave, none twice, each a step up from the
-    /// last, and the realm's own great champion at the end. (The Abyss has no end and sends them all.)
+    /// last, and the realm's own great champion at the end. The Abyss sends the
+    /// strongest few and then Fate; Fate's Echo sends none — it is only the horde.
     static func bosses(for realm: RealmID) -> [EnemyKindID] {
         let list: [EnemyDefinition]
         switch realm {
@@ -778,7 +807,8 @@ enum EnemyCatalog {
             list = [bossVoidmaw, bossOathbreaker, bossSiegeTitan, bossBellkeeper, bossGildedRegent, bossIronSaint]
         case .gateOfRuin:
             list = [bossRimeTyrant, bossPlagueMonarch, bossEmberLord, bossVoidmaw, bossIronSaint, bossGraveWarden]
-        case .abyss: list = champions
+        case .abyss: list = Array(champions.suffix(FateTuning.abyssChampionsBeforeFate)) + [fate]
+        case .fatesEcho: list = []
         }
         return list.map(\.id)
     }

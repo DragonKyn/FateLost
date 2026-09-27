@@ -192,7 +192,37 @@ enum ArenaThemes {
                                particles: .motes, particleColor: RGBA(hex: 0xD04AA0, alpha: 0.5), particleRate: 12)
     )
 
+    /// Fate's Echo: where Fate stood, after. Pale where the Abyss was dark —
+    /// grey stone gone the colour of old bone, and Fate's own violet-white
+    /// drifting over it like ash that never lands.
+    static let fatesEcho = makeTheme(
+        palette: GroundPalette(
+            bases: [(0x3A3640, 0x4A4552, .speckled), (0x34303A, 0x423D4A, .smooth), (0x3E3944, 0x504A58, .patchy)],
+            accent: (0x4A3E62, 0x8A7AB8, .cracked),
+            road: (0x2E2A34, 0x26222C),
+            brokenRoad: (0x2A2630, 0x221E28)
+        ),
+        roads: nil,
+        decorations: fatesEchoDecorations,
+        atmosphere: Atmosphere(background: RGBA(hex: 0x0C0A12), vignette: RGBA(hex: 0x0A0814, alpha: 0.85),
+                               particles: .ash, particleColor: RGBA(hex: 0xB8A8FF, alpha: 0.55), particleRate: 16)
+    )
+
     // MARK: - Set dressing, one realm at a time
+
+    private static let fatesEchoDecorations: [DecorationRule] = [
+        // Fate's scythe where it fell, ringed by the Abyss's obelisks. The
+        // Hollow Throne stays the Abyss's own.
+        .cluster(ClusterRule(name: "Where Fate Fell", instances: 10, radius: 6, members: [
+            ClusterMember(kind: .fallenScythe, count: 1, arrangement: .center),
+            ClusterMember(kind: .blackObelisk, count: 5, arrangement: .ring),
+        ])),
+        .scatter(kind: .fallenScythe, count: 24, avoidRoads: false),
+        .scatter(kind: .floatingStone, count: 140, avoidRoads: false),
+        .scatter(kind: .blackObelisk, count: 90, avoidRoads: false),
+        .scatter(kind: .bones, count: 80, avoidRoads: false),
+        .scatter(kind: .skullPile, count: 40, avoidRoads: false),
+    ]
 
     /// The Fen: standing water, reeds and stumps, and a drowned graveyard
     /// nobody has been able to reach for a long time.
