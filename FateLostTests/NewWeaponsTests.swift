@@ -65,7 +65,6 @@ final class NewWeaponsTests: XCTestCase {
         let baseline = sim.sheet[.damage]
 
         sim.player.form = FormCatalog.bear.id
-        sim.combat.build.formRanks[FormCatalog.bear.id] = 1
         sim.refreshStats(force: true)
 
         XCTAssertGreaterThan(sim.sheet[.damage], baseline, "Hand Claws should carry their edge into the beast form")
@@ -77,7 +76,6 @@ final class NewWeaponsTests: XCTestCase {
         let baseline = sim.sheet[.damage]
 
         sim.player.form = FormCatalog.bear.id
-        sim.combat.build.formRanks[FormCatalog.bear.id] = 1
         sim.refreshStats(force: true)
 
         XCTAssertEqual(sim.sheet[.damage], baseline, accuracy: 0.0001,
