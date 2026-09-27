@@ -125,6 +125,10 @@ extension SpriteID {
     static let allyBlade: SpriteID = "ally.blade"
     /// A glowing mote, tinted per use.
     static let allyWisp: SpriteID = "ally.wisp"
+    /// A restyled companion's extra, planted or hung beside it rather than
+    /// worn, so it fits any silhouette.
+    static let allyExtraBanner: SpriteID = "ally.extra.banner"
+    static let allyExtraCharm: SpriteID = "ally.extra.charm"
 
     // Weapons (held and icon)
     static let weaponSword: SpriteID = "weapon.sword"

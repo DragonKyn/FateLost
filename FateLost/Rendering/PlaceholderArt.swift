@@ -210,6 +210,8 @@ enum PlaceholderArt {
         case .fxFlame: return flame()
         case .fxSlash: return slash()
         case .fxThrust: return thrust()
+        case .allyExtraBanner: return banner()
+        case .allyExtraCharm: return charm()
         case .fxSpark: return spark()
         case .fxRing: return ring()
         case .fxSplat: return splat()
@@ -642,6 +644,37 @@ enum PlaceholderArt {
             }
         }
         return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 0.5))
+    }
+
+    /// A small pennant on a short pole, drawn near-white so it takes a
+    /// companion's own tint the same way its body does. Planted beside it
+    /// rather than worn, so it fits any creature's silhouette.
+    private static func banner() -> Sprite {
+        let size = CGSize(width: 26, height: 42)
+        let image = render(size) { ctx in
+            fillPolygon(ctx, [CGPoint(x: 11, y: 4), CGPoint(x: 14, y: 4), CGPoint(x: 14, y: 40),
+                              CGPoint(x: 11, y: 40)], UIColor(rgb: 0x5A4A38))
+            let flag = [CGPoint(x: 14, y: 4), CGPoint(x: 25, y: 9.5), CGPoint(x: 19.5, y: 14),
+                       CGPoint(x: 25, y: 18.5), CGPoint(x: 14, y: 22)]
+            fillPolygon(ctx, flag, UIColor(rgb: 0xE8E2D4))
+            strokePolygon(ctx, flag, UIColor(rgb: 0x1A1512), width: 1)
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 1))
+    }
+
+    /// A little trophy on a cord, also drawn near-white to take the tint.
+    private static func charm() -> Sprite {
+        let size = CGSize(width: 20, height: 32)
+        let image = render(size) { ctx in
+            stroke(ctx, from: CGPoint(x: 10, y: 2), to: CGPoint(x: 10, y: 11), UIColor(rgb: 0x5A4A38), width: 1.2)
+            fillOval(ctx, CGRect(x: 4, y: 11, width: 12, height: 11), UIColor(rgb: 0xE8E2D4))
+            strokeOval(ctx, CGRect(x: 4, y: 11, width: 12, height: 11), UIColor(rgb: 0x1A1512), width: 1)
+            fillOval(ctx, CGRect(x: 6.8, y: 24, width: 6.4, height: 5.4), UIColor(rgb: 0xE8E2D4))
+            strokeOval(ctx, CGRect(x: 6.8, y: 24, width: 6.4, height: 5.4), UIColor(rgb: 0x1A1512), width: 1)
+            fillOval(ctx, CGRect(x: 6.6, y: 14.4, width: 2.4, height: 2.8), UIColor(rgb: 0x1A1512))
+            fillOval(ctx, CGRect(x: 11, y: 14.4, width: 2.4, height: 2.8), UIColor(rgb: 0x1A1512))
+        }
+        return Sprite(image: image, anchor: CGPoint(x: 0.5, y: 1))
     }
 
     private static func spark() -> Sprite {

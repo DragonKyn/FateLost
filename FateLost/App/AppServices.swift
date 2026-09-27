@@ -200,7 +200,8 @@ final class AppServices {
 
     /// Keeps the look the player has chosen, minus anything not yet bought.
     func setHero(_ look: HeroAppearance) {
-        let allowed = look.restricted(to: { profile.owns($0) })
+        var allowed = look.restricted(to: { profile.owns($0) })
+        allowed.companions = allowed.companions.restricted(to: { profile.owns($0) })
         guard allowed != hero else { return }
         hero = allowed
         heroStore.save(allowed)
@@ -213,6 +214,18 @@ final class AppServices {
     /// Buys a look from the character screen.
     @discardableResult
     func buyLook(_ option: HeroOption) -> Bool {
+        guard profile.buy(option) else { return false }
+        saveProfile()
+        return true
+    }
+
+    func owns(_ option: CompanionOption) -> Bool {
+        profile.owns(option)
+    }
+
+    /// Buys a companion restyle or extra from the character screen.
+    @discardableResult
+    func buyCompanion(_ option: CompanionOption) -> Bool {
         guard profile.buy(option) else { return false }
         saveProfile()
         return true

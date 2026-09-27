@@ -283,7 +283,8 @@ final class GameScene: SKScene {
         let enemies = EnemyRenderer(catalog: catalog, projection: projection, layer: standing,
                                     pointsPerWorldUnit: pointsPerWorldUnit)
         enemyRenderer = enemies
-        allyRenderer = AllyRenderer(catalog: catalog, projection: projection, layer: standing)
+        allyRenderer = AllyRenderer(catalog: catalog, projection: projection, layer: standing,
+                                    companions: dependencies.hero.companions)
         projectileRenderer = ProjectileRenderer(catalog: catalog, projection: projection, layer: standing)
         pickupRenderer = PickupRenderer(catalog: catalog, projection: projection, layer: standing)
         dropRenderer = DropRenderer(catalog: catalog, projection: projection, layer: standing)
@@ -514,7 +515,7 @@ final class GameScene: SKScene {
         playerView.position = selfScreen
         playerView.zPosition = DepthSorting.z(forScreenY: selfScreen.y)
         let screenVelocity = projection.toScreen(player.velocity)
-        playerView.setForm(simulation.activeForm)
+        playerView.setForm(simulation.activeForm?.customized(with: dependencies.hero.companions))
         playerView.apply(player, screenVelocity: screenVelocity, dt: frameDelta)
 
         cameraController.shakeEnabled = dependencies.settings.settings.cameraShakeEnabled

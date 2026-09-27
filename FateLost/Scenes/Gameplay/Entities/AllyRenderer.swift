@@ -18,6 +18,9 @@ final class AllyRenderer {
     private final class AllyView: SKNode {
         let shadowSprite: SKSpriteNode
         let body = SKSpriteNode()
+        /// A restyled companion's extra, planted or hung beside it. Hidden
+        /// unless `configure` gives it a texture.
+        let extraSprite = SKSpriteNode()
         /// A slim bar above the ally, shown only once it has been hurt.
         private let healthTrack = SKSpriteNode(color: .black, size: HealthBarMetrics.trackSize)
         private let healthFill = SKSpriteNode(color: HealthBarMetrics.fillColor, size: HealthBarMetrics.fillSize)
@@ -25,6 +28,9 @@ final class AllyRenderer {
         var lastSeenFrame = 0
         var facing: CGFloat = 1
         var age: CGFloat = 0
+        /// A player's chosen size for this companion, in place of its own
+        /// catalogue scale; nil where it hasn't been restyled.
+        var scaleOverride: CGFloat?
 
         init(catalog: SpriteCatalog) {
             shadowSprite = catalog.makeSprite(.shadow)
@@ -32,6 +38,9 @@ final class AllyRenderer {
             shadowSprite.zPosition = -0.5
             addChild(shadowSprite)
             addChild(body)
+            extraSprite.isHidden = true
+            extraSprite.zPosition = 0.4
+            addChild(extraSprite)
             healthTrack.zPosition = 6
             healthTrack.alpha = 0
             healthFill.anchorPoint = CGPoint(x: 0, y: 0.5)
@@ -69,15 +78,23 @@ final class AllyRenderer {
     private var views: [Int: AllyView] = [:]
     private var departed: [Int] = []
     private var frameNumber = 0
+    /// The local player's own restyles. Never applied to another party
+    /// member's summons: their own choices aren't part of what syncs over
+    /// the wire today.
+    private let companions: CompanionCustomization
 
-    init(catalog: SpriteCatalog, projection: IsometricProjection, layer: SKNode) {
+    init(catalog: SpriteCatalog, projection: IsometricProjection, layer: SKNode,
+        companions: CompanionCustomization = CompanionCustomization()) {
         self.catalog = catalog
         self.projection = projection
         self.layer = layer
+        self.companions = companions
         pool = NodePool(prewarm: 12, make: { AllyView(catalog: catalog) }, prepareForReuse: { view in
             view.spriteID = nil
             view.age = 0
             view.alpha = 1
+            view.scaleOverride = nil
+            view.extraSprite.isHidden = true
             view.showHealth(fraction: 1, timeSinceHurt: 99, height: 0)
         })
     }
@@ -106,7 +123,7 @@ final class AllyRenderer {
             view.position = screen
             view.zPosition = DepthSorting.z(forScreenY: screen.y)
 
-            let scale = ally.spec.scale
+            let scale = view.scaleOverride ?? ally.spec.scale
             // A quick lunge when striking.
             let lunge = CGFloat(max(0, 1 - ally.timeSinceAttack / 0.18))
             let screenHeading = projection.toScreen(ally.heading)
@@ -124,6 +141,7 @@ final class AllyRenderer {
                 view.body.xScale = view.facing * scale * (1 + 0.1 * lunge)
                 view.body.yScale = scale * (1 - 0.06 * lunge)
                 view.body.zRotation = 0
+                view.extraSprite.position = CGPoint(x: view.facing * -16 * scale, y: 4)
             }
 
             if ally.isMortal {
@@ -154,11 +172,35 @@ final class AllyRenderer {
         view.body.texture = catalog.texture(sprite)
         view.body.size = catalog.size(sprite)
         view.body.anchorPoint = catalog.anchor(sprite)
-        if let tint = spec.tint {
+
+        let target = CompanionTarget(summonKey: spec.key)
+        let look = target.map { companions[$0] }
+        if let tintID = look?.tint {
+            view.body.color = UIColor(rgb: HeroPalette.swatch(tintID, in: HeroPalette.trim).hex)
+            view.body.colorBlendFactor = spec.sprite == .allyWisp ? 1 : 0.65
+        } else if let tint = spec.tint {
             view.body.color = tint.uiColor
             view.body.colorBlendFactor = spec.sprite == .allyWisp ? 1 : 0.65
         } else {
             view.body.colorBlendFactor = 0
+        }
+        if let target, let look {
+            view.scaleOverride = CGFloat(target.catalogueScale * look.scale.multiplier)
+            switch look.extra {
+            case .none:
+                view.extraSprite.isHidden = true
+            case .banner, .charm:
+                let extraID: SpriteID = look.extra == .banner ? .allyExtraBanner : .allyExtraCharm
+                view.extraSprite.texture = catalog.texture(extraID)
+                view.extraSprite.size = catalog.size(extraID)
+                view.extraSprite.anchorPoint = catalog.anchor(extraID)
+                view.extraSprite.color = UIColor(rgb: HeroPalette.swatch(look.tint ?? "brass", in: HeroPalette.trim).hex)
+                view.extraSprite.colorBlendFactor = 0.6
+                view.extraSprite.isHidden = false
+            }
+        } else {
+            view.scaleOverride = nil
+            view.extraSprite.isHidden = true
         }
         let isOrbiting: Bool
         if case .orbit = spec.behavior {
@@ -168,6 +210,6 @@ final class AllyRenderer {
         }
         view.body.blendMode = spec.sprite == .allyWisp ? .add : .alpha
         view.shadowSprite.isHidden = isOrbiting
-        view.shadowSprite.setScale(0.6 * spec.scale)
+        view.shadowSprite.setScale(0.6 * (view.scaleOverride ?? spec.scale))
     }
 }

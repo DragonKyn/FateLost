@@ -380,7 +380,8 @@ enum HeroPalette {
 }
 
 /// The hero's look: a body, a cloak, a head, five colours and three kinds of
-/// extra (an emblem, metalwork and wings).
+/// extra (an emblem, metalwork and wings) — plus, saved alongside it, how
+/// every restyled companion looks.
 ///
 /// Purely cosmetic and saved on its own, apart from the Legacy board, so
 /// nothing that happens to a run or a profile can cost a player the
@@ -399,6 +400,7 @@ struct HeroAppearance: Codable, Equatable, Hashable {
     var detail: MetalDetail = .plain
     var wings: WingStyle = .plain
     var eyewear: EyewearStyle = .plain
+    var companions = CompanionCustomization()
 
     static let standard = HeroAppearance()
 
@@ -418,6 +420,8 @@ struct HeroAppearance: Codable, Equatable, Hashable {
         detail = (try? values.decodeIfPresent(MetalDetail.self, forKey: .detail)) ?? .plain
         wings = (try? values.decodeIfPresent(WingStyle.self, forKey: .wings)) ?? .plain
         eyewear = (try? values.decodeIfPresent(EyewearStyle.self, forKey: .eyewear)) ?? .plain
+        companions = (try? values.decodeIfPresent(CompanionCustomization.self, forKey: .companions))
+            ?? CompanionCustomization()
     }
 
     var cloakSwatch: HeroSwatch { HeroPalette.swatch(cloakColor, in: HeroPalette.cloak) }

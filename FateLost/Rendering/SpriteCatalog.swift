@@ -135,7 +135,7 @@ enum GameplaySprites {
         .enemyExplosiveElite,
         .allySkeleton, .allyBear, .allyTiger, .allyOwl, .allyImp, .allyWolf, .allyTreant, .allyBlade, .allyWisp,
         .allySkeletonArcher, .allySkeletonBrute, .allyBoneColossus, .allyTigerWhite, .allyWolfBlack, .allyHellhound,
-        .allyPitFiend, .formWarBear, .formDireWolf,
+        .allyPitFiend, .formWarBear, .formDireWolf, .allyExtraBanner, .allyExtraCharm,
         .weaponSword, .weaponBow, .weaponStaff,
         .weaponSai, .weaponKatana, .weaponDualDaggers, .weaponBoStaff, .weaponFlail,
         .weaponWarHammer, .weaponClaymore, .weaponBoomerang,

@@ -74,6 +74,32 @@ struct LegacyProfile: Codable, Equatable {
         return true
     }
 
+    // MARK: The menagerie
+    //
+    // Companion restyles share the hero wardrobe's `cosmetics` set: the ids
+    // are namespaced ("companion.…" against "wings.…" and the rest) so
+    // nothing collides, and it means one save, one migration path.
+
+    func owns(_ option: CompanionOption) -> Bool {
+        CompanionUnlocks.isFree(option) || cosmetics.contains(option.id)
+    }
+
+    func denial(for option: CompanionOption) -> String? {
+        if owns(option) { return "Already yours" }
+        let cost = CompanionUnlocks.cost(of: option)
+        return echoes >= cost ? nil : "Costs \(cost) echoes"
+    }
+
+    @discardableResult
+    mutating func buy(_ option: CompanionOption) -> Bool {
+        guard denial(for: option) == nil else { return false }
+        let cost = CompanionUnlocks.cost(of: option)
+        echoes -= cost
+        spent += cost
+        cosmetics.insert(option.id)
+        return true
+    }
+
     // MARK: Buying
 
     /// Whether a node's tier has been opened by what is already bought.
