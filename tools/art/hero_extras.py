@@ -308,28 +308,29 @@ def demon(g):
 
 
 def skeleton(g):
-    s = layer(f"heroWingsSkeleton{cap(g.build)}", f"Bare bone wings, ribs and a tattered membrane, behind a {g.build} frame.")
+    s = layer(f"heroWingsSkeleton{cap(g.build)}",
+             f"A fan of curved, jointed bone talons behind a {g.build} frame: no membrane, just the bones.")
+    finger_count = 6
     for side in (-1, 1):
-        bx, by = CX + side * 5, g.sy + 3
-        spines = []
-        for i in range(5):
-            t = i / 4
-            length = 19 - abs(t - 0.5) * 6
-            angle = math.radians(58 + t * 46)
-            spines.append((bx + side * length * math.cos(angle), by - length * math.sin(angle)))
-        # The membrane stretched between the spine tips, notched and tattered
-        # at the trailing edge rather than a clean curve.
-        membrane = [(bx, by)]
-        for i, tip in enumerate(spines):
-            membrane.append(tip)
-            if i < len(spines) - 1:
-                nxt = spines[i + 1]
-                membrane.append(((tip[0] + nxt[0]) / 2, (tip[1] + nxt[1]) / 2 + 3.6))
-        s.poly(membrane, ("cloak:0.3", 0.4), outline=BONE_SHADE, width=0.5)
-        # The spines themselves: a bone taper from the shoulder to each tip.
-        for tip in spines:
-            s.taper([(bx, by), tip], BONE, 1.6, 0.2, outline=INK, width=0.4)
-        s.dot(bx, by, 1.4, BONE_SHADE)
+        wrist = (CX + side * 4.4, g.sy + 5)
+        for i in range(finger_count):
+            t = i / (finger_count - 1)
+            # Spread from low and forward to high and back, longest in the middle.
+            angle = math.radians(18 + t * 96)
+            length = 12.5 + math.sin(t * math.pi) * 6.5
+            curl = 0.3 + 0.25 * t
+            points = [wrist]
+            steps = 4
+            for k in range(1, steps + 1):
+                frac = k / steps
+                bend = angle + curl * frac * frac
+                dist = length * frac
+                points.append((wrist[0] + side * dist * math.cos(bend), wrist[1] - dist * math.sin(bend)))
+            s.taper(points, BONE, 1.5, 0.2, outline=INK, width=0.4)
+            for p in points[1:-1]:
+                s.dot(p[0], p[1], 0.6, BONE_SHADE)
+        s.dot(wrist[0], wrist[1], 1.5, BONE_SHADE)
+        s.dot(wrist[0], wrist[1], 0.8, BONE)
     return s
 
 
