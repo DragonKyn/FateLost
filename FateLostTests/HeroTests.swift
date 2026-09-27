@@ -262,7 +262,7 @@ final class HeroTests: XCTestCase {
         profile.grant(echoes: -300)
         XCTAssertEqual(profile.echoes, 1_500)
         XCTAssertTrue(profile.buy(.wings(.angel)))
-        XCTAssertEqual(profile.echoes, 1_000)
+        XCTAssertEqual(profile.echoes, 1_500 - HeroUnlocks.cost(of: .wings(.angel)))
     }
 
     func testOptionIDsAreUnique() {
