@@ -751,7 +751,19 @@ final class PartyDeathAndReviveTests: XCTestCase {
 
 /// The breather every second wave, and what a party's run pays out.
 final class PartyBreatherAndPoolTests: XCTestCase {
+    /// The default three-hero party through two full waves, computed once
+    /// and copied out to every test that wants it: `GameSimulation` is a
+    /// value type, so each caller's copy is independent, and four tests
+    /// simulating the same two waves from scratch was most of this suite's
+    /// CI time for the same setup every time.
+    private static let restingPartyOfThree: GameSimulation = {
+        var sim = Party.make(3)
+        Party.run(&sim, seconds: sim.realm.waves.waveSeconds * 2 + 1)
+        return sim
+    }()
+
     private func restingParty(_ count: Int = 3) -> GameSimulation {
+        guard count != 3 else { return Self.restingPartyOfThree }
         var sim = Party.make(count)
         // Two full waves of the first realm, and a moment more.
         Party.run(&sim, seconds: sim.realm.waves.waveSeconds * 2 + 1)
