@@ -38,6 +38,10 @@ final class PlayerView: SKNode {
         static let swingFrom: CGFloat = 1.5
         static let swingTo: CGFloat = -2.1
         static let settleDuration: CGFloat = 0.14
+        /// A thrust weapon (spear, lance) doesn't rotate through a swing; it
+        /// levels off and lunges straight out along this angle instead.
+        static let thrustAngle: CGFloat = -0.08
+        static let thrustDistance: CGFloat = 16
         static let hurtFlashDuration: CGFloat = 0.18
         static let hurtColor = UIColor(red: 1, green: 0.2, blue: 0.15, alpha: 1)
         /// Seconds the cast glow pulses and fades.
@@ -72,6 +76,9 @@ final class PlayerView: SKNode {
     /// Weapon rest angle; bows are carried upright.
     private var restAngle: CGFloat
     private var weaponSprite: SpriteID
+    private let handPosition: CGPoint
+    /// Spear and lance stab straight out rather than swinging through an arc.
+    private var isThrustWeapon: Bool { weaponSprite == .weaponSpear || weaponSprite == .weaponLance }
 
     init(catalog: SpriteCatalog, weaponSprite: SpriteID, hand: CGPoint = BodyBuild.standard.hand,
          cloth: CGFloat = 1, shoulders: CGFloat = BodyBuild.standard.shoulderHeight) {
@@ -86,6 +93,7 @@ final class PlayerView: SKNode {
         shoulderHeight = shoulders * catalog.size(.playerCloak).height / PlaceholderArt.heroCanvas.height
         weapon = catalog.makeSprite(weaponSprite)
         self.weaponSprite = weaponSprite
+        handPosition = hand
         barrierGlow = catalog.makeSprite(.fxGlow)
         burnGlow = catalog.makeSprite(.fxGlow)
         castGlow = catalog.makeSprite(.fxGlow)
@@ -269,17 +277,28 @@ final class PlayerView: SKNode {
         if attacking {
             let t = attackAge / Style.attackDuration
             if attackIsMelee {
-                // Fast out, slow settle: most of the arc in the first third.
-                let eased = 1 - pow(1 - t, 3)
-                weapon.zRotation = Style.swingFrom + (Style.swingTo - Style.swingFrom) * eased
+                if isThrustWeapon {
+                    // Lunge straight out along the hand's own angle and back;
+                    // no arc, so it reads as a stab rather than a swing.
+                    let lunge = CGFloat(sin(Double(min(1, t)) * .pi)) * Style.thrustDistance
+                    weapon.position = CGPoint(x: handPosition.x + lunge, y: handPosition.y)
+                    weapon.zRotation = Style.thrustAngle
+                } else {
+                    // Fast out, slow settle: most of the arc in the first third.
+                    let eased = 1 - pow(1 - t, 3)
+                    weapon.position = handPosition
+                    weapon.zRotation = Style.swingFrom + (Style.swingTo - Style.swingFrom) * eased
+                }
             } else {
                 // A short recoil for bows and staves.
+                weapon.position = handPosition
                 weapon.zRotation = restAngle + 0.35 * sin(t * .pi)
             }
         } else {
+            weapon.position = handPosition
             let walk = restAngle + CGFloat(sin(phase + .pi / 2)) * 0.12 * speedFraction
             let settle = (attackAge - Style.attackDuration) / Style.settleDuration
-            if attackIsMelee, settle < 1 {
+            if attackIsMelee, settle < 1, !isThrustWeapon {
                 // Ease back from the end of the swing to the carry pose.
                 weapon.zRotation = Style.swingTo + (walk - Style.swingTo) * settle
             } else {

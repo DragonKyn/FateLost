@@ -202,37 +202,37 @@ enum StarterWeapons {
         spriteID: .weaponBoomerang
     )
 
-    /// A long thrust with real reach and a narrow arc: fewer enemies in the
-    /// cone than a sword, but caught at a distance nothing else here matches
-    /// this early.
+    /// A straight thrust, not a swing: a narrow point caught at a distance
+    /// nothing else here matches this early. Fewer enemies in the line than a
+    /// sword's cone, but it lands from further out.
     static let spear = WeaponDefinition(
         id: "starter.spear",
         name: "Spear",
-        summary: "A thrust with real reach. Keeps whatever it hits at arm's length.",
+        summary: "A straight stab with real reach. Keeps whatever it hits at arm's length.",
         baseDamage: 10,
         attackSpeed: 1.15,
-        range: 2.6,
+        range: 3.0,
         damageType: .physical,
         tags: [.melee, .weapon, .physical],
-        delivery: .meleeArc(arcDegrees: 45),
+        delivery: .meleeArc(arcDegrees: 20),
         targeting: .nearest,
         rarity: .uncommon,
         spriteID: .weaponSpear
     )
 
-    /// A heavier, slower spear with the longest reach and narrowest arc of
-    /// any melee weapon: one target, hit hard, from further away than
-    /// anything gets close enough to answer.
+    /// A heavier, slower spear with the longest reach and the narrowest line
+    /// of any melee weapon: one target, hit hard, from further away than
+    /// anything gets close enough to answer. Point first, not an edge.
     static let lance = WeaponDefinition(
         id: "starter.lance",
         name: "Lance",
         summary: "The longest reach in the rack, and the least room for error.",
         baseDamage: 23,
         attackSpeed: 0.55,
-        range: 2.8,
+        range: 3.4,
         damageType: .physical,
         tags: [.melee, .weapon, .physical, .twoHanded],
-        delivery: .meleeArc(arcDegrees: 45),
+        delivery: .meleeArc(arcDegrees: 14),
         targeting: .nearest,
         rarity: .epic,
         spriteID: .weaponLance
