@@ -4,6 +4,20 @@ import Foundation
 /// from Phase 6; until then it lives in memory.
 struct RealmProgress: Codable, Equatable {
     var conquered: Set<RealmID> = []
+    /// Difficulty modifiers switched on for a realm, kept between runs so a
+    /// chosen build of hardship doesn't have to be redone every time.
+    var activeModifiers: [RealmID: [RunModifierSelection]] = [:]
+
+    init() {}
+
+    /// Decoded field by field so a profile written before this field existed
+    /// still loads.
+    init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        conquered = try container.decodeIfPresent(Set<RealmID>.self, forKey: .conquered) ?? []
+        activeModifiers = try container.decodeIfPresent([RealmID: [RunModifierSelection]].self,
+                                                        forKey: .activeModifiers) ?? [:]
+    }
 }
 
 /// Campaign unlock rules, kept separate from UI and persistence so they can

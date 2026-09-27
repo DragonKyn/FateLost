@@ -94,6 +94,8 @@ struct RunSummary: Equatable {
     var outcome: Outcome = .defeated
     var wave: Int = 1
     var relics = RelicInventory()
+    /// The echo payout bonus this run's difficulty modifiers earned, if any.
+    var difficultyBonus: Double = 0
 }
 
 /// The gameplay scene.
@@ -678,7 +680,8 @@ final class GameScene: SKScene {
         onRunEnded?(RunSummary(realm: simulation.run.realmID, weapon: simulation.run.starterWeaponID,
                                secondsSurvived: seconds, stats: simulation.stats,
                                level: simulation.progression.level, allocation: simulation.allocation,
-                               outcome: outcome, wave: simulation.wave.index, relics: simulation.relics))
+                               outcome: outcome, wave: simulation.wave.index, relics: simulation.relics,
+                               difficultyBonus: simulation.difficultyEffects.payoutBonus))
     }
 
     // MARK: - Beacons

@@ -8,6 +8,7 @@ struct WeaponSelectView: View {
     @Environment(AppRouter.self) private var router
     @Environment(AppServices.self) private var services
     @State private var selectedID: WeaponID = StarterWeapons.sword.id
+    @State private var modifierSelections: [RunModifierSelection] = []
 
     var body: some View {
         ZStack {
@@ -18,6 +19,13 @@ struct WeaponSelectView: View {
                                subtitle: "\(realm.name) — your weapon does not decide what you become.") {
                     services.audio.play(.uiBack)
                     router.show(.realmSelect)
+                }
+
+                if services.isDifficultyEligible(realm) {
+                    DifficultyModifiersSection(realm: realm.id, selections: $modifierSelections)
+                        .onChange(of: modifierSelections) { _, newValue in
+                            services.setActiveModifiers(newValue, for: realm.id)
+                        }
                 }
 
                 ScrollView(.horizontal, showsIndicators: false) {
@@ -48,7 +56,8 @@ struct WeaponSelectView: View {
                     Button("Enter the Realm") {
                         services.haptics.play(.uiTap)
                         services.audio.play(.uiConfirm)
-                        router.startRun(.new(realm: realm.id, weapon: selectedID), services: services)
+                        router.startRun(.new(realm: realm.id, weapon: selectedID, modifiers: modifierSelections),
+                                        services: services)
                     }
                     .buttonStyle(.flPrimary)
                     .frame(width: 260)
@@ -57,6 +66,95 @@ struct WeaponSelectView: View {
             .padding(.horizontal, FLTheme.Metrics.screenPadding)
             .padding(.vertical, FLTheme.Metrics.screenPaddingVertical)
         }
+        .onAppear {
+            modifierSelections = services.activeModifiers(for: realm.id)
+        }
+    }
+}
+
+/// Toggles for the difficulty modifiers a conquered realm has opened up: a
+/// row of chips, each worth more echoes when switched on, with a slider for
+/// the one modifier that has a range.
+private struct DifficultyModifiersSection: View {
+    let realm: RealmID
+    @Binding var selections: [RunModifierSelection]
+
+    private var payoutBonus: Double { DifficultyModifierCatalog.effects(for: selections).payoutBonus }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                FLSectionLabel(text: "Difficulty Modifiers")
+                Spacer()
+                if payoutBonus > 0 {
+                    Text("+\(Int((payoutBonus * 100).rounded()))% echoes")
+                        .font(FLTheme.Typeface.number(12))
+                        .foregroundStyle(FLTheme.Palette.emberBright)
+                }
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(DifficultyModifierCatalog.all) { definition in
+                        ModifierChip(definition: definition, isOn: isOn(definition.id)) {
+                            toggle(definition.id)
+                        }
+                    }
+                }
+                .padding(.horizontal, 2)
+            }
+            .scrollClipDisabled()
+
+            if let index = selections.firstIndex(where: { $0.id == .reinforcedEnemies }) {
+                let bonus = 50 + Int((selections[index].intensity * 200).rounded())
+                HStack(spacing: 10) {
+                    Text("+\(bonus)% enemy health")
+                        .font(FLTheme.Typeface.body(12))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                        .frame(width: 140, alignment: .leading)
+                    Slider(value: Binding(
+                        get: { selections[index].intensity },
+                        set: { selections[index].intensity = $0 }
+                    ), in: 0...1)
+                }
+            }
+        }
+    }
+
+    private func isOn(_ id: DifficultyModifierID) -> Bool {
+        selections.contains { $0.id == id }
+    }
+
+    private func toggle(_ id: DifficultyModifierID) {
+        if let index = selections.firstIndex(where: { $0.id == id }) {
+            selections.remove(at: index)
+        } else {
+            selections.append(RunModifierSelection(id: id, intensity: 0.2))
+        }
+    }
+}
+
+private struct ModifierChip: View {
+    let definition: DifficultyModifierDefinition
+    let isOn: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(definition.name)
+                    .font(FLTheme.Typeface.label(12))
+                    .foregroundStyle(isOn ? FLTheme.Palette.ember : FLTheme.Palette.parchment)
+                Text("+\(Int((definition.echoBonusAtMinimum * 100).rounded()))% echoes")
+                    .font(FLTheme.Typeface.number(10))
+                    .foregroundStyle(FLTheme.Palette.parchmentDim)
+            }
+            .padding(.horizontal, 10)
+            .padding(.vertical, 6)
+        }
+        .buttonStyle(.plain)
+        .flPanel(highlighted: isOn)
+        .help(definition.tagline)
     }
 }
 

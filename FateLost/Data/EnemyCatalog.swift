@@ -722,7 +722,20 @@ enum EnemyCatalog {
     /// Each roster mixes two or three families so a realm has a face of its
     /// own, and the later realms fold in what came before: by the Gate of
     /// Ruin everything you have already learned to beat is there at once.
-    static func roster(for realm: RealmID) -> [EnemyDefinition] {
+    /// - Parameter includingRareElites: forces the Hollow Forest's and Frozen
+    ///   Wastes' rare elites into an earlier realm's roster, for the Extra
+    ///   Elites and Elitist difficulty modifiers. Realms that already field
+    ///   them are unaffected.
+    static func roster(for realm: RealmID, includingRareElites forced: Bool = false) -> [EnemyDefinition] {
+        let base = baseRoster(for: realm)
+        guard forced else { return base }
+        var extra: [EnemyDefinition] = []
+        if !base.contains(where: { $0.id == shieldbreaker.id }) { extra.append(shieldbreaker) }
+        if !base.contains(where: { $0.id == explosiveElite.id }) { extra.append(explosiveElite) }
+        return base + extra
+    }
+
+    private static func baseRoster(for realm: RealmID) -> [EnemyDefinition] {
         switch realm {
         case .ashenWilds:
             return goblinWarband

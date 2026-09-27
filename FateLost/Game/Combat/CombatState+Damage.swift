@@ -258,7 +258,7 @@ extension CombatState {
 
         let armor = max(0, sheet[.armor])
         let reduction = min(0.8, armor / (armor + 75))
-        var amount = godMode ? 0 : rawAmount * (1 - reduction)
+        var amount = godMode ? 0 : rawAmount * playerDamageTakenScale * (1 - reduction)
 
         if player.barrier > 0 {
             let absorbed = min(player.barrier, amount)

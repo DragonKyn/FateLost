@@ -81,6 +81,9 @@ struct CombatState {
 
     var enemyHealthScale: Double = 1
     var enemyDamageScale: Double = 1
+    /// Extra fraction of damage the player takes, from Glass Cannon. Set
+    /// once at run start and never recomputed.
+    var playerDamageTakenScale: Double = 1
 
     // MARK: The party
     //
@@ -230,7 +233,8 @@ extension CombatState {
     /// The properties every hero shares.
     static let sharedFieldNames: [String] = [
         "world", "tuning", "enemies", "orbs", "drops", "shrines", "curseRemaining", "grid", "lootRandom", "nearby",
-        "nearbySecondary", "nextEntityID", "enemyHealthScale", "enemyDamageScale", "hostileProjectiles",
+        "nearbySecondary", "nextEntityID", "enemyHealthScale", "enemyDamageScale", "playerDamageTakenScale",
+        "hostileProjectiles",
         "worldAnchors", "incidents", "partyEffects", "hazards", "bossBrains", "eliteBrains", "portals", "rift",
         "reviveMarkers", "activeHero", "isParty",
     ]

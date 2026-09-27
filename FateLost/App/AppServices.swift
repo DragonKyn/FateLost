@@ -107,6 +107,28 @@ final class AppServices {
         return RealmUnlockRules.isUnlocked(realm, progress: profile.realms, catalog: RealmCatalog.all)
     }
 
+    /// Whether a realm may have difficulty modifiers switched on: it has been
+    /// conquered once, and it isn't the endless Abyss (which has no "beaten"
+    /// to gate on, and is already the hardest thing on offer).
+    func isDifficultyEligible(_ realm: RealmDefinition) -> Bool {
+        profile.realms.conquered.contains(realm.id) && !realm.isEndless
+    }
+
+    /// Difficulty modifiers currently switched on for a realm.
+    func activeModifiers(for realm: RealmID) -> [RunModifierSelection] {
+        profile.realms.activeModifiers[realm] ?? []
+    }
+
+    /// Switches a realm's chosen modifiers to exactly this set.
+    func setActiveModifiers(_ selections: [RunModifierSelection], for realm: RealmID) {
+        if selections.isEmpty {
+            profile.realms.activeModifiers.removeValue(forKey: realm)
+        } else {
+            profile.realms.activeModifiers[realm] = selections
+        }
+        saveProfile()
+    }
+
     /// The bonuses the Legacy board grants a new run.
     var legacyModifiers: [StatModifier] {
         developer.disableLegacyBonuses ? [] : profile.modifiers

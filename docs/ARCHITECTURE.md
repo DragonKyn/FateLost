@@ -521,3 +521,26 @@ three. The first realm's goblin archers fire about 30% less often.
 Legacy profile, the hero and the settings, along with anything moved aside as
 corrupt. Each store erases only its own files, so the reset is testable
 without touching a real save, and it is always behind a confirmation.
+
+## 25. End-game difficulty modifiers
+
+Once a realm is conquered (the endless Abyss excepted — it has no "beaten"
+to gate on, and is already the hardest thing on offer), `WeaponSelectView`
+opens a strip of toggles for it: `DifficultyModifierCatalog` (14 of them,
+`DifficultyModifierID`) each turn one knob the realm already had, and pay an
+echo bonus for turning it. `DifficultyModifierCatalog.effects(for:)` folds a
+run's chosen selections into one `DifficultyModifierEffects` value, computed
+once in `GameSimulation.init` and read by whichever system owns that knob:
+`enemyHealthScale`/`enemyDamageScale` (Reinforced Enemies, Vicious Foes),
+`SpawnSystem`'s elite cap and weight (Extra Elites, Elitist — which also
+forces the Hollow Forest's and Frozen Wastes' rare elites into an earlier
+realm's roster), the spawn ring and rate (Closing In, Swarm), a champion's own
+health at the moment it is placed (Bloodthirsty Bosses), `player.timeStationary`
+crossing a tick boundary (Don't Stop), and a clutch of plain `StatModifier`s
+folded in with the Legacy board's own (Glass Cannon, Iron Lung, No Second
+Wind, Thin Ice, Slow Recovery). `RunConfiguration.modifiers` carries the
+choice into the run; `RunSummary.difficultyBonus` carries the earned payout
+bonus back out, folded into `LegacyEchoes.earned`'s result the same way the
+Legacy board's own `echoGain` stat already is. Chosen modifiers persist per
+realm in `RealmProgress.activeModifiers`, decoded field by field like the rest
+of the profile.

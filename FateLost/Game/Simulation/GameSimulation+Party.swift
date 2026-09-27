@@ -48,7 +48,7 @@ extension GameSimulation {
     static let sharedFieldNames: [String] = [
         "run", "realm", "arena", "tuning", "combat", "elapsed", "cheats", "slots", "activeHero", "members",
         "timeSinceWipe", "stepCounter", "spawnFocusScratch", "targetScratch", "mirror", "movement", "spawner", "enemyAI",
-        "waves", "projectileSystem", "statusSystem", "shrineWave",
+        "waves", "projectileSystem", "statusSystem", "shrineWave", "difficultyEffects",
     ]
 
     // MARK: - Building a party
@@ -100,7 +100,7 @@ extension GameSimulation {
             statSignature: nil,
             alliesNeedSync: true,
             timeSinceDefeat: nil,
-            legacy: config.legacy,
+            legacy: config.legacy + difficultyEffects.extraStatModifiers,
             bonusRerolls: max(0, config.bonusRerolls),
             combat: HeroCombat(seed: seed)))
         members.append(PartyMember(id: config.id, name: config.name, slot: config.slot,

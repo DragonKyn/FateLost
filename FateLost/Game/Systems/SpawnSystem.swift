@@ -41,14 +41,27 @@ struct SpawnSystem {
     var wave = 1
     /// Multiplier on the spawn rate from wave pressure and the boss phase.
     var rateMultiplier: Double = 1
+    /// Extra fraction added to a rare elite's own spawn weight, from the
+    /// Elitist difficulty modifier.
+    var eliteWeightBonus: Double = 0
+    /// How many rare elites may be alive together, from the Extra Elites
+    /// difficulty modifier. One (the ordinary rule) unless raised.
+    var maxSimultaneousElites: Int = 1
+    /// Extra fraction of move speed an ordinary spawn rolls with, from the
+    /// Berserker Foes difficulty modifier.
+    var moveSpeedBonus: Double = 0
 
     /// Fractional enemies owed, carried between steps.
     private var accumulator: Double = 0
 
-    init(tuning: SpawnTuning, roster: [EnemyDefinition]) {
+    init(tuning: SpawnTuning, roster: [EnemyDefinition], eliteWeightBonus: Double = 0,
+        maxSimultaneousElites: Int = 1, moveSpeedBonus: Double = 0) {
         self.tuning = tuning
         self.roster = roster
         spawnRadius = tuning.spawnRadius
+        self.eliteWeightBonus = eliteWeightBonus
+        self.maxSimultaneousElites = max(1, maxSimultaneousElites)
+        self.moveSpeedBonus = moveSpeedBonus
     }
 
     /// Enemies per second at a moment in the run.
@@ -84,9 +97,10 @@ struct SpawnSystem {
                 break
             }
             let definition = roster[pick(from: &combat.random)]
-            // A rare elite's attacks are only fair alone: never more than one
-            // on the field together, whatever the horde around it is doing.
-            if definition.eliteKit != nil, Self.hasLivingRareElite(combat) {
+            // A rare elite's attacks are only fair alone: never more than
+            // `maxSimultaneousElites` on the field together, whatever the
+            // horde around it is doing.
+            if definition.eliteKit != nil, Self.livingRareEliteCount(combat) >= maxSimultaneousElites {
                 continue
             }
             let focus = Self.pickFocus(focuses, random: &combat.random)
@@ -94,11 +108,12 @@ struct SpawnSystem {
         }
     }
 
-    private static func hasLivingRareElite(_ combat: CombatState) -> Bool {
+    private static func livingRareEliteCount(_ combat: CombatState) -> Int {
+        var count = 0
         for index in 0..<combat.enemies.count where combat.enemies.definition(at: index).eliteKit != nil {
-            return true
+            count += 1
         }
-        return false
+        return count
     }
 
     /// Places `count` enemies at once, ignoring the natural cap (developer
@@ -151,26 +166,31 @@ struct SpawnSystem {
     }
 
     /// A roster index, weighted by spawn weight among the kinds this wave
-    /// allows.
+    /// allows. A rare elite's own weight is boosted by `eliteWeightBonus`
+    /// (the Elitist difficulty modifier).
     private func pick(from random: inout SeededRandom) -> Int {
         var total = 0.0
         for definition in roster where definition.earliestWave <= wave {
-            total += definition.spawnWeight
+            total += weight(of: definition)
         }
         guard total > 0 else { return 0 }
         var roll = random.unit() * total
         for (index, definition) in roster.enumerated() where definition.earliestWave <= wave {
-            roll -= definition.spawnWeight
+            roll -= weight(of: definition)
             if roll < 0 { return index }
         }
         return 0
+    }
+
+    private func weight(of definition: EnemyDefinition) -> Double {
+        definition.eliteKit != nil ? definition.spawnWeight * (1 + eliteWeightBonus) : definition.spawnWeight
     }
 
     private func spawn(_ definition: EnemyDefinition, into combat: inout CombatState, focus: SpawnFocus,
                        speedVariance: CGFloat) {
         let position = ringPosition(around: focus, random: &combat.random, world: combat.world)
         let kind = combat.enemies.kindIndex(for: definition)
-        let scale = 1 + CGFloat(combat.random.range(-1, 1)) * speedVariance
+        let scale = (1 + CGFloat(combat.random.range(-1, 1)) * speedVariance) * CGFloat(1 + moveSpeedBonus)
         let strain = EnemyStrain.roll(for: definition.rank, wave: wave, random: &combat.random)
         let id = combat.makeEntityID()
         combat.enemies.append(id: id, kind: kind, position: position, speedScale: scale,

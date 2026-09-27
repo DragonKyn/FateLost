@@ -251,7 +251,8 @@ struct LegacyProfile: Codable, Equatable {
                                                 realmMultiplier: realm.legacyMultiplier,
                                                 conquered: summary.outcome == .conquered)
         let gainBonus = modifiers.filter { $0.stat == .echoGain }.reduce(0.0) { $0 + $1.value }
-        let earned = gainBonus > 0 ? max(1, Int((Double(base) * (1 + gainBonus)).rounded())) : base
+        let totalBonus = gainBonus + max(0, summary.difficultyBonus)
+        let earned = totalBonus > 0 ? max(1, Int((Double(base) * (1 + totalBonus)).rounded())) : base
         echoes += earned
         lifetime.add(summary, realm: realm, echoes: earned)
         if summary.outcome == .conquered {

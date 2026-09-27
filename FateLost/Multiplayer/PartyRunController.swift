@@ -265,6 +265,7 @@ final class PartyRunController: PartyRunDriver {
         summary.outcome = outcome
         summary.wave = simulation.wave.index
         summary.relics = simulation.relics
+        summary.difficultyBonus = simulation.difficultyEffects.payoutBonus
         return summary
     }
 

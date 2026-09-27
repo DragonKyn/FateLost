@@ -6,9 +6,12 @@ struct RunConfiguration: Hashable {
     let realmID: RealmID
     let starterWeaponID: WeaponID
     let seed: UInt64
+    /// Difficulty modifiers switched on for this run, if any.
+    var modifiers: [RunModifierSelection] = []
 
-    static func new(realm: RealmID, weapon: WeaponID) -> RunConfiguration {
-        RunConfiguration(realmID: realm, starterWeaponID: weapon, seed: UInt64.random(in: .min ... .max))
+    static func new(realm: RealmID, weapon: WeaponID, modifiers: [RunModifierSelection] = []) -> RunConfiguration {
+        RunConfiguration(realmID: realm, starterWeaponID: weapon, seed: UInt64.random(in: .min ... .max),
+                        modifiers: modifiers)
     }
 }
 
@@ -67,6 +70,9 @@ struct GameSimulation {
     var legacy: [StatModifier]
     /// Extra rerolls on every find, from the relic codex.
     var bonusRerolls: Int
+    /// What this run's difficulty modifiers add up to. Computed once from
+    /// `run.modifiers` at construction, since they never change mid-run.
+    let difficultyEffects: DifficultyModifierEffects
 
     var player: PlayerState
     var combat: CombatState
@@ -175,7 +181,9 @@ struct GameSimulation {
     init(run: RunConfiguration, tuning: GameTuning, legacy: [StatModifier] = [], bonusRerolls: Int = 0) {
         self.run = run
         self.tuning = tuning
-        self.legacy = legacy
+        let difficultyEffects = DifficultyModifierCatalog.effects(for: run.modifiers)
+        self.difficultyEffects = difficultyEffects
+        self.legacy = legacy + difficultyEffects.extraStatModifiers
         self.bonusRerolls = max(0, bonusRerolls)
         let realm = RealmCatalog.realm(run.realmID)
         self.realm = realm
@@ -186,8 +194,15 @@ struct GameSimulation {
         // Combat randomness has its own stream so it never shifts the arena.
         combat = CombatState(world: arena.world, tuning: tuning.combat, gridCellSize: tuning.enemyAI.gridCellSize,
                              capacity: tuning.enemyAI.hardCap, seed: run.seed ^ 0xC0_4BA7)
+        combat.playerDamageTakenScale = 1 + difficultyEffects.playerDamageTakenBonus
         movement = MovementSystem(tuning: tuning.player)
-        spawner = SpawnSystem(tuning: tuning.spawning, roster: EnemyCatalog.roster(for: run.realmID))
+        spawner = SpawnSystem(tuning: tuning.spawning,
+                             roster: EnemyCatalog.roster(for: run.realmID,
+                                                         includingRareElites: difficultyEffects.includesRareElites),
+                             eliteWeightBonus: difficultyEffects.eliteWeightBonus,
+                             maxSimultaneousElites: difficultyEffects.maxSimultaneousElites,
+                             moveSpeedBonus: difficultyEffects.enemyMoveSpeedBonus)
+        spawner.spawnRadius *= CGFloat(1 - difficultyEffects.spawnRadiusFraction)
         waves = WaveSystem(plan: realm.waves, conquestWave: realm.conquestWave)
         enemyAI = EnemyAISystem(tuning: tuning.enemyAI, combatTuning: tuning.combat)
         weaponSystem = WeaponSystem(weapon: weapon, tuning: tuning.combat,
@@ -397,11 +412,17 @@ struct GameSimulation {
         }
         spawner.wave = waves.state.index
         spawner.rateMultiplier = waves.pressure * waves.spawnShare * partySpawnFactor()
+            * (1 + difficultyEffects.spawnRateBonus)
         combat.stats.wave = max(combat.stats.wave, waves.state.index)
         guard let due, let definition = EnemyCatalog.definition(for: due),
               let focus = spawnFocusScratch.first else { return }
+        // Bloodthirsty Bosses lifts a champion's health for its own arrival
+        // only, without touching the horde's `enemyHealthScale`.
+        let previousHealthScale = combat.enemyHealthScale
+        combat.enemyHealthScale *= 1 + difficultyEffects.championHealthBonus
         let id = spawner.spawnNamed(definition, into: &combat, focus: focus,
                                     distance: spawner.spawnRadius * 0.8)
+        combat.enemyHealthScale = previousHealthScale
         guard let index = combat.index(ofEnemy: id) else {
             // The champion never made it onto the field. Carry on with the
             // wave rather than leaving the run waiting for a fight that
@@ -463,7 +484,9 @@ struct GameSimulation {
         let crowd = 1 + tuning.party.enemyHealthPerExtraHero * Double(max(0, heroCount - 1))
         combat.enemyHealthScale = (1 + scaling.enemyHealthPerMinute * minutes
             + scaling.enemyHealthPerMinuteSquared * minutes * minutes) * curse * crowd
+            * (1 + difficultyEffects.enemyHealthBonus)
         combat.enemyDamageScale = (1 + scaling.enemyDamagePerMinute * minutes) * curse
+            * (1 + difficultyEffects.enemyDamageBonus)
     }
 
     mutating func tickTimers(_ dt: TimeInterval) {
@@ -472,7 +495,16 @@ struct GameSimulation {
         player.timeSinceHit += dt
         player.timeSinceKill += dt
         player.timeSinceDodge += dt
+        let stationaryBefore = player.timeStationary
         player.timeStationary = player.isMoving ? 0 : player.timeStationary + dt
+        if difficultyEffects.dontStopEnabled, !player.isDefeated {
+            let ticks = Self.dontStopTicks(at: player.timeStationary) - Self.dontStopTicks(at: stationaryBefore)
+            if ticks > 0 {
+                let damage = player.maxHealth * DifficultyModifierTuning.dontStopDamageFraction * Double(ticks)
+                player.health = max(1, player.health - damage)
+                combat.stats.damageTaken += damage
+            }
+        }
         player.tickBuffs(dt)
         player.tickBurns(dt)
         if let target = player.pullTarget, player.pullSecondsRemaining > 0 {
@@ -497,6 +529,15 @@ struct GameSimulation {
         }
         combat.cheatDeathCooldown = max(0, combat.cheatDeathCooldown - dt)
         AllySystem.tickCooldowns(&combat, dt: dt)
+    }
+
+    /// How many Don't Stop ticks a stretch of standing still this long has
+    /// crossed: zero through the grace period, one a tick-interval later,
+    /// and one more each interval after that.
+    private static func dontStopTicks(at timeStationary: Double) -> Int {
+        let grace = DifficultyModifierTuning.dontStopGraceSeconds
+        guard timeStationary > grace else { return 0 }
+        return Int((timeStationary - grace) / DifficultyModifierTuning.dontStopTickInterval) + 1
     }
 
     mutating func updateConditions() {
