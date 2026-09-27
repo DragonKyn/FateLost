@@ -8,7 +8,10 @@ struct RealmProgress: Codable, Equatable {
     /// chosen build of hardship doesn't have to be redone every time.
     var activeModifiers: [RealmID: [RunModifierSelection]] = [:]
 
-    init() {}
+    init(conquered: Set<RealmID> = [], activeModifiers: [RealmID: [RunModifierSelection]] = [:]) {
+        self.conquered = conquered
+        self.activeModifiers = activeModifiers
+    }
 
     /// Decoded field by field so a profile written before this field existed
     /// still loads.
