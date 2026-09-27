@@ -146,6 +146,14 @@ struct SkillTreeCanvas: View {
                     Text(requirementLine(order))
                         .font(FLTheme.Typeface.body(11))
                         .foregroundStyle(color)
+                    // The tier headers below only have room for a bare
+                    // "3 + 4"; say once what the two numbers are.
+                    if let primaryName = SkillCatalog.archetype(order.primary)?.name,
+                       let synergyName = SkillCatalog.archetype(order.synergy)?.name {
+                        Text("Each tier below: \(primaryName) + \(synergyName)")
+                            .font(FLTheme.Typeface.body(10))
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    }
                 }
             }
             HStack(spacing: 0) {
@@ -170,20 +178,19 @@ struct SkillTreeCanvas: View {
     }
 
     private func requirementLine(_ order: HybridOrderDefinition) -> String {
-        let primaryName = SkillCatalog.archetype(order.primary)?.name ?? ""
-        let synergyName = SkillCatalog.archetype(order.synergy)?.name ?? ""
-        return "\(draft.points(in: order.primary)) in \(primaryName)"
-            + " · \(draft.points(in: order.synergy)) in \(synergyName)"
+        order.requirementSummary(for: draft)
     }
 
     private func orderTierHeader(_ tier: SkillTier, nodes: Int) -> some View {
         let rules = SkillTreeRules.standard
         let primaryNeed = rules.threshold(for: tier)
         let synergyNeed = rules.synergyThreshold(for: tier)
-        let synergy = HybridOrders.order(board.orderID ?? .spellblade)?.synergy
+        let order = HybridOrders.order(board.orderID ?? .spellblade)
         let unlocked = draft.points(in: archetype, below: tier) >= primaryNeed
-            && (synergy.map { draft.points(in: $0) >= synergyNeed } ?? true)
-        return TierHeader(tier: tier, unlocked: unlocked, threshold: primaryNeed, second: synergyNeed)
+            && (order.map { draft.points(in: $0.synergy) >= synergyNeed } ?? true)
+        return TierHeader(tier: tier, unlocked: unlocked, threshold: primaryNeed, second: synergyNeed,
+                          primaryName: SkillCatalog.archetype(archetype)?.name,
+                          secondName: order.flatMap { SkillCatalog.archetype($0.synergy)?.name })
             .frame(width: Metrics.node * CGFloat(nodes) + Metrics.gap * CGFloat(nodes - 1))
     }
 
@@ -218,6 +225,10 @@ private struct TierHeader: View {
     let threshold: Int
     /// An order's second requirement, shown as "3 + 4".
     var second: Int?
+    /// Which archetype `threshold` counts, for VoiceOver (the compact
+    /// number pair on screen has no room to say so).
+    var primaryName: String?
+    var secondName: String?
 
     var body: some View {
         HStack(spacing: 4) {
@@ -237,7 +248,15 @@ private struct TierHeader: View {
         .foregroundStyle(unlocked ? FLTheme.Palette.parchment : FLTheme.Palette.locked)
         .lineLimit(1)
         .minimumScaleFactor(0.7)
-        .accessibilityLabel("\(tier.displayName), needs \(threshold) points")
+        .accessibilityLabel(accessibilityText)
+    }
+
+    private var accessibilityText: String {
+        guard let second, let secondName else {
+            return "\(tier.displayName), needs \(threshold) points"
+        }
+        let primary = primaryName ?? "the primary tree"
+        return "\(tier.displayName), needs \(threshold) points in \(primary) and \(second) in \(secondName)"
     }
 }
 

@@ -288,7 +288,8 @@ private struct BoardRail: View {
 
                 ForEach(HybridOrders.all) { order in
                     OrderSigil(order: order, points: BuildTitle.points(in: order.id, of: allocation),
-                               isOpen: isOpen(order), isSelected: selection == .order(order.id))
+                               isOpen: isOpen(order), isSelected: selection == .order(order.id),
+                               requirement: order.requirementSummary(for: allocation))
                         .onTapGesture { onSelect(.order(order.id)) }
                 }
             }
@@ -299,18 +300,19 @@ private struct BoardRail: View {
 
     /// Whether the order's first nodes could be taken right now.
     private func isOpen(_ order: HybridOrderDefinition) -> Bool {
-        let rules = SkillTreeRules.standard
-        return allocation.points(in: order.primary, below: .two) >= rules.threshold(for: .two)
-            && allocation.points(in: order.synergy) >= rules.synergyThreshold(for: .two)
+        order.isOpen(for: allocation)
     }
 }
 
-/// One order in the rail. Dim until both its trees have been fed.
+/// One order in the rail. Dim until both its trees have been fed, with a
+/// small lock badge and a long-press hint saying exactly what is missing.
 private struct OrderSigil: View {
     let order: HybridOrderDefinition
     let points: Int
     let isOpen: Bool
     let isSelected: Bool
+    /// What's still needed to open this order, or that it already is.
+    let requirement: String
 
     var body: some View {
         HStack(spacing: 0) {
@@ -336,6 +338,15 @@ private struct OrderSigil: View {
                             .padding(.vertical, 0.5)
                             .background(Capsule().fill(FLTheme.Palette.emberBright))
                             .offset(x: 5, y: -2)
+                    } else if !isOpen {
+                        // A plain lock, not just a dimmer icon, so "this
+                        // needs something first" reads at a glance.
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(FLTheme.Palette.abyss)
+                            .padding(3)
+                            .background(Circle().fill(FLTheme.Palette.locked))
+                            .offset(x: 4, y: -2)
                     }
                 }
                 Text(order.name)
@@ -347,8 +358,9 @@ private struct OrderSigil: View {
             .frame(maxWidth: .infinity)
         }
         .contentShape(Rectangle())
+        .help(requirement)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(order.name) order, \(points) points, \(isOpen ? "open" : "locked")")
+        .accessibilityLabel("\(order.name) order, \(requirement)")
         .accessibilityAddTraits(isSelected ? [.isButton, .isSelected] : .isButton)
     }
 }

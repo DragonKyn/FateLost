@@ -92,3 +92,35 @@ enum HybridOrders {
         all.first { $0.id == id }
     }
 }
+
+extension HybridOrderDefinition {
+    /// Whether this order's gate is open: the entry tier's thresholds met in
+    /// both the primary and synergy archetypes.
+    func isOpen(for allocation: SkillAllocation, rules: SkillTreeRules = .standard) -> Bool {
+        allocation.points(in: primary, below: .two) >= rules.threshold(for: .two)
+            && allocation.points(in: synergy) >= rules.synergyThreshold(for: .two)
+    }
+
+    /// A plain-English line: exactly what is still needed to open this
+    /// order, or that it already is — never bare numbers with nothing
+    /// saying what they mean.
+    func requirementSummary(for allocation: SkillAllocation, rules: SkillTreeRules = .standard) -> String {
+        let primaryName = SkillCatalog.archetype(primary)?.name ?? ""
+        let synergyName = SkillCatalog.archetype(synergy)?.name ?? ""
+        let primaryNeed = rules.threshold(for: .two)
+        let synergyNeed = rules.synergyThreshold(for: .two)
+        let primaryHave = allocation.points(in: primary, below: .two)
+        let synergyHave = allocation.points(in: synergy)
+        if primaryHave >= primaryNeed, synergyHave >= synergyNeed {
+            return "Open — \(primaryHave) in \(primaryName), \(synergyHave) in \(synergyName)"
+        }
+        var needs: [String] = []
+        if primaryHave < primaryNeed {
+            needs.append("\(primaryNeed - primaryHave) more in \(primaryName)")
+        }
+        if synergyHave < synergyNeed {
+            needs.append("\(synergyNeed - synergyHave) more in \(synergyName)")
+        }
+        return "Needs \(needs.joined(separator: " and "))"
+    }
+}

@@ -129,6 +129,41 @@ final class OrderTests: XCTestCase {
         XCTAssertEqual(denial, .orderCapstoneTaken(capstones[0].id))
     }
 
+    // MARK: Clarity
+
+    func testRequirementSummaryNamesBothArchetypesWhenNeitherIsMet() {
+        let order = HybridOrders.all[0]
+        let allocation = SkillAllocation()
+        XCTAssertFalse(order.isOpen(for: allocation))
+        let summary = order.requirementSummary(for: allocation)
+        let primaryName = SkillCatalog.archetype(order.primary)?.name ?? ""
+        let synergyName = SkillCatalog.archetype(order.synergy)?.name ?? ""
+        XCTAssertTrue(summary.contains(primaryName), summary)
+        XCTAssertTrue(summary.contains(synergyName), summary)
+        XCTAssertTrue(summary.contains("\(rules.threshold(for: .two))"), summary)
+        XCTAssertTrue(summary.contains("\(rules.synergyThreshold(for: .two))"), summary)
+    }
+
+    func testRequirementSummaryOnlyNamesWhicheverArchetypeIsStillShort() {
+        let order = HybridOrders.all[0]
+        var allocation = SkillAllocation()
+        invest(&allocation, order.primary, rules.threshold(for: .two))
+        let summary = order.requirementSummary(for: allocation)
+        let primaryName = SkillCatalog.archetype(order.primary)?.name ?? ""
+        let synergyName = SkillCatalog.archetype(order.synergy)?.name ?? ""
+        XCTAssertFalse(summary.contains(primaryName), summary)
+        XCTAssertTrue(summary.contains(synergyName), summary)
+    }
+
+    func testRequirementSummaryReportsOpenOnceBothAreMet() {
+        let order = HybridOrders.all[0]
+        var allocation = SkillAllocation()
+        invest(&allocation, order.primary, rules.threshold(for: .two))
+        invest(&allocation, order.synergy, rules.synergyThreshold(for: .two))
+        XCTAssertTrue(order.isOpen(for: allocation))
+        XCTAssertTrue(order.requirementSummary(for: allocation).hasPrefix("Open"))
+    }
+
     // MARK: Naming
 
     func testAnOrderNamesTheBuild() {
