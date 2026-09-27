@@ -9,6 +9,7 @@ struct WeaponSelectView: View {
     @Environment(AppServices.self) private var services
     @State private var selectedID: WeaponID = StarterWeapons.sword.id
     @State private var modifierSelections: [RunModifierSelection] = []
+    @State private var modifiersExpanded = false
 
     var body: some View {
         ZStack {
@@ -22,7 +23,8 @@ struct WeaponSelectView: View {
                 }
 
                 if services.isDifficultyEligible(realm) {
-                    DifficultyModifiersSection(realm: realm.id, selections: $modifierSelections)
+                    DifficultyModifiersSection(realm: realm.id, selections: $modifierSelections,
+                                                isExpanded: $modifiersExpanded)
                         .onChange(of: modifierSelections) { _, newValue in
                             services.setActiveModifiers(newValue, for: realm.id)
                         }
@@ -68,6 +70,7 @@ struct WeaponSelectView: View {
         }
         .onAppear {
             modifierSelections = services.activeModifiers(for: realm.id)
+            modifiersExpanded = !modifierSelections.isEmpty
         }
     }
 }
@@ -78,47 +81,66 @@ struct WeaponSelectView: View {
 private struct DifficultyModifiersSection: View {
     let realm: RealmID
     @Binding var selections: [RunModifierSelection]
+    @Binding var isExpanded: Bool
 
     private var payoutBonus: Double { DifficultyModifierCatalog.effects(for: selections).payoutBonus }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                FLSectionLabel(text: "Difficulty Modifiers")
-                Spacer()
-                if payoutBonus > 0 {
-                    Text("+\(Int((payoutBonus * 100).rounded()))% echoes")
-                        .font(FLTheme.Typeface.number(12))
-                        .foregroundStyle(FLTheme.Palette.emberBright)
+            Button {
+                withAnimation(.easeInOut(duration: 0.22)) { isExpanded.toggle() }
+            } label: {
+                HStack {
+                    FLSectionLabel(text: "Difficulty Modifiers")
+                    if !selections.isEmpty {
+                        Text("\(selections.count) active")
+                            .font(FLTheme.Typeface.number(11))
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                    }
+                    Spacer()
+                    if payoutBonus > 0 {
+                        Text("+\(Int((payoutBonus * 100).rounded()))% echoes")
+                            .font(FLTheme.Typeface.number(12))
+                            .foregroundStyle(FLTheme.Palette.emberBright)
+                    }
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(FLTheme.Palette.parchmentDim)
+                        .rotationEffect(.degrees(isExpanded ? 180 : 0))
                 }
+                .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(DifficultyModifierCatalog.all) { definition in
-                        ModifierChip(definition: definition, isOn: isOn(definition.id)) {
-                            toggle(definition.id)
+            if isExpanded {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(DifficultyModifierCatalog.all) { definition in
+                            ModifierChip(definition: definition, isOn: isOn(definition.id)) {
+                                toggle(definition.id)
+                            }
                         }
                     }
+                    .padding(.horizontal, 2)
                 }
-                .padding(.horizontal, 2)
-            }
-            .scrollClipDisabled()
+                .scrollClipDisabled()
 
-            if let index = selections.firstIndex(where: { $0.id == .reinforcedEnemies }) {
-                let bonus = 50 + Int((selections[index].intensity * 200).rounded())
-                HStack(spacing: 10) {
-                    Text("+\(bonus)% enemy health")
-                        .font(FLTheme.Typeface.body(12))
-                        .foregroundStyle(FLTheme.Palette.parchmentDim)
-                        .frame(width: 140, alignment: .leading)
-                    Slider(value: Binding(
-                        get: { selections[index].intensity },
-                        set: { selections[index].intensity = $0 }
-                    ), in: 0...1)
+                if let index = selections.firstIndex(where: { $0.id == .reinforcedEnemies }) {
+                    let bonus = 50 + Int((selections[index].intensity * 200).rounded())
+                    HStack(spacing: 10) {
+                        Text("+\(bonus)% enemy health")
+                            .font(FLTheme.Typeface.body(12))
+                            .foregroundStyle(FLTheme.Palette.parchmentDim)
+                            .frame(width: 140, alignment: .leading)
+                        Slider(value: Binding(
+                            get: { selections[index].intensity },
+                            set: { selections[index].intensity = $0 }
+                        ), in: 0...1)
+                    }
                 }
             }
         }
+        .transition(.opacity)
     }
 
     private func isOn(_ id: DifficultyModifierID) -> Bool {
