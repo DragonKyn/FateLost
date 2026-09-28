@@ -200,19 +200,28 @@ export function contentId(value: unknown, field: string): string {
   return value;
 }
 
-/** Small JSON of numbers, strings and booleans, with bounded depth. */
-function plainObject(value: unknown, field: string, maxKeys = 40): Record<string, unknown> {
+/**
+ * Small JSON of numbers, strings, booleans and nested objects, with bounded
+ * depth and size. Nesting is needed for the hero's companion looks
+ * (`hero.companions.<target>.<field>`); arrays are still refused.
+ */
+function plainObject(value: unknown, field: string, maxKeys = 40, maxDepth = 3,
+                     budget = { entries: 400 }): Record<string, unknown> {
   if (!isObject(value)) fail(`${field} must be an object`);
   const keys = Object.keys(value);
   if (keys.length > maxKeys) fail(`${field} has too many fields`);
   for (const key of keys) {
     const entry = value[key];
     if (key.length > 40) fail(`${field} has a long key`);
+    if (--budget.entries < 0) fail(`${field} is too large`);
     const type = typeof entry;
     if (type === "string") {
       if ((entry as string).length > 80) fail(`${field}.${key} is too long`);
     } else if (type === "number") {
       if (!Number.isFinite(entry as number)) fail(`${field}.${key} is not finite`);
+    } else if (isObject(entry)) {
+      if (maxDepth <= 1) fail(`${field}.${key} is nested too deeply`);
+      plainObject(entry, `${field}.${key}`, maxKeys, maxDepth - 1, budget);
     } else if (type !== "boolean" && entry !== null) {
       fail(`${field}.${key} has an unsupported type`);
     }
