@@ -222,8 +222,9 @@ final class RewardedAds {
             await running.value
             return
         }
-        let task = Task { @MainActor [weak self] in
-            await self?.request()
+        let task = Task<Void, Never> { @MainActor [weak self] in
+            guard let self else { return }
+            await self.request()
         }
         inFlight = task
         await task.value
