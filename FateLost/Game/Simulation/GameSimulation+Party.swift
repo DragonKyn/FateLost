@@ -49,6 +49,7 @@ extension GameSimulation {
         "run", "realm", "arena", "tuning", "combat", "elapsed", "cheats", "slots", "activeHero", "members",
         "timeSinceWipe", "stepCounter", "spawnFocusScratch", "targetScratch", "mirror", "movement", "spawner", "enemyAI",
         "waves", "projectileSystem", "statusSystem", "shrineWave", "difficultyEffects", "echoOffer",
+        "offersSecondChance", "secondChanceSpent", "awaitingSecondChance", "riftChanceBonus",
     ]
 
     // MARK: - Building a party
