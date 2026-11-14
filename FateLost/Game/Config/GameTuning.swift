@@ -42,15 +42,18 @@ struct PlayerTuning {
     var baseMaxHealth: Double = 100
     /// Exponential decay rate of knockback on the player, per second.
     var knockbackDecay: CGFloat = 11
-    /// Passive regeneration (what the build, the Legacy board and gear give,
-    /// not a timed aura) counts in full up to this share of max health a
-    /// second. Past it each further point counts for less and less, so a
-    /// second regeneration source still helps, but stacking every one cannot
-    /// make a hero unkillable.
+    /// Steady healing (regeneration from any source, auras and songs
+    /// included, plus life steal and triggered heals) counts in full up to
+    /// this share of max health a second. Past it each further point counts
+    /// for less and less, so a second source still helps, but stacking every
+    /// one from several classes cannot make a hero unkillable.
     var regenKneeFraction: Double = 0.03
-    /// The most passive regeneration can ever reach, as a share of max health
-    /// a second: what any pile of sources approaches and never passes.
-    var regenCeilingFraction: Double = 0.06
+    /// The most steady healing can ever reach, as a share of max health a
+    /// second: what any pile of sources approaches and never passes.
+    var regenCeilingFraction: Double = 0.07
+    /// Healing past full health kept as a barrier stops at this share of
+    /// max health (barrier abilities still reach the full amount).
+    var overhealBarrierFraction: Double = 0.4
 
     /// What `raw` health per second of passive regeneration is worth to a hero
     /// with `maxHealth`: the same up to the knee, then an ever slower climb

@@ -148,7 +148,7 @@ final class StatSheetTests: XCTestCase {
         sheet.add(StatModifier(.dodgeChance, .flat, 5))
         sheet.add(StatModifier(.cooldownReduction, .flat, 5))
         sheet.finalize()
-        XCTAssertEqual(sheet[.dodgeChance], 0.6)
+        XCTAssertEqual(sheet[.dodgeChance], 0.5)
         XCTAssertEqual(sheet[.cooldownReduction], 0.5)
     }
 }

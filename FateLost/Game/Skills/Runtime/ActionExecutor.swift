@@ -56,7 +56,13 @@ enum ActionExecutor {
             bless(.barrier(fraction: fraction.value), context, &combat, player)
         case .heal(let fraction):
             let amount = fraction.value * player.maxHealth
-            combat.pendingHealing += amount
+            if context.ability != nil, context.depth == 0 {
+                // A heal the player chose to cast lands in full.
+                combat.pendingHealing += amount
+            } else {
+                // One set off by a kill, a hit or a timer is steady sustain.
+                combat.pendingSustain += amount
+            }
             if amount >= 1 {
                 combat.events.append(.playerHealed(amount: amount * combat.sheet[.healingReceived]))
             }
@@ -165,13 +171,19 @@ enum ActionExecutor {
         combat.nearbySecondary.removeAll(keepingCapacity: true)
         combat.grid.query(around: center, radius: radius + combat.largestEnemyRadius, into: &combat.nearbySecondary)
         let candidates = combat.nearbySecondary
-        for index in candidates where index < combat.enemies.count && combat.enemies.health[index] > 0 {
+        func reaches(_ index: Int) -> Bool {
+            guard index < combat.enemies.count, combat.enemies.health[index] > 0 else { return false }
+            return combat.world.distance(center, combat.enemies.positions[index])
+                <= radius + combat.enemies.definition(at: index).radius
+        }
+        let crowd = damage == nil ? 1 : BalanceTuning.crowdScale(candidates.reduce(0) { $0 + (reaches($1) ? 1 : 0) })
+        for index in candidates where reaches(index) {
             let offset = combat.world.delta(from: center, to: combat.enemies.positions[index])
             let distance = offset.length
-            guard distance <= radius + combat.enemies.definition(at: index).radius else { continue }
             let direction = distance > 0.0001 ? offset / distance : CGPoint(x: 1, y: 0)
             if let damage {
                 var hit = combat.hit(from: damage, direction: direction, depth: depth, source: source)
+                hit.amount *= crowd
                 hit.status = status
                 combat.strike(index, with: hit)
             } else if let status {
@@ -207,14 +219,20 @@ enum ActionExecutor {
         combat.nearbySecondary.removeAll(keepingCapacity: true)
         combat.grid.query(around: origin, radius: range + combat.largestEnemyRadius, into: &combat.nearbySecondary)
         let candidates = combat.nearbySecondary
-        for index in candidates where index < combat.enemies.count && combat.enemies.health[index] > 0 {
+        func inCone(_ index: Int) -> Bool {
+            guard index < combat.enemies.count, combat.enemies.health[index] > 0 else { return false }
             let offset = combat.world.delta(from: origin, to: combat.enemies.positions[index])
             let distance = offset.length
-            guard distance <= range + combat.enemies.definition(at: index).radius else { continue }
-            let inArc = distance < 0.6 || (distance > 0.0001 && (offset / distance).dot(direction) >= halfArcCosine)
-            guard inArc else { continue }
+            guard distance <= range + combat.enemies.definition(at: index).radius else { return false }
+            return distance < 0.6 || (distance > 0.0001 && (offset / distance).dot(direction) >= halfArcCosine)
+        }
+        let crowd = BalanceTuning.crowdScale(candidates.reduce(0) { $0 + (inCone($1) ? 1 : 0) })
+        for index in candidates where inCone(index) {
+            let offset = combat.world.delta(from: origin, to: combat.enemies.positions[index])
+            let distance = offset.length
             let push = distance > 0.0001 ? offset / distance : direction
             var hit = combat.hit(from: spec.damage, direction: push, depth: context.depth, source: source(of: context))
+            hit.amount *= crowd
             hit.status = spec.status
             combat.strike(index, with: hit)
         }

@@ -31,7 +31,7 @@ final class PassiveHealingTests: XCTestCase {
         let one = tuning.effectiveRegeneration(7, maxHealth: 200)
         let four = tuning.effectiveRegeneration(28, maxHealth: 200)
         XCTAssertLessThan(four, one * 2, "four sources must be worth well under double one")
-        XCTAssertLessThanOrEqual(four, 12.0, "at most six percent of max health a second")
+        XCTAssertLessThanOrEqual(four, 200 * tuning.regenCeilingFraction + 0.0001, "at most the ceiling a second")
     }
 
     func testANegativeOrEmptyRegenerationPassesThrough() {
@@ -58,6 +58,6 @@ final class PassiveHealingTests: XCTestCase {
         sim.applyHealing(1)
         let gained = sim.player.health - before
         XCTAssertGreaterThan(gained, 6, "still worth having")
-        XCTAssertLessThanOrEqual(gained, 12.01, "but capped at six percent of max health")
+        XCTAssertLessThanOrEqual(gained, 200 * PlayerTuning().regenCeilingFraction + 0.01, "but capped at the ceiling")
     }
 }

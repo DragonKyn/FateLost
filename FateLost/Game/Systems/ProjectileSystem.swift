@@ -194,11 +194,17 @@ struct ProjectileSystem {
         combat.nearbySecondary.removeAll(keepingCapacity: true)
         combat.grid.query(around: center, radius: reach, into: &combat.nearbySecondary)
         let candidates = combat.nearbySecondary
-        for index in candidates where index < combat.enemies.count {
+        func reaches(_ index: Int) -> Bool {
+            guard index < combat.enemies.count else { return false }
+            return combat.world.distance(center, combat.enemies.positions[index])
+                <= radius + combat.enemies.definition(at: index).radius
+        }
+        let crowd = BalanceTuning.crowdScale(candidates.reduce(0) { $0 + (reaches($1) ? 1 : 0) })
+        for index in candidates where reaches(index) {
             let offset = combat.world.delta(from: center, to: combat.enemies.positions[index])
             let distance = offset.length
-            guard distance <= radius + combat.enemies.definition(at: index).radius else { continue }
             var hit = projectile.hit
+            hit.amount *= crowd
             hit.direction = distance > 0.0001 ? offset / distance : projectile.direction
             hit.knockback = projectile.hit.knockback * Self.splashKnockbackScale
             combat.strike(index, with: hit)

@@ -7,8 +7,10 @@ import Foundation
 extension CombatState {
     /// A hit from content damage at the current level.
     func hit(from spec: DamageSpec, direction: CGPoint, depth: Int, source: HitSource) -> Hit {
-        Hit(amount: spec.power.value * skillPower, type: spec.type, tags: spec.tags, direction: direction,
-            knockback: spec.knockback, critBonus: spec.critBonus, depth: depth, source: source)
+        // An effect set off by an effect set off by a hit lands softer each
+        // step down the chain, so one kill cannot cascade across the horde.
+        Hit(amount: spec.power.value * skillPower * BalanceTuning.depthScale(depth), type: spec.type, tags: spec.tags,
+            direction: direction, knockback: spec.knockback, critBonus: spec.critBonus, depth: depth, source: source)
     }
 
     /// Applies a hit to a living enemy.
@@ -92,7 +94,9 @@ extension CombatState {
         if !isDot {
             let steal = hit.source == .summon ? sheet[.summonLifeSteal] : sheet[.lifeSteal]
             if steal > 0 {
-                pendingHealing += dealt * steal
+                // Steady sustain: soft-capped with regeneration, so life
+                // steal off a crowd cannot make a hero unkillable.
+                pendingSustain += dealt * steal
             }
         }
 
@@ -257,7 +261,7 @@ extension CombatState {
         }
 
         let armor = max(0, sheet[.armor])
-        let reduction = min(0.8, armor / (armor + 75))
+        let reduction = min(BalanceTuning.maximumArmorReduction, armor / (armor + 75))
         var amount = godMode ? 0 : rawAmount * playerDamageTakenScale * (1 - reduction)
 
         if player.barrier > 0 {

@@ -92,12 +92,14 @@ enum ZoneSystem {
             return
         }
 
+        let crowd = BalanceTuning.crowdScale(inside.count)
         for index in inside {
             let offset = combat.world.delta(from: zone.position, to: combat.enemies.positions[index])
             let distance = offset.length
             let outward = distance > 0.0001 ? offset / distance : CGPoint(x: 1, y: 0)
             if let damage = spec.damage {
                 var hit = combat.hit(from: damage, direction: outward, depth: depth, source: source)
+                hit.amount *= crowd
                 hit.status = spec.status
                 combat.strike(index, with: hit)
             } else if let status = spec.status {

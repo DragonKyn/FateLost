@@ -93,7 +93,7 @@ enum StatID: Int, CaseIterable, Codable {
     var bounds: ClosedRange<Double> {
         switch self {
         case .maxHealth: return 1...100_000
-        case .dodgeChance: return 0...0.6
+        case .dodgeChance: return 0...0.5
         case .cooldownReduction: return 0...0.5
         case .critChance: return 0...1
         case .lifeSteal: return 0...0.25
@@ -103,7 +103,8 @@ enum StatID: Int, CaseIterable, Codable {
         case .echoGain: return 0...0.05
         case .moveSpeed: return 0.3...3
         case .attackSpeed: return 0.25...6
-        case .areaSize: return 0.3...4
+        case .areaSize: return 0.3...2.5
+        case .healingReceived: return 0...2
         case .pickupRadius: return 0.5...12
         case .healthRegen: return -50...500
         default: return 0...100_000

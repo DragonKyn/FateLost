@@ -698,28 +698,28 @@ struct GameSimulation {
     mutating func applyHealing(_ dt: TimeInterval) {
         guard !player.isDefeated else {
             combat.pendingHealing = 0
+            combat.pendingSustain = 0
             return
         }
         let received = combat.sheet[.healingReceived]
+        // One-off heals (a cast heal, a vial, a level, a shrine) land in full.
         var amount = combat.pendingHealing * received
         combat.pendingHealing = 0
+        // Everything steady shares one soft cap: regeneration from any source
+        // (passive, an aura, a song, a stance) together with life steal and
+        // triggered heals. Each source still helps, but stacking them from
+        // several classes approaches a ceiling instead of out-healing the horde.
+        var steady = combat.pendingSustain * received
+        combat.pendingSustain = 0
         let regeneration = combat.sheet[.healthRegen]
         if regeneration > 0 {
-            // Timed auras and songs are skills with a cooldown and are paid for
-            // in full; the regeneration that is simply always there is what
-            // stacks, so that is what is soft-capped.
-            var timed = 0.0
-            for buff in player.buffs {
-                for modifier in buff.modifiers where modifier.stat == .healthRegen && modifier.kind == .flat {
-                    timed += modifier.value * Double(buff.stacks)
-                }
-            }
-            timed = min(max(0, timed), regeneration)
-            let passive = tuning.player.effectiveRegeneration((regeneration - timed) * received, maxHealth: player.maxHealth)
-            amount += (passive + timed * received) * dt
+            steady += regeneration * received * dt
         } else if regeneration < 0 {
             // Forbidden power drains, but never kills.
             player.health = max(1, player.health + regeneration * dt)
+        }
+        if steady > 0, dt > 0 {
+            amount += tuning.player.effectiveRegeneration(steady / dt, maxHealth: player.maxHealth) * dt
         }
         guard amount > 0 else { return }
         let healed = min(amount, player.maxHealth - player.health)
@@ -727,8 +727,11 @@ struct GameSimulation {
         combat.stats.healingReceived += max(0, healed)
         let overflow = amount - max(0, healed)
         let conversion = combat.sheet[.overhealBarrier]
-        if overflow > 0, conversion > 0 {
-            player.barrier = min(player.maxHealth, player.barrier + overflow * conversion)
+        let overhealCap = player.maxHealth * tuning.player.overhealBarrierFraction
+        if overflow > 0, conversion > 0, player.barrier < overhealCap {
+            // Healing past full keeps only a partial shield, so sustain cannot
+            // also double a hero's health.
+            player.barrier = min(overhealCap, player.barrier + overflow * conversion)
         }
     }
 

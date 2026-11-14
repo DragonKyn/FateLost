@@ -55,8 +55,11 @@ struct CombatState {
 
     /// Effects waiting to run; see `ActionExecutor`.
     var pendingActions: [QueuedAction] = []
-    /// Healing earned this step (life steal, heals), applied once.
+    /// One-off healing earned this step (a cast heal, a vial, a level), applied once in full.
     var pendingHealing: Double = 0
+    /// Steady healing earned this step (life steal, triggered heals), applied
+    /// once together with regeneration through the sustain soft cap.
+    var pendingSustain: Double = 0
     /// Experience collected this step.
     var experienceCollected = 0
     /// Enemies slain this step.
@@ -204,6 +207,7 @@ struct HeroCombat {
     var playerStealthed = false
     var pendingActions: [QueuedAction] = []
     var pendingHealing: Double = 0
+    var pendingSustain: Double = 0
     var experienceCollected = 0
     var killsThisStep = 0
     var procCooldowns: [Double] = []
@@ -227,7 +231,7 @@ extension CombatState {
     static let heroFieldNames: [String] = [
         "projectiles", "allies", "zones", "strikes", "pendingFinds", "pendingShrines", "random", "stats", "events",
         "build", "sheet", "level", "skillPower", "conditions", "playerPosition", "playerFacing", "playerStealthed",
-        "pendingActions", "pendingHealing", "experienceCollected", "killsThisStep", "procCooldowns", "procTimers",
+        "pendingActions", "pendingHealing", "pendingSustain", "experienceCollected", "killsThisStep", "procCooldowns", "procTimers",
         "attackCount", "abilityCooldowns", "cheatDeathCooldown", "allyAnchors", "summonCooldowns",
         "companionsDismissed", "summonVitalityLevel", "summonVitalityGrowth",
     ]
@@ -263,6 +267,7 @@ extension CombatState {
         swap(&playerStealthed, &other.playerStealthed)
         swap(&pendingActions, &other.pendingActions)
         swap(&pendingHealing, &other.pendingHealing)
+        swap(&pendingSustain, &other.pendingSustain)
         swap(&experienceCollected, &other.experienceCollected)
         swap(&killsThisStep, &other.killsThisStep)
         swap(&procCooldowns, &other.procCooldowns)
