@@ -1,0 +1,244 @@
+=== build exit code: 0
+=== test exit code: 0
+=== xcode
+Xcode 26.3
+Build version 17C529
+=== app bundle
+total 51848
+drwxr-xr-x  53 runner  staff      1696 Nov 14 20:03 .
+drwxr-xr-x@ 11 runner  staff       352 Nov 14 20:03 ..
+-rw-r--r--   1 runner  staff    973272 Nov 14 20:00 amb_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff     13283 Nov 14 20:00 AppIcon60x60@2x.png
+-rw-r--r--   1 runner  staff     17872 Nov 14 20:00 AppIcon76x76@2x~ipad.png
+-rw-r--r--   1 runner  staff    493160 Nov 14 20:00 Assets.car
+-rwxr-xr-x   1 runner  staff  18918888 Nov 14 20:03 FateLost
+drwxr-xr-x   4 runner  staff       128 Nov 14 20:00 Frameworks
+-rw-r--r--   1 runner  staff      3554 Nov 14 20:00 Info.plist
+-rw-r--r--   1 runner  staff   1789879 Nov 14 20:00 mus_battle_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff    283691 Nov 14 20:00 mus_defeat.m4a
+-rw-r--r--   1 runner  staff   1801686 Nov 14 20:00 mus_menu_fate_lost.m4a
+-rw-r--r--   1 runner  staff         8 Nov 14 20:00 PkgInfo
+-rw-r--r--   1 runner  staff      1685 Nov 14 20:00 PrivacyInfo.xcprivacy
+-rw-r--r--   1 runner  staff     79424 Nov 14 20:00 sfx_ab_buff.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_fire.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_frost.wav
+-rw-r--r--   1 runner  staff     88244 Nov 14 20:00 sfx_ab_holy.wav
+-rw-r--r--   1 runner  staff     44144 Nov 14 20:00 sfx_ab_impact.wav
+-rw-r--r--   1 runner  staff     48554 Nov 14 20:00 sfx_ab_lightning.wav
+-rw-r--r--   1 runner  staff     61784 Nov 14 20:00 sfx_ab_nature.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_shadow.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_sonic.wav
+-rw-r--r--   1 runner  staff     83834 Nov 14 20:00 sfx_arcane_burst.wav
+-rw-r--r--   1 runner  staff     54728 Nov 14 20:00 sfx_arcane_cast.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_bow_shot.wav
+-rw-r--r--   1 runner  staff     26504 Nov 14 20:00 sfx_dash.wav
+-rw-r--r--   1 runner  staff     19448 Nov 14 20:00 sfx_dodge.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_1.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_2.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_3.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_4.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_5.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_goblin_death_1.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_goblin_death_2.wav
+-rw-r--r--   1 runner  staff     61784 Nov 14 20:00 sfx_heal.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_1.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_2.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_3.wav
+=== bundle id / version / minimum iOS
+com.wickedstudios.fatelost
+1.0.2
+17.0
+=== orientations
+build/Build/Products/Release-iphoneos/FateLost.app/Info.plist: Could not extract value, error: No value at that key path or invalid key path: UISupportedInterfaceOrientations
+=== adverts
+ca-app-pub-6085748649825153~2883746766
+50
+-rw-r--r--  1 runner  staff  1685 Nov 14 20:00 build/Build/Products/Release-iphoneos/FateLost.app/PrivacyInfo.xcprivacy
+Fetching from https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+Fetching from https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+Creating working copy of package ‘swift-package-manager-google-mobile-ads’
+Checking out 13.12.0 of package ‘swift-package-manager-google-mobile-ads’
+Creating working copy of package ‘swift-package-manager-google-user-messaging-platform’
+=== build errors
+=== build warnings in project sources (first 80)
+726:/Users/runner/work/FateLost/FateLost/FateLost/App/Ads/RewardedAds.swift:350:17: warning: capture of 'ad' with non-Sendable type 'RewardedAd' in a '@Sendable' closure
+732:/Users/runner/work/FateLost/FateLost/FateLost/App/Ads/RewardedAds.swift:6:1: warning: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'GoogleMobileAds'
+736:/Users/runner/work/FateLost/FateLost/FateLost/App/Ads/RewardedAds.swift:351:21: warning: capture of 'self' with non-Sendable type 'AdPresenter?' in a '@Sendable' closure
+742:/Users/runner/work/FateLost/FateLost/FateLost/Core/Feedback/AudioManager.swift:298:20: warning: capture of 'raw' with non-Sendable type 'AVAudioPCMBuffer' in a '@Sendable' closure
+748:/Users/runner/work/FateLost/FateLost/FateLost/Core/Feedback/AudioManager.swift:1:1: warning: add '@preconcurrency' to suppress 'Sendable'-related warnings from module 'AVFAudio'
+752:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:9:20: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+761:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:11:23: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+770:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:12:23: warning: call to main actor-isolated initializer 'init()' in a synchronous nonisolated context
+779:/Users/runner/work/FateLost/FateLost/FateLost/Scenes/Gameplay/Entities/PartyRenderer.swift:18:25: warning: call to main actor-isolated initializer 'init(text:)' in a synchronous nonisolated context
+=== audio
+mus_menu_fate_lost            91.76s  peak   -3.6 dBFS  rms  -17.2 dB  (19.1s)
+mus_battle_ashen_wilds        89.14s  peak   -3.7 dBFS  rms  -15.3 dB  (13.2s)
+mus_defeat                    14.49s  peak   -5.5 dBFS  rms  -17.2 dB  (1.7s)
+amb_ashen_wilds               48.00s  peak   -4.7 dBFS  rms  -26.1 dB  (2.1s)
+sfx_swing_1                    0.26s  peak   -3.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_swing_2                    0.29s  peak   -3.0 dBFS  rms  -16.5 dB  (0.0s)
+sfx_swing_3                    0.32s  peak   -3.0 dBFS  rms  -13.2 dB  (0.0s)
+sfx_hit_1                      0.20s  peak   -1.5 dBFS  rms  -10.0 dB  (0.0s)
+sfx_hit_2                      0.20s  peak   -1.5 dBFS  rms  -11.3 dB  (0.0s)
+sfx_hit_3                      0.20s  peak   -1.5 dBFS  rms   -9.8 dB  (0.0s)
+sfx_hit_critical               0.50s  peak   -1.0 dBFS  rms  -15.1 dB  (0.0s)
+sfx_goblin_death_1             0.34s  peak   -3.0 dBFS  rms  -10.0 dB  (0.0s)
+sfx_goblin_death_2             0.34s  peak   -3.0 dBFS  rms   -9.9 dB  (0.0s)
+sfx_player_hurt                0.32s  peak   -1.0 dBFS  rms   -8.4 dB  (0.0s)
+sfx_player_death               1.60s  peak   -1.0 dBFS  rms   -8.3 dB  (0.0s)
+sfx_bow_shot                   0.34s  peak   -3.0 dBFS  rms  -16.2 dB  (0.0s)
+sfx_arcane_cast                0.62s  peak   -3.0 dBFS  rms  -12.2 dB  (0.0s)
+sfx_arcane_burst               0.95s  peak   -1.0 dBFS  rms  -16.3 dB  (0.0s)
+ui_confirm                     0.70s  peak   -6.0 dBFS  rms  -14.1 dB  (0.0s)
+ui_back                        0.35s  peak   -7.0 dBFS  rms  -15.8 dB  (0.0s)
+sfx_ember_1                    0.45s  peak   -8.0 dBFS  rms  -15.8 dB  (0.0s)
+sfx_ember_2                    0.45s  peak   -8.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_ember_3                    0.45s  peak   -8.0 dBFS  rms  -15.7 dB  (0.0s)
+sfx_ember_4                    0.45s  peak   -8.0 dBFS  rms  -15.9 dB  (0.0s)
+sfx_ember_5                    0.45s  peak   -8.0 dBFS  rms  -16.0 dB  (0.0s)
+sfx_level_up                   2.20s  peak   -1.0 dBFS  rms  -10.0 dB  (0.1s)
+ui_skill_learn                 0.55s  peak   -6.0 dBFS  rms  -17.9 dB  (0.0s)
+ui_tree_open                   0.80s  peak   -7.0 dBFS  rms  -18.4 dB  (0.0s)
+sfx_ab_impact                  0.50s  peak   -1.0 dBFS  rms  -10.6 dB  (0.0s)
+sfx_ab_fire                    0.80s  peak   -2.0 dBFS  rms  -16.4 dB  (0.0s)
+sfx_ab_frost                   0.80s  peak   -3.0 dBFS  rms  -16.9 dB  (0.0s)
+sfx_ab_lightning               0.55s  peak   -2.0 dBFS  rms  -18.0 dB  (0.0s)
+sfx_ab_holy                    1.00s  peak   -2.0 dBFS  rms  -13.4 dB  (0.0s)
+sfx_ab_shadow                  0.80s  peak   -2.0 dBFS  rms  -14.7 dB  (0.0s)
+sfx_ab_nature                  0.70s  peak   -3.0 dBFS  rms  -17.4 dB  (0.0s)
+sfx_ab_sonic                   0.80s  peak   -3.0 dBFS  rms  -13.6 dB  (0.0s)
+sfx_ab_buff                    0.90s  peak   -3.0 dBFS  rms  -10.0 dB  (0.0s)
+sfx_summon                     0.90s  peak   -3.0 dBFS  rms   -8.6 dB  (0.0s)
+sfx_dash                       0.30s  peak   -4.0 dBFS  rms  -14.0 dB  (0.0s)
+sfx_heal                       0.70s  peak   -7.0 dBFS  rms  -16.8 dB  (0.0s)
+sfx_dodge                      0.22s  peak   -6.0 dBFS  rms  -16.9 dB  (0.0s)
+sfx_keg_blast                  1.10s  peak   -1.0 dBFS  rms  -12.1 dB  (0.0s)
+sfx_shapeshift                 0.90s  peak   -2.0 dBFS  rms  -14.7 dB  (0.0s)
+-rw-r--r--   1 runner  staff    973272 Nov 14 20:00 amb_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff   1789879 Nov 14 20:00 mus_battle_ashen_wilds.m4a
+-rw-r--r--   1 runner  staff    283691 Nov 14 20:00 mus_defeat.m4a
+-rw-r--r--   1 runner  staff   1801686 Nov 14 20:00 mus_menu_fate_lost.m4a
+-rw-r--r--   1 runner  staff     79424 Nov 14 20:00 sfx_ab_buff.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_fire.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_frost.wav
+-rw-r--r--   1 runner  staff     88244 Nov 14 20:00 sfx_ab_holy.wav
+-rw-r--r--   1 runner  staff     44144 Nov 14 20:00 sfx_ab_impact.wav
+-rw-r--r--   1 runner  staff     48554 Nov 14 20:00 sfx_ab_lightning.wav
+-rw-r--r--   1 runner  staff     61784 Nov 14 20:00 sfx_ab_nature.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_shadow.wav
+-rw-r--r--   1 runner  staff     70604 Nov 14 20:00 sfx_ab_sonic.wav
+-rw-r--r--   1 runner  staff     83834 Nov 14 20:00 sfx_arcane_burst.wav
+-rw-r--r--   1 runner  staff     54728 Nov 14 20:00 sfx_arcane_cast.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_bow_shot.wav
+-rw-r--r--   1 runner  staff     26504 Nov 14 20:00 sfx_dash.wav
+-rw-r--r--   1 runner  staff     19448 Nov 14 20:00 sfx_dodge.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_1.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_2.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_3.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_4.wav
+-rw-r--r--   1 runner  staff     39734 Nov 14 20:00 sfx_ember_5.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_goblin_death_1.wav
+-rw-r--r--   1 runner  staff     30032 Nov 14 20:00 sfx_goblin_death_2.wav
+-rw-r--r--   1 runner  staff     61784 Nov 14 20:00 sfx_heal.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_1.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_2.wav
+-rw-r--r--   1 runner  staff     17684 Nov 14 20:00 sfx_hit_3.wav
+-rw-r--r--   1 runner  staff     44144 Nov 14 20:00 sfx_hit_critical.wav
+-rw-r--r--   1 runner  staff     97064 Nov 14 20:00 sfx_keg_blast.wav
+-rw-r--r--   1 runner  staff    194084 Nov 14 20:00 sfx_level_up.wav
+-rw-r--r--   1 runner  staff    141164 Nov 14 20:00 sfx_player_death.wav
+-rw-r--r--   1 runner  staff     28268 Nov 14 20:00 sfx_player_hurt.wav
+-rw-r--r--   1 runner  staff     79424 Nov 14 20:00 sfx_shapeshift.wav
+-rw-r--r--   1 runner  staff     79424 Nov 14 20:00 sfx_summon.wav
+-rw-r--r--   1 runner  staff     22976 Nov 14 20:00 sfx_swing_1.wav
+-rw-r--r--   1 runner  staff     25622 Nov 14 20:00 sfx_swing_2.wav
+-rw-r--r--   1 runner  staff     28268 Nov 14 20:00 sfx_swing_3.wav
+-rw-r--r--   1 runner  staff     30914 Nov 14 20:00 ui_back.wav
+=== test results
+2528:2026-11-14 20:08:23.955373+0000 FateLost[15483:47225] [Client] Synchronous remote object proxy returned error: Error Domain=NSCocoaErrorDomain Code=4099 "The connection to service named com.apple.commcenter.coretelephony.xpc was invalidated: Connection init failed at lookup with error 3 - No such process." UserInfo={NSDebugDescription=The connection to service named com.apple.commcenter.coretelephony.xpc was invalidated: Connection init failed at lookup with error 3 - No such process.}
+2530:2026-11-14 20:08:24.340124+0000 FateLost[15483:47225] [Client] Synchronous remote object proxy returned error: Error Domain=NSCocoaErrorDomain Code=4099 "The connection to service named com.apple.commcenter.coretelephony.xpc was invalidated: Connection init failed at lookup with error 3 - No such process." UserInfo={NSDebugDescription=The connection to service named com.apple.commcenter.coretelephony.xpc was invalidated: Connection init failed at lookup with error 3 - No such process.}
+2567:	 Executed 15 tests, with 0 failures (0 unexpected) in 0.809 (2.381) seconds
+2584:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.169 (8.846) seconds
+2607:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.337 (0.626) seconds
+2616:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.494 (0.581) seconds
+2636:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.151 (12.661) seconds
+2657:	 Executed 9 tests, with 0 failures (0 unexpected) in 7.074 (16.310) seconds
+2706:	 Executed 23 tests, with 0 failures (0 unexpected) in 37.199 (48.321) seconds
+2725:	 Executed 8 tests, with 0 failures (0 unexpected) in 3.493 (4.225) seconds
+2759:	 Executed 15 tests, with 0 failures (0 unexpected) in 2.250 (2.352) seconds
+2778:	 Executed 8 tests, with 0 failures (0 unexpected) in 1.178 (5.619) seconds
+2795:	 Executed 7 tests, with 0 failures (0 unexpected) in 2.155 (2.407) seconds
+2814:	 Executed 3 tests, with 0 failures (0 unexpected) in 14.142 (14.145) seconds
+2867:	 Executed 25 tests, with 0 failures (0 unexpected) in 0.232 (0.533) seconds
+2880:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.085 (0.087) seconds
+2925:	 Executed 21 tests, with 0 failures (0 unexpected) in 3.094 (3.710) seconds
+2934:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.013 (2.239) seconds
+2967:	 Executed 15 tests, with 0 failures (0 unexpected) in 0.177 (0.264) seconds
+2992:	 Executed 11 tests, with 0 failures (0 unexpected) in 8.010 (10.612) seconds
+3014:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.968 (0.970) seconds
+3023:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.006 (0.010) seconds
+3042:	 Executed 8 tests, with 0 failures (0 unexpected) in 2.390 (2.395) seconds
+3053:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.017 (0.019) seconds
+3100:	 Executed 22 tests, with 0 failures (0 unexpected) in 0.650 (0.660) seconds
+3111:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.004 (0.030) seconds
+3122:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.035 (0.036) seconds
+3134:	 Executed 4 tests, with 0 failures (0 unexpected) in 113.159 (113.167) seconds
+3147:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.012 (0.019) seconds
+3162:	 Executed 6 tests, with 0 failures (0 unexpected) in 1.014 (1.019) seconds
+3171:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.006 (0.019) seconds
+3238:	 Executed 32 tests, with 0 failures (0 unexpected) in 3.516 (3.531) seconds
+3249:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.111 (0.114) seconds
+3262:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+3275:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.005 (0.013) seconds
+3284:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.004 (0.006) seconds
+3293:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.033 (0.035) seconds
+3342:	 Executed 23 tests, with 0 failures (0 unexpected) in 0.088 (0.111) seconds
+3359:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.022 (0.025) seconds
+3399:	 Executed 18 tests, with 0 failures (0 unexpected) in 0.561 (0.581) seconds
+3412:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.015) seconds
+3431:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.036 (0.041) seconds
+3446:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.022 (0.098) seconds
+3461:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.028 (0.030) seconds
+3486:	 Executed 11 tests, with 0 failures (0 unexpected) in 0.468 (0.472) seconds
+3503:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.039 (0.042) seconds
+3522:	 Executed 8 tests, with 0 failures (0 unexpected) in 0.075 (0.078) seconds
+3537:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.058 (0.061) seconds
+3562:	 Executed 11 tests, with 0 failures (0 unexpected) in 0.361 (0.374) seconds
+3591:	 Executed 12 tests, with 0 failures (0 unexpected) in 119.653 (119.665) seconds
+3670:	 Executed 38 tests, with 0 failures (0 unexpected) in 0.981 (1.273) seconds
+3681:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.002 (0.007) seconds
+3712:	 Executed 14 tests, with 0 failures (0 unexpected) in 31.558 (31.573) seconds
+3759:	 Executed 22 tests, with 0 failures (0 unexpected) in 35.042 (35.056) seconds
+3780:	 Executed 9 tests, with 0 failures (0 unexpected) in 0.507 (0.513) seconds
+3807:	 Executed 12 tests, with 0 failures (0 unexpected) in 0.679 (0.688) seconds
+3832:	 Executed 11 tests, with 0 failures (0 unexpected) in 10.383 (10.390) seconds
+3847:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.011 (0.013) seconds
+3854:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.006) seconds
+3869:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.037 (0.041) seconds
+3880:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.518 (0.520) seconds
+3893:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.007 (0.011) seconds
+3916:	 Executed 10 tests, with 0 failures (0 unexpected) in 0.077 (0.081) seconds
+3931:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.007 (0.010) seconds
+3938:	 Executed 2 tests, with 0 failures (0 unexpected) in 0.002 (0.009) seconds
+3989:	 Executed 24 tests, with 0 failures (0 unexpected) in 0.413 (0.422) seconds
+4008:	 Executed 8 tests, with 0 failures (0 unexpected) in 25.100 (25.106) seconds
+4019:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.006 (0.009) seconds
+4050:	 Executed 14 tests, with 0 failures (0 unexpected) in 0.530 (0.534) seconds
+4063:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.048 (0.050) seconds
+4076:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.006 (0.008) seconds
+4096:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.010 (0.012) seconds
+4121:	 Executed 11 tests, with 0 failures (0 unexpected) in 0.055 (0.060) seconds
+4130:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.019 (0.029) seconds
+4139:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.006 (0.009) seconds
+4161:	 Executed 7 tests, with 0 failures (0 unexpected) in 0.006 (0.016) seconds
+4170:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.030 (0.053) seconds
+4179:	 Executed 3 tests, with 0 failures (0 unexpected) in 0.002 (0.004) seconds
+4192:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.003 (0.006) seconds
+4205:	 Executed 5 tests, with 0 failures (0 unexpected) in 0.067 (0.069) seconds
+4240:	 Executed 16 tests, with 0 failures (0 unexpected) in 0.043 (0.080) seconds
+4275:	 Executed 16 tests, with 0 failures (0 unexpected) in 0.274 (0.296) seconds
+4290:	 Executed 6 tests, with 0 failures (0 unexpected) in 0.148 (0.152) seconds
+4301:	 Executed 4 tests, with 0 failures (0 unexpected) in 0.005 (0.019) seconds
+4303:	 Executed 746 tests, with 0 failures (0 unexpected) in 437.415 (493.259) seconds
+4305:	 Executed 746 tests, with 0 failures (0 unexpected) in 437.415 (493.263) seconds
+4313:** TEST SUCCEEDED **
