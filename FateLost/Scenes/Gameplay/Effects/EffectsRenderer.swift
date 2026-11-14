@@ -13,6 +13,8 @@ final class EffectsRenderer {
     private enum Kind {
         case slash
         case thrust
+        /// A weapon family's signature trail (see `SwingStyle`).
+        case swing
         case spark
         case number
         case corpse
@@ -42,6 +44,20 @@ final class EffectsRenderer {
         let magnitude: CGFloat
         /// Seconds before the effect appears.
         var delay: CGFloat = 0
+        /// For `.swing`: whose trail, which part of it, and which way it sweeps.
+        var swing: SwingStyle = .blade
+        var role: SwingRole = .main
+        var spin: CGFloat = 1
+    }
+
+    /// The parts a signature swing is built from.
+    private enum SwingRole {
+        /// The trail itself.
+        case main
+        /// A katana's flash straight across the cut, a beat later.
+        case flash
+        /// A faint stretched copy behind a lunge.
+        case wake
     }
 
     private enum Limit {
@@ -109,13 +125,100 @@ final class EffectsRenderer {
                    variant: angle, magnitude: range), layer: overlayLayer)
     }
 
-    func spark(at position: CGPoint, isCritical: Bool, color: UIColor? = nil) {
+    func spark(at position: CGPoint, isCritical: Bool, color: UIColor? = nil, delay: CGFloat = 0) {
         guard let sprite = acquire(.spark) as? SKSpriteNode else { return }
         sprite.color = color ?? (isCritical ? UIColor(rgb: 0xFFD27A) : UIColor(rgb: 0xFFF6E8))
         sprite.colorBlendFactor = 1
         sprite.zRotation = CGFloat.random(in: 0 ... .pi)
         add(Effect(kind: .spark, node: sprite, worldPosition: position, lifetime: isCritical ? 0.2 : 0.13,
-                   variant: isCritical ? 1.6 : 1, magnitude: 0), layer: overlayLayer)
+                   variant: isCritical ? 1.6 : 1, magnitude: 0, delay: delay), layer: overlayLayer)
+    }
+
+    // MARK: - Signature swings
+
+    /// Alternates which way arcs sweep, so a run of swings reads as forehand,
+    /// backhand, forehand rather than the same cut on repeat.
+    private var swingFlip: CGFloat = 1
+
+    /// Draws a melee weapon's attack in its family's own style.
+    func swing(_ style: SwingStyle, at position: CGPoint, direction: CGPoint, range: CGFloat) {
+        let angle = atan2(direction.y, direction.x)
+        let unit = direction.normalized == .zero ? CGPoint(x: 1, y: 0) : direction.normalized
+        swingFlip = -swingFlip
+        let tip = position + unit * (range * 0.85)
+        switch style {
+        case .blade:
+            slash(at: position, direction: direction, range: range)
+            motes(at: tip, count: 3, color: UIColor(rgb: 0xFFF0D0), spread: 0.35, lifetime: 0.35)
+        case .thrust:
+            thrust(at: position, direction: direction, range: range)
+            addSwing(.thrust, role: .wake, sprite: .fxThrust, tint: UIColor(rgb: 0xFFE7B8), at: position,
+                     angle: angle, range: range * 1.2, lifetime: 0.22, delay: 0.03)
+            motes(at: tip, count: 4, color: UIColor(rgb: 0xFFF0D0), spread: 0.12, lifetime: 0.3)
+            spark(at: position + unit * range, isCritical: false, color: UIColor(rgb: 0xFFF6E8), delay: 0.05)
+        case .heavy:
+            addSwing(.heavy, sprite: .fxSwingHeavy, tint: UIColor(rgb: 0xFFB86A), at: position, angle: angle,
+                     range: range, lifetime: 0.3)
+            // Where the blow comes down, the ground cracks and dust kicks up.
+            let impact = position + unit * (range * 0.7)
+            ring(at: impact, radius: range * 0.55, color: UIColor(rgb: 0xC9A27A), lifetime: 0.4, delay: 0.08)
+            motes(at: impact, count: 8, color: UIColor(rgb: 0xB89878), spread: 0.6, lifetime: 0.5)
+            motes(at: tip, count: 5, color: UIColor(rgb: 0xFFC27A), spread: 0.4, lifetime: 0.4)
+        case .quick:
+            addSwing(.quick, sprite: .fxSwingThin, tint: UIColor(rgb: 0xDDF4FF), at: position, angle: angle,
+                     range: range, lifetime: 0.13)
+            // A beat later, a flash straight across the cut: iaido.
+            addSwing(.quick, role: .flash, sprite: .fxThrust, tint: .white,
+                     at: position + unit * (range * 0.55), angle: angle + .pi / 2 * swingFlip,
+                     range: range * 0.75, lifetime: 0.14, delay: 0.07)
+            spark(at: tip, isCritical: true, color: UIColor(rgb: 0xE8F8FF), delay: 0.07)
+        case .twin:
+            // Two blades, crossing: one now, the other a heartbeat after.
+            addSwing(.twin, sprite: .fxSwingThin, tint: UIColor(rgb: 0xE8ECF4), at: position, angle: angle + 0.42,
+                     range: range * 0.92, lifetime: 0.15, spin: -1)
+            addSwing(.twin, sprite: .fxSwingThin, tint: UIColor(rgb: 0xC8D0E0), at: position, angle: angle - 0.42,
+                     range: range * 0.92, lifetime: 0.15, delay: 0.06, spin: 1)
+            motes(at: tip, count: 4, color: UIColor(rgb: 0xE8ECF4), spread: 0.25, lifetime: 0.25)
+        case .claw:
+            addSwing(.claw, sprite: .fxSwingClaw, tint: UIColor(rgb: 0xFFD0C0), at: position, angle: angle,
+                     range: range, lifetime: 0.2)
+            motes(at: tip, count: 4, color: UIColor(rgb: 0xFF9A88), spread: 0.3, lifetime: 0.3)
+        case .reap:
+            addSwing(.reap, sprite: .fxSwingReap, tint: UIColor(rgb: 0xC9A6FF), at: position, angle: angle,
+                     range: range, lifetime: 0.34)
+            // Wisps peel off the edge of the blade as it passes.
+            motes(at: tip, count: 7, color: UIColor(rgb: 0x9A78E0), spread: range * 0.4, lifetime: 0.7)
+        case .lash:
+            addSwing(.lash, sprite: .fxSwingLash, tint: UIColor(rgb: 0xFFD98A), at: position, angle: angle,
+                     range: range, lifetime: 0.24)
+            // The crack, as the tip snaps straight.
+            spark(at: position + unit * (range * 0.95), isCritical: true, color: UIColor(rgb: 0xFFF2C0), delay: 0.1)
+            motes(at: position + unit * (range * 0.95), count: 4, color: UIColor(rgb: 0xFFE2A0), spread: 0.2,
+                  lifetime: 0.3)
+        case .spin:
+            addSwing(.spin, sprite: .fxSwingRing, tint: UIColor(rgb: 0xF5E6C8), at: position, angle: angle,
+                     range: range, lifetime: 0.3)
+            ring(at: position, radius: range * 0.9, color: UIColor(rgb: 0xF5E6C8), lifetime: 0.25, delay: 0.12)
+        }
+    }
+
+    private func addSwing(_ style: SwingStyle, role: SwingRole = .main, sprite: SpriteID, tint: UIColor,
+                          at position: CGPoint, angle: CGFloat, range: CGFloat, lifetime: CGFloat,
+                          delay: CGFloat = 0, spin: CGFloat? = nil) {
+        guard let container = acquire(.swing), let blade = container.children.first as? SKSpriteNode else { return }
+        blade.texture = catalog.texture(sprite)
+        blade.color = tint
+        blade.colorBlendFactor = 1
+        blade.zRotation = angle + .pi / 4
+        blade.setScale(1)
+        blade.size = CGSize(width: range * 2, height: range * 2)
+        container.alpha = 1
+        var effect = Effect(kind: .swing, node: container, worldPosition: position, lifetime: lifetime,
+                            variant: angle, magnitude: range, delay: delay)
+        effect.swing = style
+        effect.role = role
+        effect.spin = spin ?? swingFlip
+        add(effect, layer: overlayLayer)
     }
 
     func damageNumber(_ amount: Double, at position: CGPoint, isCritical: Bool, color: UIColor? = nil,
@@ -453,6 +556,8 @@ final class EffectsRenderer {
                 blade.setScale(0.85 + 0.2 * t)
             }
             node.alpha = t < 0.25 ? 1 : 1 - (t - 0.25) / 0.75
+        case .swing:
+            applySwing(effect, t: t, frame: frame)
         case .thrust:
             // Lunges straight out and back: a fixed angle, no arc sweep.
             if let blade = node.children.first {
@@ -530,6 +635,66 @@ final class EffectsRenderer {
         }
     }
 
+    /// How each family's trail moves over its short life.
+    private func applySwing(_ effect: Effect, t: CGFloat, frame: WrappedRenderFrame) {
+        guard let blade = effect.node.children.first else { return }
+        let ease = 1 - (1 - t) * (1 - t)
+        var sweep: CGFloat = 0
+        var scale: CGFloat = 1
+        var stretch: CGFloat = 1
+        var alpha: CGFloat = t < 0.25 ? 1 : 1 - (t - 0.25) / 0.75
+        switch (effect.swing, effect.role) {
+        case (_, .flash):
+            // Opens across the cut, then is gone.
+            stretch = 0.3 + 0.9 * min(1, t * 3)
+            alpha = t < 0.35 ? 1 : 1 - (t - 0.35) / 0.65
+        case (_, .wake):
+            scale = 0.85 + 0.35 * t
+            alpha = 0.45 * (1 - t)
+        case (.heavy, _):
+            // Slow, wide and heavy: it hangs a moment at the end of the arc.
+            sweep = -0.45 + 0.9 * ease
+            scale = 0.88 + 0.18 * ease
+            alpha = t < 0.4 ? 1 : 1 - (t - 0.4) / 0.6
+        case (.quick, _):
+            // Nearly instant: almost all of the arc in the first instant.
+            sweep = -0.6 + 1.2 * pow(t, 0.3)
+            scale = 0.95 + 0.08 * t
+            alpha = t < 0.15 ? 1 : 1 - (t - 0.15) / 0.85
+        case (.twin, _):
+            sweep = -0.35 + 0.7 * ease
+            scale = 0.9 + 0.12 * t
+        case (.claw, _):
+            // The rakes drag forward through the target rather than sweeping.
+            let unit = CGPoint(x: cos(effect.variant), y: sin(effect.variant))
+            let shifted = effect.worldPosition + unit * (effect.magnitude * 0.22 * ease)
+            effect.node.position = projection.toScreen(frame.unwrapped(shifted))
+            scale = 0.92 + 0.12 * ease
+        case (.reap, _):
+            // A long, steady harvest of an arc.
+            sweep = -0.8 + 1.6 * ease
+            scale = 0.9 + 0.15 * t
+            alpha = t < 0.45 ? 1 : 1 - (t - 0.45) / 0.55
+        case (.lash, _):
+            // The whip unrolls to full length, cracks, and falls slack.
+            stretch = 0.25 + 0.75 * min(1, t / 0.45)
+            sweep = 0.25 * (1 - ease)
+            alpha = t < 0.5 ? 1 : 1 - (t - 0.5) / 0.5
+        case (.spin, _):
+            // A full turn and a little more, fading as it goes.
+            sweep = 2 * .pi * 1.15 * ease
+            scale = 0.82 + 0.2 * ease
+            alpha = 1 - t
+        case (.blade, _), (.thrust, _):
+            sweep = (t - 0.5) * 0.5
+            scale = 0.85 + 0.2 * t
+        }
+        blade.zRotation = effect.variant + .pi / 4 + sweep * effect.spin
+        blade.xScale = scale * stretch
+        blade.yScale = scale
+        effect.node.alpha = max(0, alpha)
+    }
+
     // MARK: - Pooling
 
     private func add(_ effect: Effect, layer: SKNode?) {
@@ -573,6 +738,8 @@ final class EffectsRenderer {
             return groundContainer(holding: catalog.makeSprite(.fxSlash), zPosition: 1)
         case .thrust:
             return groundContainer(holding: catalog.makeSprite(.fxThrust), zPosition: 1)
+        case .swing:
+            return groundContainer(holding: catalog.makeSprite(.fxSlash), zPosition: 1)
         case .shockwave:
             return groundContainer(holding: catalog.makeSprite(.fxRing), zPosition: 1)
         case .cone:

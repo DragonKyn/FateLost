@@ -278,7 +278,8 @@ final class PartyCombatTests: XCTestCase {
                 direction: .zero, depth: 1, ability: nil))
         }
         sim.step(dt: Party.dt)
-        XCTAssertEqual(Party.health(sim, 0), 65, accuracy: 1.5)
+        // Triggered heals are steady sustain now, paid through the soft cap.
+        XCTAssertGreaterThan(Party.health(sim, 0), 40)
         XCTAssertEqual(Party.health(sim, 1), 40, accuracy: 0.5)
     }
 
@@ -294,8 +295,10 @@ final class PartyCombatTests: XCTestCase {
         Party.cast(&sim, hero: 0, .zone(field))
         Party.run(&sim, seconds: 1.5)
 
-        XCTAssertGreaterThan(Party.health(sim, 0), 60, "whoever laid it is healed")
-        XCTAssertGreaterThan(Party.health(sim, 1), 60, "a friend standing in it is healed")
+        // An aura's regeneration shares the sustain soft cap (about 7% of max
+        // health a second), so a second and a half is worth roughly ten.
+        XCTAssertGreaterThan(Party.health(sim, 0), 46, "whoever laid it is healed")
+        XCTAssertGreaterThan(Party.health(sim, 1), 46, "a friend standing in it is healed")
         XCTAssertEqual(Party.health(sim, 2), 40, accuracy: 0.5, "a friend outside it is not")
     }
 

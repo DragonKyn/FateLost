@@ -212,6 +212,8 @@ enum PlaceholderArt {
         case .fxFlame: return flame()
         case .fxSlash: return slash()
         case .fxThrust: return thrust()
+        case .fxSwingHeavy, .fxSwingThin, .fxSwingReap, .fxSwingClaw, .fxSwingLash, .fxSwingRing:
+            return swingSprite(for: id)
         case .allyExtraBanner: return banner()
         case .allyExtraCharm: return charm()
         case .fxSpark: return spark()

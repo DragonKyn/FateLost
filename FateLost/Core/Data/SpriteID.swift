@@ -231,6 +231,13 @@ extension SpriteID {
     static let fxSlash: SpriteID = "fx.slash"
     /// A straight jab of light for a thrust weapon, drawn pointing along +x.
     static let fxThrust: SpriteID = "fx.thrust"
+    /// Signature melee trails (see `SwingStyle`), each pointing along +x.
+    static let fxSwingHeavy: SpriteID = "fx.swing.heavy"
+    static let fxSwingThin: SpriteID = "fx.swing.thin"
+    static let fxSwingReap: SpriteID = "fx.swing.reap"
+    static let fxSwingClaw: SpriteID = "fx.swing.claw"
+    static let fxSwingLash: SpriteID = "fx.swing.lash"
+    static let fxSwingRing: SpriteID = "fx.swing.ring"
     /// Small four-point star for hit sparks.
     static let fxSpark: SpriteID = "fx.spark"
     /// Circle outline, for hitboxes and shockwaves.

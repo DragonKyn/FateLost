@@ -272,7 +272,7 @@ final class NetEventCodecTests: XCTestCase {
         let p = CGPoint(x: 12.5, y: 30.25)
         let d = CGPoint(x: 0, y: 1)
         return [
-            .meleeSwing(origin: p, direction: d, range: 2.2, arcDegrees: 120),
+            .meleeSwing(origin: p, direction: d, range: 2.2, arcDegrees: 120, style: .reap),
             .projectileFired(spriteID: .projectileArrow, origin: p, direction: d),
             .enemyHit(enemyID: 77, position: p, amount: 41.5, isCritical: true, direction: d, type: .fire, isDot: false),
             .enemyKilled(enemyID: 77, kind: EnemyCatalog.goblin.id, position: p, direction: d),

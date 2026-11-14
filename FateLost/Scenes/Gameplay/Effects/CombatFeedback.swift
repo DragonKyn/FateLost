@@ -140,20 +140,15 @@ final class CombatFeedback {
         var critFlares = 0
         for event in events {
             switch event {
-            case let .meleeSwing(origin, direction, range, arcDegrees):
-                let isThrust = arcDegrees <= CombatFeedback.thrustArcDegrees
-                if isThrust {
-                    effects.thrust(at: origin, direction: direction, range: range)
-                } else {
-                    effects.slash(at: origin, direction: direction, range: range)
-                }
-                // Sparks off the point or the edge of the blade, at the end of its reach.
-                effects.motes(at: origin + direction * (range * 0.85), count: range >= CombatFeedback.heavySwingRange ? 6 : 3,
-                              color: UIColor(rgb: 0xFFF0D0), spread: isThrust ? 0.12 : 0.35, lifetime: 0.35)
+            case let .meleeSwing(origin, direction, range, _, style):
+                // Every family of weapon has its own trail: see `SwingStyle`.
+                effects.swing(style, at: origin, direction: direction, range: range)
                 if isOwn(origin) {
                     player.playAttack(screenDirection: projection.toScreen(direction), isMelee: true)
-                    // A long, heavy blade (the claymore) is felt in the camera.
-                    if range >= CombatFeedback.heavySwingRange { camera.addTrauma(0.1) }
+                    // A heavy weapon coming down is felt in the camera.
+                    if style == .heavy || range >= CombatFeedback.heavySwingRange {
+                        camera.addTrauma(style == .heavy ? 0.12 : 0.1)
+                    }
                 }
                 audio.play(.swordSwing)
 

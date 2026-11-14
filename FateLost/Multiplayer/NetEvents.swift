@@ -63,8 +63,9 @@ enum NetEventCodec {
     private static func write(_ event: CombatEvent, to w: inout ByteWriter, slotOf: (Int) -> UInt8) {
         func visual(_ style: VisualStyle) { w.u8(NetTables.visualIndex(style)) }
         switch event {
-        case let .meleeSwing(origin, direction, range, arc):
+        case let .meleeSwing(origin, direction, range, arc, style):
             w.u8(Tag.meleeSwing.rawValue); w.point(origin); w.direction(direction); w.f32(Float(range)); w.f32(Float(arc))
+            w.u8(style.rawValue)
         case let .projectileFired(sprite, origin, direction):
             w.u8(Tag.projectileFired.rawValue); w.u16(NetTables.hash(of: sprite)); w.point(origin); w.direction(direction)
         case let .enemyHit(id, position, amount, critical, direction, type, isDot):
@@ -154,7 +155,8 @@ enum NetEventCodec {
         func visual() -> VisualStyle { NetTables.visual(r.u8()) }
         switch tag {
         case .meleeSwing:
-            return .meleeSwing(origin: r.point(), direction: r.direction(), range: CGFloat(r.f32()), arcDegrees: Double(r.f32()))
+            return .meleeSwing(origin: r.point(), direction: r.direction(), range: CGFloat(r.f32()),
+                               arcDegrees: Double(r.f32()), style: SwingStyle(rawValue: r.u8()) ?? .blade)
         case .projectileFired:
             // A sprite this app does not know is drawn as a plain bolt.
             let sprite = NetTables.sprite(r.u16()) ?? .projectileBolt

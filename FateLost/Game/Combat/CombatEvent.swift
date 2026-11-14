@@ -7,8 +7,9 @@ import CoreGraphics
 /// them once per frame and turns them into effects, sounds and haptics. Game
 /// rules never depend on whether an event was presented.
 enum CombatEvent: Equatable {
-    /// A melee weapon swung. `direction` is a unit vector in world space.
-    case meleeSwing(origin: CGPoint, direction: CGPoint, range: CGFloat, arcDegrees: Double)
+    /// A melee weapon swung. `direction` is a unit vector in world space;
+    /// `style` is how that weapon's swing looks.
+    case meleeSwing(origin: CGPoint, direction: CGPoint, range: CGFloat, arcDegrees: Double, style: SwingStyle)
     case projectileFired(spriteID: SpriteID, origin: CGPoint, direction: CGPoint)
     case enemyHit(enemyID: Int, position: CGPoint, amount: Double, isCritical: Bool, direction: CGPoint,
                   type: DamageType, isDot: Bool)

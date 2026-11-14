@@ -120,7 +120,8 @@ struct WeaponSystem {
         }
 
         combat.events.append(.meleeSwing(origin: player.position, direction: direction, range: range,
-                                         arcDegrees: arcDegrees))
+                                         arcDegrees: arcDegrees,
+                                         style: SwingStyle.of(weapon.spriteID, arcDegrees: baseArc)))
         return target
     }
 

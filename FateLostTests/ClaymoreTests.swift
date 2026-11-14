@@ -140,7 +140,7 @@ final class ClaymoreTests: XCTestCase {
         for _ in 0..<(60 * 5) {
             sim.step(dt: dt)
             for event in sim.drainEvents() {
-                if case .meleeSwing(_, _, let range, _) = event {
+                if case .meleeSwing(_, _, let range, _, _) = event {
                     swings += 1
                     reach = range
                 }
